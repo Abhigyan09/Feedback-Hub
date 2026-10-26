@@ -6,7 +6,7 @@ export type UserRole =
   | 'support_agent' 
   | 'client_user';
 
-export type TicketCategory = 'BUG' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE';
+export type TicketCategory = 'BUG' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE' | 'SECURITY';
 export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'BLOCKER';
 export type TicketStatus = 'OPEN' | 'TRIAGED' | 'IN_DEV' | 'IN_QA' | 'RESOLVED' | 'CLOSED';
 

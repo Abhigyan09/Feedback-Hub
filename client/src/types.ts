@@ -6,7 +6,7 @@ export type UserRole =
   | 'support_agent' 
   | 'client_user';
 
-export type TicketCategory = 'BUG' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE';
+export type TicketCategory = 'BUG' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE' | 'SECURITY';
 export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'BLOCKER';
 export type TicketStatus = 'OPEN' | 'TRIAGED' | 'IN_DEV' | 'IN_QA' | 'RESOLVED' | 'CLOSED';
 
@@ -45,6 +45,7 @@ export interface Ticket {
   status: TicketStatus;
   reporter_email: string;
   assigned_squad: string;
+  assigned_to?: string;
   assigned_to_name?: string;
   telemetry?: TicketTelemetry;
   sla_due_at: string;
@@ -59,3 +60,14 @@ export interface Tenant {
   plan: string;
   allowed_domains: string[];
 }
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  avatarInitials: string;
+  status: 'ONLINE' | 'AWAY' | 'ON_CALL';
+  color: string;
+}
+
