@@ -139,6 +139,23 @@ CREATE TABLE audit_logs (
 );
 CREATE INDEX idx_audit_tenant_time ON audit_logs(tenant_id, timestamp DESC);
 
+-- 9. REFRESH TOKENS (Multi-session tracking, rotation lineage & compromise detection)
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    family_id UUID NOT NULL,
+    is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    replaced_by_token_hash VARCHAR(64)
+);
+CREATE UNIQUE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);
+CREATE INDEX idx_refresh_tokens_family ON refresh_tokens(family_id);
+CREATE INDEX idx_refresh_tokens_user_tenant ON refresh_tokens(user_id, tenant_id);
+CREATE INDEX idx_refresh_tokens_active_expiry ON refresh_tokens(expires_at) WHERE is_revoked = FALSE;
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -147,6 +164,7 @@ ALTER TABLE ticket_telemetry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ticket_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE refresh_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Dynamic Tenant Context Check
 CREATE POLICY rls_tickets_tenant ON tickets
@@ -173,4 +191,8 @@ CREATE POLICY rls_products_tenant ON products
 
 CREATE POLICY rls_audit_tenant ON audit_logs
     FOR SELECT
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
+
+CREATE POLICY rls_refresh_tokens_tenant ON refresh_tokens
+    FOR ALL
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);

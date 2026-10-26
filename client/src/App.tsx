@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginPage } from './components/LoginPage';
 import { Header } from './components/Header';
 import { TicketList } from './components/TicketList';
 import { TicketDetailModal } from './components/TicketDetailModal';
 import { WidgetSimulatorModal } from './components/WidgetSimulatorModal';
-import { Ticket, UserRole } from './types';
-import { Activity, ShieldAlert, Cpu, Bell, CheckCircle2 } from 'lucide-react';
+import { Ticket } from './types';
+import { Activity, ShieldAlert, Cpu, Bell, CheckCircle2, Loader2 } from 'lucide-react';
 
-export const App: React.FC = () => {
-  const [currentTenantId, setCurrentTenantId] = useState<string>('tenant-acme-corp-001');
-  const [currentRole, setCurrentRole] = useState<UserRole>('developer');
+const Dashboard: React.FC = () => {
+  const { user, accessToken, logout } = useAuth();
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -17,16 +19,24 @@ export const App: React.FC = () => {
   const [isWidgetSimulatorOpen, setIsWidgetSimulatorOpen] = useState<boolean>(false);
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
 
-  // Fetch tickets for current tenant and role
+  // Fetch tickets using authenticated JWT claims (tenant & role are authoritatively resolved by backend)
   const loadTickets = useCallback(async () => {
+    if (!accessToken) return;
+
     setIsLoading(true);
     try {
       const response = await fetch('/api/v1/tickets', {
         headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        }
+          'Authorization': `Bearer ${accessToken}`
+        },
+        credentials: 'include'
       });
+
+      if (response.status === 401) {
+        // Access token expired; silent refresh will handle or user will be directed to login
+        return;
+      }
+
       const data = await response.json();
       if (data.tickets) {
         setTickets(data.tickets);
@@ -36,18 +46,19 @@ export const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentTenantId, currentRole]);
+  }, [accessToken]);
 
   useEffect(() => {
     loadTickets();
   }, [loadTickets]);
 
-  // Real-time WebSocket connection
+  // Authenticated WebSocket connection using verified access JWT
   useEffect(() => {
+    if (!accessToken) return;
+
     const socket: Socket = io({
-      query: {
-        tenantId: currentTenantId,
-        role: currentRole
+      auth: {
+        token: accessToken
       }
     });
 
@@ -59,10 +70,14 @@ export const App: React.FC = () => {
       setIsConnected(false);
     });
 
+    socket.on('connect_error', (err) => {
+      console.warn('[WebSocket] Connection error:', err.message);
+      setIsConnected(false);
+    });
+
     // Real-time new ticket alert
     socket.on('NEW_TICKET_ALERT', (data: { ticket: Ticket; message: string }) => {
       setAlertBanner(data.message);
-      // Auto clear after 6 seconds
       setTimeout(() => setAlertBanner(null), 6000);
       loadTickets();
     });
@@ -75,20 +90,23 @@ export const App: React.FC = () => {
     return () => {
       socket.disconnect();
     };
-  }, [currentTenantId, currentRole, loadTickets]);
+  }, [accessToken, loadTickets]);
 
   // Handle status update
   const handleUpdateStatus = async (ticketId: string, newStatus: string, note?: string) => {
+    if (!accessToken) return;
+
     try {
       const res = await fetch(`/api/v1/tickets/${ticketId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
+          'Authorization': `Bearer ${accessToken}`
         },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus, note })
       });
+
       if (res.ok) {
         const data = await res.json();
         if (selectedTicket && selectedTicket.id === ticketId) {
@@ -103,16 +121,24 @@ export const App: React.FC = () => {
 
   // Handle add event / dev note
   const handleAddEvent = async (ticketId: string, content: string, isInternalOnly: boolean) => {
-    await fetch(`/api/v1/tickets/${ticketId}/events`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tenant-id': currentTenantId,
-        'x-user-role': currentRole
-      },
-      body: JSON.stringify({ content, is_internal_only: isInternalOnly })
-    });
+    if (!accessToken) return;
+
+    try {
+      await fetch(`/api/v1/tickets/${ticketId}/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        credentials: 'include',
+        body: JSON.stringify({ content, is_internal_only: isInternalOnly })
+      });
+    } catch (err) {
+      console.error('Failed to add event:', err);
+    }
   };
+
+  if (!user) return null;
 
   // Metrics calculations
   const openCount = tickets.filter(t => t.status === 'OPEN').length;
@@ -122,14 +148,12 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#09090b] text-neutral-100 flex flex-col font-sans">
       
-      {/* Header */}
+      {/* Header with verified user & logout */}
       <Header
-        currentTenantId={currentTenantId}
-        onTenantChange={setCurrentTenantId}
-        currentRole={currentRole}
-        onRoleChange={setCurrentRole}
+        user={user}
         isConnected={isConnected}
         onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
+        onLogout={logout}
       />
 
       {/* Real-time Incident Alert Banner */}
@@ -148,7 +172,7 @@ export const App: React.FC = () => {
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
-        {/* KPI Strip (Stripe Squarish Metrics) */}
+        {/* KPI Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
           <div className="bg-[#121215] border border-[#27272a] p-4 flex items-center justify-between">
@@ -193,20 +217,20 @@ export const App: React.FC = () => {
 
         </div>
 
-        {/* Current Scope Banner */}
+        {/* Current Scope Banner with Verified Claims */}
         <div className="p-4 border border-[#27272a] bg-[#121215] flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-mono font-bold text-white uppercase">Active Tenant:</span>
-              <span className="text-xs font-mono text-indigo-400">
-                {currentTenantId === 'tenant-acme-corp-001' ? 'Acme Payments Inc.' : 'MedSync Healthcare'}
+              <span className="text-xs font-mono text-indigo-400 font-bold uppercase">
+                {user.tenant_name || user.tenant_slug || user.tenant_id}
               </span>
               <span className="text-neutral-500">•</span>
-              <span className="text-xs font-mono font-bold text-white uppercase">Role:</span>
-              <span className="text-xs font-mono text-neutral-300 uppercase font-semibold">[{currentRole}]</span>
+              <span className="text-xs font-mono font-bold text-white uppercase">Verified Role:</span>
+              <span className="text-xs font-mono text-neutral-200 uppercase font-semibold">[{user.role}]</span>
             </div>
             <p className="text-xs text-neutral-400">
-              {currentRole === 'client_user' 
+              {user.role === 'client_user' 
                 ? 'Client Mode Active: Internal developer notes, dirty telemetry payloads, and secret keys are quarantined.'
                 : 'Engineering Mode Active: Full stack traces, console logs, and sensitive diagnostic context are available.'}
             </p>
@@ -224,7 +248,7 @@ export const App: React.FC = () => {
         <TicketList
           tickets={tickets}
           onSelectTicket={setSelectedTicket}
-          currentRole={currentRole}
+          currentRole={user.role}
           isLoading={isLoading}
         />
 
@@ -234,7 +258,8 @@ export const App: React.FC = () => {
       <TicketDetailModal
         ticket={selectedTicket}
         onClose={() => setSelectedTicket(null)}
-        currentRole={currentRole}
+        currentRole={user.role}
+        accessToken={accessToken}
         onUpdateStatus={handleUpdateStatus}
         onAddEvent={handleAddEvent}
       />
@@ -252,5 +277,40 @@ export const App: React.FC = () => {
       </footer>
 
     </div>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Screen-flash prevention while silent session restoration runs
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0c10] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-white font-mono font-bold text-xl shadow-lg shadow-blue-500/30 border border-blue-400/30 animate-pulse">
+          FH
+        </div>
+        <div className="mt-4 flex items-center space-x-2 text-neutral-400 font-mono text-xs">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+          <span>Restoring Feedback-Hub session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Unauthenticated users see the premium login screen
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // Authenticated users enter the protected incident management dashboard
+  return <Dashboard />;
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };

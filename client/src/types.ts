@@ -59,3 +59,36 @@ export interface Tenant {
   plan: string;
   allowed_domains: string[];
 }
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  tenant_id: string;
+  tenant_name?: string;
+  tenant_slug?: string;
+}
+
+export interface LoginRequestDTO {
+  email: string;
+  password: string;
+  tenant_slug: string;
+}
+
+export interface LoginResponseDTO {
+  message: string;
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  user: AuthenticatedUser;
+}
+
+export interface RefreshResponseDTO {
+  message: string;
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  user: AuthenticatedUser;
+}
+

@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { ENV } from './env.js';
-import { Tenant, User, Product, Ticket, TicketEvent } from '../types/index.js';
+import { Tenant, User, Product, Ticket, TicketEvent, RefreshTokenRecord } from '../types/index.js';
 import { encryptSensitiveData } from '../services/crypto.js';
 
 const { Pool } = pg;
@@ -22,6 +22,7 @@ export class MultiTenantStore {
   public products: Product[] = [];
   public tickets: Ticket[] = [];
   public events: TicketEvent[] = [];
+  public refreshTokens: RefreshTokenRecord[] = [];
 
   constructor() {
     this.seedInitialData();
@@ -78,6 +79,24 @@ export class MultiTenantStore {
     // Users
     this.users.push(
       {
+        id: 'user-super-01',
+        tenant_id: tenantA.id,
+        email: 'superadmin@feedbackhub.io',
+        full_name: 'Alex Vance (Global Super Admin)',
+        role: 'super_admin',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'user-admin-01',
+        tenant_id: tenantA.id,
+        email: 'admin.priya@acme.com',
+        full_name: 'Priya Sharma (Acme Admin)',
+        role: 'tenant_admin',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
         id: 'user-lead-01',
         tenant_id: tenantA.id,
         email: 'lead.dev@acme.com',
@@ -96,11 +115,30 @@ export class MultiTenantStore {
         created_at: new Date().toISOString()
       },
       {
+        id: 'user-support-01',
+        tenant_id: tenantA.id,
+        email: 'support.amit@acme.com',
+        full_name: 'Amit Patel (Support Agent)',
+        role: 'support_agent',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
         id: 'user-client-01',
         tenant_id: tenantA.id,
         email: 'operations@partner-client.com',
         full_name: 'Sarah Jenkins (Client Ops Director)',
         role: 'client_user',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      // Tenant B (MedSync) user to verify multi-tenant isolation
+      {
+        id: 'user-medsync-dev-01',
+        tenant_id: tenantB.id,
+        email: 'dev.elena@medsync.io',
+        full_name: 'Elena Rostova (MedSync Dev)',
+        role: 'developer',
         is_active: true,
         created_at: new Date().toISOString()
       }
@@ -172,7 +210,36 @@ export class MultiTenantStore {
       }
     };
 
-    this.tickets.push(ticket1, ticket2);
+    // Tenant B Ticket for cross-tenant boundary verification
+    const ticketMedSync: Ticket = {
+      id: 'ticket-medsync-2001',
+      tenant_id: tenantB.id,
+      product_id: 'prod-medsync-ehr',
+      product_name: 'MedSync EHR Cloud',
+      short_code: 'MS-2001',
+      title: 'HIPAA Audit Trail Sync Latency in Clinic Node',
+      description: 'Audit logs for patient record lookups are delayed by 180 seconds during batch record ingestion.',
+      category: 'PERFORMANCE',
+      severity: 'HIGH',
+      status: 'OPEN',
+      reporter_email: 'compliance@medsync.io',
+      assigned_squad: 'COMPLIANCE_ENG',
+      assigned_to: 'user-medsync-dev-01',
+      assigned_to_name: 'Elena Rostova',
+      sla_due_at: new Date(Date.now() + 120 * 60000).toISOString(),
+      created_at: new Date(Date.now() - 60 * 60000).toISOString(),
+      updated_at: new Date(Date.now() - 30 * 60000).toISOString(),
+      telemetry: {
+        page_url: 'https://ehr.medsync.io/audit/sync',
+        app_version: 'v1.8.0',
+        user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        viewport_dimensions: '1920x1080',
+        console_logs: [],
+        network_errors: []
+      }
+    };
+
+    this.tickets.push(ticket1, ticket2, ticketMedSync);
 
     // Events (Internal Dev Notes vs Client Replies)
     this.events.push(
@@ -197,8 +264,32 @@ export class MultiTenantStore {
         content: 'Our core API team is actively applying a backend hotfix to resolve the gateway delay. Next status update in 20 minutes.',
         is_internal_only: false, // VISIBLE TO CLIENT
         created_at: new Date(Date.now() - 12 * 60000).toISOString()
+      },
+      {
+        id: 'ev-medsync-01',
+        ticket_id: ticketMedSync.id,
+        tenant_id: tenantB.id,
+        author_name: 'Elena Rostova',
+        author_role: 'developer',
+        event_type: 'DEV_NOTE',
+        content: 'Configured secondary Redis replica for HIPAA audit buffering.',
+        is_internal_only: true,
+        created_at: new Date(Date.now() - 25 * 60000).toISOString()
       }
     );
+  }
+
+  /**
+   * Initializes development-only password hashes for mock users.
+   * Clearly identified for development/testing only; never used in production.
+   */
+  public async ensureDevSeedCredentials(hashFn: (password: string) => Promise<string>, devPassword = 'DevPassword123!') {
+    const devHash = await hashFn(devPassword);
+    for (const user of this.users) {
+      if (!user.password_hash) {
+        user.password_hash = devHash;
+      }
+    }
   }
 }
 
@@ -212,5 +303,50 @@ pool.query('SELECT NOW()')
   })
   .catch((err) => {
     isPostgresConnected = false;
-    console.log('[Database] PostgreSQL instance not detected. Operating with Active In-Memory Multi-Tenant Store.');
+    if (ENV.NODE_ENV === 'production') {
+      console.error('[CRITICAL DATABASE ERROR] Failed to connect to PostgreSQL in production mode:', err.message);
+    } else {
+      console.log('[Database] PostgreSQL instance not detected. Operating with Active In-Memory Multi-Tenant Store.');
+    }
   });
+
+/**
+ * Executes a callback within a managed PostgreSQL transaction client if connected.
+ * In development without PostgreSQL, runs safely against the in-memory store.
+ * In production, strictly throws if PostgreSQL is not connected (no silent in-memory fallback).
+ */
+export async function withTransaction<T>(
+  callback: (client: pg.PoolClient | null) => Promise<T>
+): Promise<T> {
+  if (isPostgresConnected) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await callback(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  if (ENV.NODE_ENV === 'production') {
+    throw new Error(
+      '[CRITICAL DATABASE ERROR] PostgreSQL connection required in production mode. In-memory storage fallback is disabled.'
+    );
+  }
+
+  // Development/Test fallback with transactional snapshot rollback support
+  const snapshotTokens = tenantStore.refreshTokens.map(t => ({ ...t }));
+  const snapshotUsers = tenantStore.users.map(u => ({ ...u }));
+  try {
+    return await callback(null);
+  } catch (error) {
+    tenantStore.refreshTokens = snapshotTokens;
+    tenantStore.users = snapshotUsers;
+    throw error;
+  }
+}

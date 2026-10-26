@@ -77,13 +77,17 @@ ticketRouter.patch('/:id/status', requireRole(['super_admin', 'tenant_admin', 's
   const { status, note } = req.body;
   const tenantId = req.auth!.tenantId;
 
+  if (!status || typeof status !== 'string') {
+    return res.status(400).json({ error: 'Valid ticket status is required.' });
+  }
+
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
   const oldStatus = ticket.status;
-  ticket.status = status;
+  ticket.status = status as any;
   ticket.updated_at = new Date().toISOString();
 
   // Create timeline event
@@ -116,6 +120,10 @@ ticketRouter.post('/:id/events', (req: Request, res: Response) => {
   const { content, is_internal_only } = req.body;
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
+
+  if (!content || typeof content !== 'string' || !content.trim()) {
+    return res.status(400).json({ error: 'Event content is required.' });
+  }
 
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {
