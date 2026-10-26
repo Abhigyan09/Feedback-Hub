@@ -6,8 +6,8 @@ export type UserRole =
   | 'support_agent' 
   | 'client_user';
 
-export type TicketCategory = 'BUG' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE';
-export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'BLOCKER';
+export type TicketCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE';
+export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL' | 'BLOCKER';
 export type TicketStatus = 'OPEN' | 'TRIAGED' | 'IN_DEV' | 'IN_QA' | 'RESOLVED' | 'CLOSED';
 
 export interface Tenant {
@@ -15,8 +15,16 @@ export interface Tenant {
   name: string;
   slug: string;
   plan: string;
+  isolation_standard?: string;
   allowed_domains: string[];
+  webhook_url?: string;
+  notification_email?: string;
+  auto_capture_telemetry?: boolean;
+  auto_capture_network?: boolean;
+  require_email?: boolean;
+  default_squad?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface User {
@@ -34,19 +42,23 @@ export interface Product {
   tenant_id: string;
   name: string;
   slug: string;
+  description?: string;
   api_key_hash: string;
   raw_api_key?: string;
-  environment: string;
+  environment: 'production' | 'staging' | 'development';
   created_at: string;
+  updated_at?: string;
 }
 
 export interface TicketTelemetry {
   page_url?: string;
+  domain_origin?: string;
   app_version?: string;
   user_agent?: string;
   viewport_dimensions?: string;
   console_logs?: Array<{ type: string; message: string; timestamp: string }>;
   network_errors?: Array<{ url: string; status: number; method?: string; timestamp: string }>;
+  screenshot_url?: string;
   encrypted_sensitive_data?: string;
 }
 
@@ -68,11 +80,14 @@ export interface Ticket {
   tenant_id: string;
   product_id: string;
   product_name?: string;
+  domain_origin?: string;
   short_code: string;
   title: string;
   description: string;
   category: TicketCategory;
   severity: TicketSeverity;
+  rating?: number;
+  screenshot_url?: string;
   status: TicketStatus;
   reporter_email: string;
   assigned_squad: string;

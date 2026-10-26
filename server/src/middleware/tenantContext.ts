@@ -32,12 +32,23 @@ export const tenantContextMiddleware = async (req: Request, res: Response, next:
     return res.status(404).json({ error: `Tenant not found for ID: ${tenantId}` });
   }
 
+  const roleToUserMap: Record<UserRole, { fullName: string; defaultEmail: string }> = {
+    super_admin: { fullName: 'Alex Turner (Super Admin)', defaultEmail: 'alex.admin@feedbackhub.cloud' },
+    tenant_admin: { fullName: 'Elena Rostova (Tenant Admin)', defaultEmail: 'elena.rostova@acme.com' },
+    squad_lead: { fullName: 'Vikram Mehta (API Squad Lead)', defaultEmail: 'vikram.mehta@acme.com' },
+    developer: { fullName: 'Rahul Sharma (Senior Backend Dev)', defaultEmail: 'rahul.sharma@acme.com' },
+    support_agent: { fullName: 'Marcus Chen (Support Specialist)', defaultEmail: 'marcus.chen@acme.com' },
+    client_user: { fullName: 'Sarah Jenkins (Client Reporter)', defaultEmail: 'sarah.jenkins@clientops.com' }
+  };
+
+  const roleMeta = roleToUserMap[role] || roleToUserMap.developer;
+
   req.auth = {
     tenantId: tenant.id,
     userId,
     role,
-    email,
-    fullName: role === 'squad_lead' ? 'Vikram Mehta (Lead)' : role === 'developer' ? 'Rahul Sharma (Dev)' : 'Sarah Jenkins (Client)'
+    email: (req.headers['x-user-email'] as string) || req.auth?.email || roleMeta.defaultEmail,
+    fullName: roleMeta.fullName
   };
 
   // If connected to live Postgres, set session variable for RLS

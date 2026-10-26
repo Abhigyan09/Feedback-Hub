@@ -1,21 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Header } from './components/Header';
+import { Sidebar, SidebarView } from './components/Sidebar';
 import { TicketList } from './components/TicketList';
 import { TicketDetailModal } from './components/TicketDetailModal';
 import { WidgetSimulatorModal } from './components/WidgetSimulatorModal';
-import { Ticket, UserRole } from './types';
-import { Activity, ShieldAlert, Cpu, Bell, CheckCircle2 } from 'lucide-react';
+import { SettingsView } from './components/SettingsView';
+import { Ticket, Tenant, UserRole } from './types';
+import { 
+  Activity, 
+  ShieldAlert, 
+  Cpu, 
+  Bell, 
+  CheckCircle2, 
+  Layers, 
+  LogOut, 
+  X,
+  Sparkles,
+  Info,
+  UserPlus,
+  RefreshCw,
+  Users,
+  Building,
+  Terminal
+} from 'lucide-react';
 
 export const App: React.FC = () => {
   const [currentTenantId, setCurrentTenantId] = useState<string>('tenant-acme-corp-001');
   const [currentRole, setCurrentRole] = useState<UserRole>('developer');
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isWidgetSimulatorOpen, setIsWidgetSimulatorOpen] = useState<boolean>(false);
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
+
+  // Sidebar navigation state
+  const [currentView, setCurrentView] = useState<SidebarView>('dashboard');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
 
   // Fetch tickets for current tenant and role
   const loadTickets = useCallback(async () => {
@@ -37,6 +61,25 @@ export const App: React.FC = () => {
       setIsLoading(false);
     }
   }, [currentTenantId, currentRole]);
+
+  // Load all available tenants for switcher
+  const loadTenants = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/tenants/all');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.tenants) {
+          setTenants(data.tenants);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load tenants:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTenants();
+  }, [loadTenants]);
 
   useEffect(() => {
     loadTickets();
@@ -62,7 +105,6 @@ export const App: React.FC = () => {
     // Real-time new ticket alert
     socket.on('NEW_TICKET_ALERT', (data: { ticket: Ticket; message: string }) => {
       setAlertBanner(data.message);
-      // Auto clear after 6 seconds
       setTimeout(() => setAlertBanner(null), 6000);
       loadTickets();
     });
@@ -72,15 +114,28 @@ export const App: React.FC = () => {
       loadTickets();
     });
 
+    // Real-time ticket deleted
+    socket.on('TICKET_DELETED', (data: { ticketId: string; message: string }) => {
+      setAlertBanner(data.message);
+      setTimeout(() => setAlertBanner(null), 6000);
+      loadTickets();
+    });
+
+    // Real-time settings updated
+    socket.on('SETTINGS_UPDATED', () => {
+      loadTenants();
+      loadTickets();
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, [currentTenantId, currentRole, loadTickets]);
+  }, [currentTenantId, currentRole, loadTickets, loadTenants]);
 
   // Handle status update
   const handleUpdateStatus = async (ticketId: string, newStatus: string, note?: string) => {
     try {
-      const res = await fetch(`/api/v1/tickets/${ticketId}/status`, {
+      await fetch(`/api/v1/tickets/${ticketId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -89,15 +144,59 @@ export const App: React.FC = () => {
         },
         body: JSON.stringify({ status: newStatus, note })
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (selectedTicket && selectedTicket.id === ticketId) {
-          setSelectedTicket(data.ticket);
-        }
-        loadTickets();
-      }
+      loadTickets();
     } catch (err) {
       console.error('Failed to update status:', err);
+    }
+  };
+
+  // Handle full ticket update (Edit)
+  const handleUpdateTicket = async (ticketId: string, updatedFields: Partial<Ticket>) => {
+    try {
+      const res = await fetch(`/api/v1/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': currentTenantId,
+          'x-user-role': currentRole
+        },
+        body: JSON.stringify(updatedFields)
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update ticket');
+      }
+      loadTickets();
+      if (selectedTicket && selectedTicket.id === ticketId) {
+        setSelectedTicket(prev => prev ? { ...prev, ...updatedFields } : null);
+      }
+    } catch (err: any) {
+      console.error('Failed to update ticket:', err);
+      throw err;
+    }
+  };
+
+  // Handle delete ticket
+  const handleDeleteTicket = async (ticketId: string) => {
+    try {
+      const res = await fetch(`/api/v1/tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-tenant-id': currentTenantId,
+          'x-user-role': currentRole
+        }
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete ticket');
+      }
+      loadTickets();
+      if (selectedTicket && selectedTicket.id === ticketId) {
+        setSelectedTicket(null);
+      }
+    } catch (err: any) {
+      console.error('Failed to delete ticket:', err);
+      throw err;
     }
   };
 
@@ -115,120 +214,364 @@ export const App: React.FC = () => {
   };
 
   // Metrics calculations
+  const totalCount = tickets.length;
   const openCount = tickets.filter(t => t.status === 'OPEN').length;
   const inDevCount = tickets.filter(t => t.status === 'IN_DEV').length;
-  const criticalCount = tickets.filter(t => t.severity === 'CRITICAL' || t.severity === 'BLOCKER').length;
+  const unassignedCount = tickets.filter(t => !t.assigned_to).length;
+  const criticalCount = tickets.filter(t => t.severity === 'CRITICAL' || t.severity === 'BLOCKER' || t.severity === 'URGENT').length;
+  const resolvedCount = tickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
+  const resolvedTickets = tickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED');
+
+  // Breakdown sub-counts
+  const pendingTriageCount = tickets.filter(t => t.status === 'OPEN' && !t.assigned_to).length;
+  const unassignedP0P1 = tickets.filter(t => !t.assigned_to && (t.severity === 'URGENT' || t.severity === 'HIGH')).length;
+  const unassignedP2P3 = tickets.filter(t => !t.assigned_to && (t.severity === 'MEDIUM' || t.severity === 'LOW')).length;
+  const criticalApiCount = tickets.filter(t => (t.severity === 'URGENT' || t.severity === 'CRITICAL') && t.category === 'BUG').length;
+  const infraCount = tickets.filter(t => t.assigned_squad === 'CORE_ENGINEERING_SQUAD').length;
+  const resolvedBugsCount = resolvedTickets.filter(t => t.category === 'BUG').length;
+  const otherResolvedCount = resolvedTickets.length - resolvedBugsCount;
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-neutral-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f4f6fb] text-slate-900 flex font-sans select-none">
       
-      {/* Header */}
-      <Header
-        currentTenantId={currentTenantId}
-        onTenantChange={setCurrentTenantId}
-        currentRole={currentRole}
-        onRoleChange={setCurrentRole}
-        isConnected={isConnected}
-        onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
+      {/* Sleek Dark Left Sidebar (Square Corners) */}
+      <Sidebar
+        currentView={currentView}
+        onSelectView={setCurrentView}
+        totalTicketsCount={totalCount}
+        resolvedTicketsCount={resolvedCount}
+        onLogout={() => setIsLogoutModalOpen(true)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      {/* Real-time Incident Alert Banner */}
-      {alertBanner && (
-        <div className="bg-red-950 border-b border-red-800 text-red-200 px-4 py-2.5 text-xs font-mono flex items-center justify-between animate-in slide-in-from-top duration-200">
-          <div className="flex items-center space-x-2">
-            <Bell className="w-4 h-4 text-red-400 animate-bounce" />
-            <span>{alertBanner}</span>
-          </div>
-          <button onClick={() => setAlertBanner(null)} className="text-red-400 hover:text-white font-bold">
-            DISMISS
-          </button>
-        </div>
-      )}
-
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[#f4f6fb]">
         
-        {/* KPI Strip (Stripe Squarish Metrics) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          <div className="bg-[#121215] border border-[#27272a] p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-mono text-neutral-400 uppercase">Open Incidents</span>
-              <p className="text-2xl font-bold font-mono text-white">{openCount}</p>
-            </div>
-            <div className="p-2.5 bg-amber-950/40 border border-amber-800/60 text-amber-400">
-              <Activity className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="bg-[#121215] border border-[#27272a] p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-mono text-neutral-400 uppercase">Under Dev Triage</span>
-              <p className="text-2xl font-bold font-mono text-indigo-400">{inDevCount}</p>
-            </div>
-            <div className="p-2.5 bg-indigo-950/40 border border-indigo-800/60 text-indigo-400">
-              <Cpu className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="bg-[#121215] border border-[#27272a] p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-mono text-neutral-400 uppercase">Critical (P0)</span>
-              <p className="text-2xl font-bold font-mono text-red-400">{criticalCount}</p>
-            </div>
-            <div className="p-2.5 bg-red-950/40 border border-red-800/60 text-red-400">
-              <ShieldAlert className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="bg-[#121215] border border-[#27272a] p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-mono text-neutral-400 uppercase">SLA Compliance</span>
-              <p className="text-2xl font-bold font-mono text-emerald-400">99.4%</p>
-            </div>
-            <div className="p-2.5 bg-emerald-950/40 border border-emerald-800/60 text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-          </div>
-
-        </div>
-
-        {/* Current Scope Banner */}
-        <div className="p-4 border border-[#27272a] bg-[#121215] flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-mono font-bold text-white uppercase">Active Tenant:</span>
-              <span className="text-xs font-mono text-indigo-400">
-                {currentTenantId === 'tenant-acme-corp-001' ? 'Acme Payments Inc.' : 'MedSync Healthcare'}
-              </span>
-              <span className="text-neutral-500">•</span>
-              <span className="text-xs font-mono font-bold text-white uppercase">Role:</span>
-              <span className="text-xs font-mono text-neutral-300 uppercase font-semibold">[{currentRole}]</span>
-            </div>
-            <p className="text-xs text-neutral-400">
-              {currentRole === 'client_user' 
-                ? 'Client Mode Active: Internal developer notes, dirty telemetry payloads, and secret keys are quarantined.'
-                : 'Engineering Mode Active: Full stack traces, console logs, and sensitive diagnostic context are available.'}
-            </p>
-          </div>
-
-          <button
-            onClick={() => setIsWidgetSimulatorOpen(true)}
-            className="px-3 py-1.5 text-xs font-mono bg-indigo-600 hover:bg-indigo-500 text-white font-medium self-start md:self-auto"
-          >
-            + Ingest New Incident
-          </button>
-        </div>
-
-        {/* Ticket List */}
-        <TicketList
-          tickets={tickets}
-          onSelectTicket={setSelectedTicket}
+        {/* Header (Clean Light Square Style) */}
+        <Header
+          currentTenantId={currentTenantId}
+          onTenantChange={setCurrentTenantId}
           currentRole={currentRole}
-          isLoading={isLoading}
+          onRoleChange={setCurrentRole}
+          isConnected={isConnected}
+          onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
+          tenants={tenants}
         />
 
-      </main>
+        {/* Real-time Incident Alert Banner */}
+        {alertBanner && (
+          <div className="bg-red-50 border-b border-red-200 text-red-800 px-4 py-2.5 text-xs font-mono flex items-center justify-between animate-in slide-in-from-top duration-200 shadow-xs">
+            <div className="flex items-center space-x-2">
+              <Bell className="w-4 h-4 text-red-600 animate-bounce" />
+              <span className="font-semibold">{alertBanner}</span>
+            </div>
+            <button onClick={() => setAlertBanner(null)} className="text-red-600 hover:text-red-900 font-bold cursor-pointer">
+              DISMISS
+            </button>
+          </div>
+        )}
+
+        {/* Dynamic Main Body Content */}
+        <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
+          
+          {/* VIEW 1: DASHBOARD (Matching Reference Image) */}
+          {currentView === 'dashboard' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              
+              {/* Hero Greeting Bar */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-3 flex-wrap gap-y-1">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                      Good evening, {
+                        currentRole === 'super_admin' ? 'Alex Turner (Super Admin)' :
+                        currentRole === 'tenant_admin' ? 'Elena Rostova (Tenant Admin)' :
+                        currentRole === 'squad_lead' ? 'Vikram Mehta (API Lead)' :
+                        currentRole === 'developer' ? 'Rahul Sharma (Dev)' :
+                        currentRole === 'support_agent' ? 'Marcus Chen (Support)' :
+                        'Sarah Jenkins (Client)'
+                      } 👋
+                    </h1>
+                    <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                      <span className="w-2 h-2 bg-emerald-500 animate-pulse shrink-0" />
+                      <span>Live WebSockets Connected</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-normal">
+                    Live multi-tenant telemetry bridge with instant client feedback and engineering on-call triage.
+                  </p>
+                </div>
+
+                {/* Quick Action Buttons (Exact Match to Reference Image) */}
+                <div className="flex items-center space-x-2.5 shrink-0">
+                  <button
+                    onClick={() => setIsWidgetSimulatorOpen(true)}
+                    className="px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Simulate Ingest</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsWidgetSimulatorOpen(true)}
+                    className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Quick Seed</span>
+                  </button>
+
+                  <button
+                    onClick={loadTickets}
+                    disabled={isLoading}
+                    className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 4 KPI Cards (Matching Reference Image) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                {/* 1. Open Card */}
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 tracking-wide">Open</span>
+                    <div className="w-6 h-6 bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center text-xs font-bold">
+                      <Info className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-3xl font-bold font-mono text-slate-900">{openCount}</span>
+                    <div className="text-[11px] font-mono text-slate-500 space-y-0.5 text-right">
+                      <p>• In Dev triage <span className="font-bold text-slate-700">({inDevCount})</span></p>
+                      <p>• Pending triage <span className="font-bold text-slate-700">({pendingTriageCount})</span></p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Unassigned Card */}
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 tracking-wide">Unassigned</span>
+                    <div className="w-6 h-6 bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-xs font-bold">
+                      <UserPlus className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-3xl font-bold font-mono text-slate-900">{unassignedCount}</span>
+                    <div className="text-[11px] font-mono text-slate-500 space-y-0.5 text-right">
+                      <p>• P0/P1 High <span className="font-bold text-slate-700">({unassignedP0P1})</span></p>
+                      <p>• P2/P3 Standard <span className="font-bold text-slate-700">({unassignedP2P3})</span></p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Urgent Card */}
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 tracking-wide">Urgent</span>
+                    <div className="w-6 h-6 bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center text-xs font-bold">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-3xl font-bold font-mono text-slate-900">{criticalCount}</span>
+                    <div className="text-[11px] font-mono text-slate-500 space-y-0.5 text-right">
+                      <p>• Critical API/Sec <span className="font-bold text-slate-700">({criticalApiCount})</span></p>
+                      <p>• Infra & Core <span className="font-bold text-slate-700">({infraCount})</span></p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Resolved Card */}
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 tracking-wide">Resolved</span>
+                    <div className="w-6 h-6 bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-xs font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-3xl font-bold font-mono text-slate-900">{resolvedCount}</span>
+                    <div className="text-[11px] font-mono text-slate-500 space-y-0.5 text-right">
+                      <p>• Bugs Fixed <span className="font-bold text-slate-700">({resolvedBugsCount})</span></p>
+                      <p>• Other Resolved <span className="font-bold text-slate-700">({otherResolvedCount})</span></p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Assigned Squad Members & Active Load Strip (Exact Match to Reference Image) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="font-bold text-slate-900 uppercase">Assigned Squad Members & Active Load</span>
+                    <span className="px-1.5 py-0.5 text-[10px] bg-purple-100 text-purple-700 border border-purple-200 font-semibold">
+                      3 Active
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400">Click any teammate to filter workload</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  
+                  {/* Member 1: Elena Rostova */}
+                  <div className="bg-white border border-slate-200 p-3 flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 bg-purple-100 text-purple-700 font-bold font-mono text-xs flex items-center justify-center">
+                        ER
+                      </div>
+                      <div className="leading-tight">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-xs font-bold text-slate-900">Elena Rostova</span>
+                          <span className="px-1 py-0.2 bg-amber-100 text-amber-800 text-[9px] font-semibold">ON-CALL</span>
+                        </div>
+                        <span className="text-[11px] text-slate-500">Squad Lead & Arch</span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-mono text-slate-500">
+                      Open: <span className="font-bold text-slate-800">0</span>
+                    </div>
+                  </div>
+
+                  {/* Member 2: Marcus Chen */}
+                  <div className="bg-white border border-slate-200 p-3 flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 bg-blue-100 text-blue-700 font-bold font-mono text-xs flex items-center justify-center">
+                        MC
+                      </div>
+                      <div className="leading-tight">
+                        <span className="text-xs font-bold text-slate-900 block">Marcus Chen</span>
+                        <span className="text-[11px] text-slate-500 block">Senior Engineer</span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-mono text-slate-500">
+                      Open: <span className="font-bold text-slate-800">0</span>
+                    </div>
+                  </div>
+
+                  {/* Member 3: Sarah Jenkins */}
+                  <div className="bg-white border border-slate-200 p-3 flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 bg-indigo-100 text-indigo-700 font-bold font-mono text-xs flex items-center justify-center">
+                        SJ
+                      </div>
+                      <div className="leading-tight">
+                        <span className="text-xs font-bold text-slate-900 block">Sarah Jenkins</span>
+                        <span className="text-[11px] text-slate-500 block">Senior Engineer</span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-mono text-slate-500">
+                      Open: <span className="font-bold text-slate-800">0</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Main Ticket Queue */}
+              <div className="pt-2">
+                <TicketList
+                  tickets={tickets}
+                  onSelectTicket={setSelectedTicket}
+                  currentRole={currentRole}
+                  isLoading={isLoading}
+                  onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
+                  onUpdateStatus={handleUpdateStatus}
+                  onDeleteTicket={handleDeleteTicket}
+                />
+              </div>
+
+            </div>
+          )}
+
+          {/* VIEW 2: TOTAL TICKETS */}
+          {currentView === 'total-tickets' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              <div className="bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                    <Layers className="w-5 h-5 text-indigo-600" />
+                    <span>Total Tickets ({totalCount})</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Complete registry of all ingested incidents, bug reports, feature ideas, and satisfaction ratings across all client products.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsWidgetSimulatorOpen(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold self-start sm:self-auto flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>+ Ingest New Incident</span>
+                </button>
+              </div>
+
+              <TicketList
+                tickets={tickets}
+                onSelectTicket={setSelectedTicket}
+                currentRole={currentRole}
+                isLoading={isLoading}
+                onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
+                onUpdateStatus={handleUpdateStatus}
+                onDeleteTicket={handleDeleteTicket}
+              />
+            </div>
+          )}
+
+          {/* VIEW 3: TICKETS RESOLVED */}
+          {currentView === 'resolved-tickets' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              <div className="bg-white border border-slate-200 p-5 shadow-2xs">
+                <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <span>Tickets Resolved ({resolvedCount})</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Closed and verified incidents meeting enterprise SLA resolution benchmarks.
+                </p>
+              </div>
+
+              <TicketList
+                tickets={resolvedTickets}
+                onSelectTicket={setSelectedTicket}
+                currentRole={currentRole}
+                isLoading={isLoading}
+                onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
+                onUpdateStatus={handleUpdateStatus}
+                onDeleteTicket={handleDeleteTicket}
+              />
+            </div>
+          )}
+
+          {/* VIEW 4: SETTINGS */}
+          {currentView === 'settings' && (
+            <div className="animate-in fade-in duration-150">
+              <SettingsView 
+                currentTenantId={currentTenantId}
+                currentRole={currentRole}
+                onTenantUpdated={() => {
+                  loadTenants();
+                  loadTickets();
+                }}
+              />
+            </div>
+          )}
+
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs font-mono text-slate-400 mt-12">
+          BLACKBAT.AI • ENTERPRISE INCIDENT BRIDGE • ZERO-LEAKAGE MULTI-TENANCY
+        </footer>
+
+      </div>
 
       {/* Ticket Detail Modal */}
       <TicketDetailModal
@@ -237,19 +580,53 @@ export const App: React.FC = () => {
         currentRole={currentRole}
         onUpdateStatus={handleUpdateStatus}
         onAddEvent={handleAddEvent}
+        onUpdateTicket={handleUpdateTicket}
+        onDeleteTicket={handleDeleteTicket}
       />
 
-      {/* Client Widget Simulator Modal */}
+      {/* Embed Widget Simulator Modal */}
       <WidgetSimulatorModal
         isOpen={isWidgetSimulatorOpen}
         onClose={() => setIsWidgetSimulatorOpen(false)}
-        onTicketCreated={loadTickets}
+        currentTenantId={currentTenantId}
+        onTicketCreated={() => {
+          loadTickets();
+          setAlertBanner('New client ticket ingested and broadcast in real-time!');
+          setTimeout(() => setAlertBanner(null), 6000);
+        }}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-[#27272a] py-6 text-center text-xs font-mono text-neutral-500">
-        FEEDBACK-HUB ENTERPRISE v1.0 • MULTI-TENANT POSTGRESQL RLS • BANK-GRADE AES-256 TELEMETRY
-      </footer>
+      {/* Logout Confirmation Modal */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 w-full max-w-sm p-6 space-y-4 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-slate-900">Sign Out</h3>
+              <p className="text-xs text-slate-500">
+                Are you sure you want to end your current tenant session?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2">
+              <button
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="px-3.5 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setIsLogoutModalOpen(false);
+                  setCurrentRole('client_user');
+                }}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
