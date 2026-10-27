@@ -132,7 +132,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    return (localStorage.getItem('fb_settings_tab') as SettingsTab) || 'profile';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fb_settings_tab', activeTab);
+  }, [activeTab]);
 
   // Editable Profile State
   const [orgName, setOrgName] = useState('');
@@ -233,10 +239,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const res = await fetch('/api/v1/tenants/current', {
+      const res = await fetch(`/api/v1/tenants/current?_t=${Date.now()}`, {
+        cache: 'no-store',
         headers: {
           'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
+          'x-user-role': currentRole,
+          'pragma': 'no-cache',
+          'cache-control': 'no-cache'
         }
       });
       if (res.ok) {
@@ -269,10 +278,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       }
 
       // Also fetch full permission definitions
-      const permRes = await fetch('/api/v1/tenants/permissions', {
+      const permRes = await fetch(`/api/v1/tenants/permissions?_t=${Date.now()}`, {
+        cache: 'no-store',
         headers: {
           'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
+          'x-user-role': currentRole,
+          'pragma': 'no-cache',
+          'cache-control': 'no-cache'
         }
       });
       if (permRes.ok) {

@@ -101,6 +101,8 @@ tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenan
     }
   }
 
+  tenantStore.saveToDisk();
+
   // Broadcast settings change in real-time
   broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', {
     tenant,
@@ -146,6 +148,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
 
     const updatedMatrix = tenantStore.updateRolePermissions(tenantId, role as UserRole, permissions);
     await persistRolePermissionsToDb(tenantId, role as UserRole, updatedMatrix[role as UserRole]);
+    tenantStore.saveToDisk();
 
     // Broadcast permissions change real-time
     broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
@@ -180,6 +183,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
     for (const r of ALL_ROLES) {
       await persistRolePermissionsToDb(tenantId, r, matrix[r]);
     }
+    tenantStore.saveToDisk();
 
     broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
       tenantId,
@@ -212,6 +216,7 @@ tenantRouter.post('/permissions/reset', requirePermission('permissions:reset'), 
       await persistRolePermissionsToDb(tenantId, r, resetMatrix[r]);
     }
   }
+  tenantStore.saveToDisk();
 
   broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
     tenantId,
@@ -271,6 +276,8 @@ tenantRouter.post('/products', requirePermission('products:create'), async (req:
     }
   }
 
+  tenantStore.saveToDisk();
+
   res.status(201).json({
     success: true,
     message: `Monitored product '${newProduct.name}' added successfully.`,
@@ -320,6 +327,8 @@ tenantRouter.put('/products/:id', requireAnyPermission(['products:edit', 'produc
     }
   }
 
+  tenantStore.saveToDisk();
+
   res.json({
     success: true,
     message: rotate_key ? 'Product API key rotated successfully.' : 'Product updated successfully.',
@@ -364,6 +373,8 @@ tenantRouter.delete('/products/:id', requirePermission('products:delete'), async
       console.error('[Database Product Delete Error]', dbErr);
     }
   }
+
+  tenantStore.saveToDisk();
 
   res.json({
     success: true,

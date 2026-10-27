@@ -142,6 +142,7 @@ ticketRouter.patch('/:id/status', requirePermission('tickets:change_status'), (r
     created_at: new Date().toISOString()
   };
   tenantStore.events.push(event);
+  tenantStore.saveToDisk();
 
   // Real-time broadcast
   broadcastTicketEvent(tenantId, 'TICKET_UPDATED', { ticket, event });
@@ -184,6 +185,7 @@ ticketRouter.post('/:id/events', requirePermission('tickets:view'), (req: Reques
   };
 
   tenantStore.events.push(event);
+  tenantStore.saveToDisk();
 
   // Real-time broadcast respecting quarantine
   broadcastTicketEvent(tenantId, 'NEW_EVENT', { ticketId: id, event }, internalFlag);
@@ -286,6 +288,7 @@ ticketRouter.put('/:id', requirePermission('tickets:edit'), async (req: Request,
     created_at: new Date().toISOString()
   };
   tenantStore.events.push(updateEvent);
+  tenantStore.saveToDisk();
 
   // Broadcast real-time update
   broadcastTicketEvent(tenantId, 'TICKET_UPDATED', {
@@ -327,6 +330,8 @@ ticketRouter.delete('/:id', requirePermission('tickets:delete'), async (req: Req
       console.error('[Database Delete Error]', dbErr);
     }
   }
+
+  tenantStore.saveToDisk();
 
   // Broadcast real-time deletion
   broadcastTicketEvent(tenantId, 'TICKET_DELETED', {

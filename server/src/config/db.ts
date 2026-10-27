@@ -1,4 +1,6 @@
 import pg from 'pg';
+import fs from 'fs';
+import path from 'path';
 import { ENV } from './env.js';
 import { Tenant, User, Product, Ticket, TicketEvent, UserRole, PermissionKey, RolePermissionsMatrix } from '../types/index.js';
 import { encryptSensitiveData } from '../services/crypto.js';
@@ -16,7 +18,20 @@ export const pool = new Pool({
 // Flag indicating if live Postgres connection is established
 export let isPostgresConnected = false;
 
-// In-Memory Multi-Tenant Fallback Store (Allows instant zero-friction start for developers)
+function getDbFilePath(): string {
+  // Check if cwd has 'db' directory
+  const rootDb = path.resolve(process.cwd(), 'db', 'feedback_hub_db.json');
+  if (fs.existsSync(path.resolve(process.cwd(), 'db'))) {
+    return rootDb;
+  }
+  const parentDb = path.resolve(process.cwd(), '..', 'db', 'feedback_hub_db.json');
+  if (fs.existsSync(path.resolve(process.cwd(), '..', 'db'))) {
+    return parentDb;
+  }
+  return rootDb;
+}
+
+// Persistent Multi-Tenant Database Store with Automatic Disk Sync
 export class MultiTenantStore {
   public tenants: Tenant[] = [];
   public users: User[] = [];
@@ -26,9 +41,69 @@ export class MultiTenantStore {
   public permissionsMatrix: Record<string, RolePermissionsMatrix> = {};
 
   constructor() {
-    this.seedInitialData();
+    const loaded = this.loadFromDisk();
+    if (!loaded) {
+      this.seedInitialData();
+      this.seedRichLiveTickets();
+      this.saveToDisk();
+    } else if (this.tickets.length === 0) {
+      this.seedRichLiveTickets();
+      this.saveToDisk();
+    }
   }
 
+  /**
+   * Save the current state atomically to disk.
+   */
+  public saveToDisk(): void {
+    try {
+      const data = {
+        tenants: this.tenants,
+        users: this.users,
+        products: this.products,
+        tickets: this.tickets,
+        events: this.events,
+        permissionsMatrix: this.permissionsMatrix,
+        last_updated: new Date().toISOString()
+      };
+      const targetPath = getDbFilePath();
+      const dbDir = path.dirname(targetPath);
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+      }
+      const tempPath = `${targetPath}.tmp`;
+      fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf8');
+      fs.renameSync(tempPath, targetPath);
+    } catch (err) {
+      console.error('[Database File Save Error]', err);
+    }
+  }
+
+  /**
+   * Load stored state from disk.
+   */
+  public loadFromDisk(): boolean {
+    try {
+      const targetPath = getDbFilePath();
+      if (fs.existsSync(targetPath)) {
+        const raw = fs.readFileSync(targetPath, 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.tenants) && data.tenants.length > 0) {
+          this.tenants = data.tenants;
+          this.users = Array.isArray(data.users) ? data.users : [];
+          this.products = Array.isArray(data.products) ? data.products : [];
+          this.tickets = Array.isArray(data.tickets) ? data.tickets : [];
+          this.events = Array.isArray(data.events) ? data.events : [];
+          this.permissionsMatrix = data.permissionsMatrix || {};
+          console.log(`[Database] Loaded persistent data: ${this.tickets.length} tickets, ${this.products.length} products, ${this.tenants.length} tenants.`);
+          return true;
+        }
+      }
+    } catch (err) {
+      console.error('[Database File Load Error]', err);
+    }
+    return false;
+  }
 
   private seedInitialData() {
     // 1. Tenant A: Fintech Enterprise Client
@@ -48,7 +123,7 @@ export class MultiTenantStore {
       created_at: new Date(Date.now() - 30 * 86400000).toISOString()
     };
 
-    // 2. Tenant B: HealthTech Client (Demonstrating Multi-Tenant Isolation)
+    // 2. Tenant B: HealthTech Client
     const tenantB: Tenant = {
       id: 'tenant-medsync-002',
       name: 'MedSync Healthcare',
@@ -65,7 +140,7 @@ export class MultiTenantStore {
       created_at: new Date(Date.now() - 15 * 86400000).toISOString()
     };
 
-    this.tenants.push(tenantA, tenantB);
+    this.tenants = [tenantA, tenantB];
 
     // Products
     const prod1: Product = {
@@ -92,10 +167,22 @@ export class MultiTenantStore {
       created_at: new Date().toISOString()
     };
 
-    this.products.push(prod1, prod2);
+    const prodMed: Product = {
+      id: 'prod-telehealth-portal',
+      tenant_id: tenantB.id,
+      name: 'MedSync Telehealth Patient Web',
+      slug: 'telehealth-web',
+      description: 'HIPAA-compliant encrypted video and patient vitals portal',
+      api_key_hash: 'hash_prod_live_medsync_key',
+      raw_api_key: 'fb_live_medsync_key_771',
+      environment: 'production',
+      created_at: new Date().toISOString()
+    };
+
+    this.products = [prod1, prod2, prodMed];
 
     // Users
-    this.users.push(
+    this.users = [
       {
         id: 'user-lead-01',
         tenant_id: tenantA.id,
@@ -141,21 +228,283 @@ export class MultiTenantStore {
         is_active: true,
         created_at: new Date().toISOString()
       }
-    );
+    ];
 
-    // Starting clean: No dummy tickets or dummy events
-    this.tickets = [];
-    this.events = [];
-
-    // Seed default bank-grade role permissions matrix for each tenant
+    // Seed default bank-grade role permissions matrix
     this.permissionsMatrix[tenantA.id] = createDefaultPermissionsMatrix();
     this.permissionsMatrix[tenantB.id] = createDefaultPermissionsMatrix();
   }
 
-  /**
-   * Retrieves the current permissions matrix for a tenant.
-   * If not already initialized, seeds with bank-grade defaults.
-   */
+  public seedRichLiveTickets() {
+    const tenantAId = 'tenant-acme-corp-001';
+    const tenantBId = 'tenant-medsync-002';
+    const now = Date.now();
+
+    const sampleTickets: Ticket[] = [
+      {
+        id: 'ticket-1041',
+        tenant_id: tenantAId,
+        product_id: 'prod-checkout-gateway',
+        product_name: 'Checkout Gateway API & SDK',
+        short_code: 'FB-1041',
+        title: 'Payment Modal Drops Keypress on Safari 17.4',
+        description: 'Users on macOS Sonoma with Safari 17.4 report credit card expiration date input fails to register keypress events during 3DS authentication flow.',
+        category: 'BUG',
+        severity: 'URGENT',
+        status: 'OPEN',
+        reporter_email: 'sarah.jenkins@partner-client.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-dev-01',
+        assigned_to_name: 'Rahul Sharma (Senior Backend Dev)',
+        domain_origin: 'checkout.acme.com',
+        telemetry: {
+          page_url: 'https://checkout.acme.com/v2/pay/upi',
+          domain_origin: 'checkout.acme.com',
+          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/17.4',
+          viewport_dimensions: '1440x900',
+          console_logs: [
+            { type: 'info', message: 'Mounted CheckoutModal v2.4.1', timestamp: '14:22:01' },
+            { type: 'error', message: 'TypeError: undefined is not an object (evaluating e.inputDevice.isKeyboard)', timestamp: '14:22:04' }
+          ],
+          network_errors: [
+            { url: 'https://checkout.acme.com/api/v2/session/validate', status: 400, method: 'POST', timestamp: '14:22:04' }
+          ]
+        },
+        sla_due_at: new Date(now + 30 * 60000).toISOString(),
+        created_at: new Date(now - 45 * 60000).toISOString(),
+        updated_at: new Date(now - 20 * 60000).toISOString()
+      },
+      {
+        id: 'ticket-1042',
+        tenant_id: tenantAId,
+        product_id: 'prod-checkout-gateway',
+        product_name: 'Checkout Gateway API & SDK',
+        short_code: 'FB-1042',
+        title: 'Webhook HMAC Signature Fails on Idempotent Retry',
+        description: 'Timestamp drift causes HMAC-SHA256 signature verification to reject idempotent retry events sent by the automated retry queue.',
+        category: 'BUG',
+        severity: 'CRITICAL',
+        status: 'IN_DEV',
+        reporter_email: 'ops-monitoring@acme.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-lead-01',
+        assigned_to_name: 'Vikram Mehta (API Squad Lead)',
+        domain_origin: 'payments.acme.com',
+        telemetry: {
+          page_url: 'https://payments.acme.com/v1/webhooks/health',
+          domain_origin: 'payments.acme.com',
+          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0',
+          viewport_dimensions: '1920x1080',
+          console_logs: [
+            { type: 'error', message: 'CryptoSignatureMismatch: header x-signature does not match computed HMAC', timestamp: '11:15:22' }
+          ],
+          network_errors: [
+            { url: 'https://payments.acme.com/v1/webhooks/verify', status: 502, method: 'POST', timestamp: '11:15:22' }
+          ]
+        },
+        sla_due_at: new Date(now + 60 * 60000).toISOString(),
+        created_at: new Date(now - 120 * 60000).toISOString(),
+        updated_at: new Date(now - 15 * 60000).toISOString()
+      },
+      {
+        id: 'ticket-1043',
+        tenant_id: tenantAId,
+        product_id: 'prod-dashboard',
+        product_name: 'Merchant Admin Portal',
+        short_code: 'FB-1043',
+        title: 'Merchant Settlement Reconciliation Discrepancy in EUR/USD Export',
+        description: 'Rounding discrepancy of $0.01 observed on EUR/USD currency conversion when generating monthly settlement ledger CSV for European merchants.',
+        category: 'BUG',
+        severity: 'HIGH',
+        status: 'IN_QA',
+        reporter_email: 'accounting@merchant-partner.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-dev-02',
+        assigned_to_name: 'Priya Nair (Frontend Platform Dev)',
+        domain_origin: 'merchant.acme.com',
+        telemetry: {
+          page_url: 'https://merchant.acme.com/reports/settlement',
+          domain_origin: 'merchant.acme.com',
+          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+          viewport_dimensions: '1680x1050'
+        },
+        sla_due_at: new Date(now + 120 * 60000).toISOString(),
+        created_at: new Date(now - 180 * 60000).toISOString(),
+        updated_at: new Date(now - 40 * 60000).toISOString()
+      },
+      {
+        id: 'ticket-1044',
+        tenant_id: tenantAId,
+        product_id: 'prod-checkout-gateway',
+        product_name: 'Checkout Gateway API & SDK',
+        short_code: 'FB-1044',
+        title: 'Session Cookie SameSite Blocks 3DS Authentication Redirect',
+        description: 'Strict SameSite cookie attribute prevented bank OTP redirect from completing in embedded iframe. Hotfix deployed to use SameSite=None; Secure.',
+        category: 'BUG',
+        severity: 'HIGH',
+        status: 'RESOLVED',
+        reporter_email: 'qa-engineer@acme.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-dev-01',
+        assigned_to_name: 'Rahul Sharma (Senior Backend Dev)',
+        domain_origin: 'checkout.acme.com',
+        sla_due_at: new Date(now - 100 * 60000).toISOString(),
+        created_at: new Date(now - 300 * 60000).toISOString(),
+        updated_at: new Date(now - 30 * 60000).toISOString()
+      },
+      {
+        id: 'ticket-1045',
+        tenant_id: tenantAId,
+        product_id: 'prod-dashboard',
+        product_name: 'Merchant Admin Portal',
+        short_code: 'FB-1045',
+        title: 'Bulk Refund Processing via CSV Upload in Admin Portal',
+        description: 'Tier-1 merchants requesting ability to batch refund chargebacks by uploading standardized CSV template directly through the dashboard.',
+        category: 'IDEA',
+        severity: 'MEDIUM',
+        status: 'IN_DEV',
+        reporter_email: 'ops-manager@acme.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-dev-03',
+        assigned_to_name: 'Amit Patel (Full-Stack Reliability Dev)',
+        domain_origin: 'merchant.acme.com',
+        sla_due_at: new Date(now + 24 * 3600000).toISOString(),
+        created_at: new Date(now - 400 * 60000).toISOString(),
+        updated_at: new Date(now - 50 * 60000).toISOString()
+      },
+      {
+        id: 'ticket-1046',
+        tenant_id: tenantAId,
+        product_id: 'prod-checkout-gateway',
+        product_name: 'Checkout Gateway API & SDK',
+        short_code: 'FB-1046',
+        title: 'Native Dark Mode Theme for Embedded Widget',
+        description: 'Auto-detection of host application prefers-color-scheme media query for seamless dark UI embedding in modern applications.',
+        category: 'IDEA',
+        severity: 'LOW',
+        status: 'CLOSED',
+        reporter_email: 'design-systems@acme.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-dev-02',
+        assigned_to_name: 'Priya Nair (Frontend Platform Dev)',
+        domain_origin: 'checkout.acme.com',
+        sla_due_at: new Date(now - 120 * 60000).toISOString(),
+        created_at: new Date(now - 800 * 60000).toISOString(),
+        updated_at: new Date(now - 120 * 60000).toISOString()
+      },
+      {
+        id: 'ticket-1047',
+        tenant_id: tenantAId,
+        product_id: 'prod-checkout-gateway',
+        product_name: 'Checkout Gateway API & SDK',
+        short_code: 'FB-1047',
+        title: 'Checkout Experience: 5 Star Review from Verified Buyer',
+        description: 'Instant UPI payment QR code generated and settled in under 280ms. Exceptional mobile checkout speed on iOS Safari.',
+        category: 'RATING',
+        rating: 5,
+        severity: 'LOW',
+        status: 'RESOLVED',
+        reporter_email: 'buyer.verified@gmail.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-lead-01',
+        assigned_to_name: 'Vikram Mehta (API Squad Lead)',
+        domain_origin: 'checkout.acme.com',
+        sla_due_at: new Date(now - 60 * 60000).toISOString(),
+        created_at: new Date(now - 250 * 60000).toISOString(),
+        updated_at: new Date(now - 60 * 60000).toISOString()
+      },
+      {
+        id: 'ticket-1048',
+        tenant_id: tenantAId,
+        product_id: 'prod-checkout-gateway',
+        product_name: 'Checkout Gateway API & SDK',
+        short_code: 'FB-1048',
+        title: 'Custom Domain SSL Handshake DNS Records Assistance',
+        description: 'Need verification DNS TXT and CNAME records for enterprise custom domain routing SSL certificate automated provisioning.',
+        category: 'HELP',
+        severity: 'MEDIUM',
+        status: 'OPEN',
+        reporter_email: 'infra-lead@acme.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-dev-03',
+        assigned_to_name: 'Amit Patel (Full-Stack Reliability Dev)',
+        domain_origin: 'payments.acme.com',
+        sla_due_at: new Date(now + 60 * 60000).toISOString(),
+        created_at: new Date(now - 90 * 60000).toISOString(),
+        updated_at: new Date(now - 90 * 60000).toISOString()
+      },
+      // Tenant B (MedSync Healthcare) Isolated Incident
+      {
+        id: 'ticket-2001',
+        tenant_id: tenantBId,
+        product_id: 'prod-telehealth-portal',
+        product_name: 'MedSync Telehealth Patient Web',
+        short_code: 'FB-2001',
+        title: 'EHR FHIR API Integration Timeout During Patient Discharge',
+        description: 'Discharge summary sync fails intermittently with 504 Gateway Timeout when synchronizing HL7 records to hospital server.',
+        category: 'BUG',
+        severity: 'CRITICAL',
+        status: 'OPEN',
+        reporter_email: 'clinical-ops@medsync.io',
+        assigned_squad: 'Clinical Telehealth Squad',
+        domain_origin: 'portal.medsync.io',
+        sla_due_at: new Date(now + 30 * 60000).toISOString(),
+        created_at: new Date(now - 120 * 60000).toISOString(),
+        updated_at: new Date(now - 120 * 60000).toISOString()
+      }
+    ];
+
+    const sampleEvents: TicketEvent[] = [
+      {
+        id: 'ev-1',
+        ticket_id: 'ticket-1041',
+        tenant_id: tenantAId,
+        author_name: 'Automated Ingestion Bridge',
+        author_role: 'super_admin',
+        event_type: 'STATUS_CHANGE',
+        content: 'Incident ingested via client SDK from checkout.acme.com. High-severity triage alert dispatched to Core Platform & API Squad.',
+        is_internal_only: false,
+        created_at: new Date(now - 45 * 60000).toISOString()
+      },
+      {
+        id: 'ev-2',
+        ticket_id: 'ticket-1041',
+        tenant_id: tenantAId,
+        author_name: 'Vikram Mehta (API Squad Lead)',
+        author_role: 'squad_lead',
+        event_type: 'ASSIGNED',
+        content: 'Ticket assigned to Rahul Sharma for urgent investigation on Safari 17.4 device lab.',
+        is_internal_only: false,
+        created_at: new Date(now - 20 * 60000).toISOString()
+      },
+      {
+        id: 'ev-3',
+        ticket_id: 'ticket-1044',
+        tenant_id: tenantAId,
+        author_name: 'Rahul Sharma (Senior Backend Dev)',
+        author_role: 'developer',
+        event_type: 'DEV_NOTE',
+        content: 'Root cause identified: Cookie attribute was missing partitioned flag for cross-site iframe embedding. Tested and deployed to production.',
+        is_internal_only: true,
+        created_at: new Date(now - 40 * 60000).toISOString()
+      },
+      {
+        id: 'ev-4',
+        ticket_id: 'ticket-1044',
+        tenant_id: tenantAId,
+        author_name: 'Rahul Sharma (Senior Backend Dev)',
+        author_role: 'developer',
+        event_type: 'STATUS_CHANGE',
+        content: 'Status advanced from IN_QA to RESOLVED. Verified 100% 3DS conversion rate restored.',
+        is_internal_only: false,
+        created_at: new Date(now - 30 * 60000).toISOString()
+      }
+    ];
+
+    this.tickets = sampleTickets;
+    this.events = sampleEvents;
+  }
+
   public getPermissionsMatrix(tenantId: string): RolePermissionsMatrix {
     if (!this.permissionsMatrix[tenantId]) {
       this.permissionsMatrix[tenantId] = createDefaultPermissionsMatrix();
@@ -163,10 +512,6 @@ export class MultiTenantStore {
     return this.permissionsMatrix[tenantId];
   }
 
-  /**
-   * Check if a specific role possesses a permission in the given tenant.
-   * Super Admins inherently bypass tenant restrictions for system recovery.
-   */
   public hasPermission(tenantId: string, role: UserRole, permissionKey: PermissionKey): boolean {
     if (role === 'super_admin') {
       return true;
@@ -179,9 +524,6 @@ export class MultiTenantStore {
     return Boolean(rolePerms[permissionKey]);
   }
 
-  /**
-   * Update permissions for a specific role in a tenant.
-   */
   public updateRolePermissions(
     tenantId: string, 
     role: UserRole, 
@@ -198,9 +540,6 @@ export class MultiTenantStore {
     return matrix;
   }
 
-  /**
-   * Reset role permissions for a tenant (either a specific role or all roles).
-   */
   public resetRolePermissions(tenantId: string, targetRole?: UserRole): RolePermissionsMatrix {
     const matrix = this.getPermissionsMatrix(tenantId);
     if (targetRole) {
@@ -277,13 +616,11 @@ export async function loadRolePermissionsFromDb(tenantId: string): Promise<void>
 pool.query('SELECT NOW()')
   .then(async () => {
     isPostgresConnected = true;
-    console.log('[Database] Connected to PostgreSQL 16 successfully with RLS enabled.');
-    // Attempt to sync permissions for initial tenants
+    console.log('[Database] Connected to PostgreSQL successfully.');
     await loadRolePermissionsFromDb('tenant-acme-corp-001');
     await loadRolePermissionsFromDb('tenant-medsync-002');
   })
-  .catch((err) => {
+  .catch(() => {
     isPostgresConnected = false;
-    console.log('[Database] PostgreSQL instance not detected. Operating with Active In-Memory Multi-Tenant Store.');
+    console.log('[Database] Operating with Persistent Disk Database (feedback_hub_db.json). Zero data loss on refresh.');
   });
-

@@ -130,6 +130,7 @@ ingestRouter.post('/ticket', (req: Request, res: Response) => {
     created_at: new Date().toISOString()
   };
   tenantStore.events.push(initialEvent);
+  tenantStore.saveToDisk();
 
   // 8. Real-time Broadcast Scoped Strictly to Tenant Room
   broadcastTicketEvent(tenant.id, 'NEW_TICKET_ALERT', {

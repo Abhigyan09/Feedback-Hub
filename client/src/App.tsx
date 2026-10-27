@@ -26,8 +26,12 @@ import {
 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [currentTenantId, setCurrentTenantId] = useState<string>('tenant-acme-corp-001');
-  const [currentRole, setCurrentRole] = useState<UserRole>('tenant_admin');
+  const [currentTenantId, setCurrentTenantId] = useState<string>(() => {
+    return localStorage.getItem('fb_current_tenant_id') || 'tenant-acme-corp-001';
+  });
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    return (localStorage.getItem('fb_current_role') as UserRole) || 'tenant_admin';
+  });
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [permissionsMatrix, setPermissionsMatrix] = useState<RolePermissionsMatrix | null>(null);
@@ -38,19 +42,37 @@ export const App: React.FC = () => {
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
 
 
-  // Sidebar navigation state
-  const [currentView, setCurrentView] = useState<SidebarView>('dashboard');
+  // Sidebar navigation state with localStorage persistence
+  const [currentView, setCurrentView] = useState<SidebarView>(() => {
+    return (localStorage.getItem('fb_current_view') as SidebarView) || 'dashboard';
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
 
-  // Fetch tickets for current tenant and role
+  // Sync state changes to localStorage so page refresh preserves user context
+  useEffect(() => {
+    localStorage.setItem('fb_current_tenant_id', currentTenantId);
+  }, [currentTenantId]);
+
+  useEffect(() => {
+    localStorage.setItem('fb_current_role', currentRole);
+  }, [currentRole]);
+
+  useEffect(() => {
+    localStorage.setItem('fb_current_view', currentView);
+  }, [currentView]);
+
+  // Fetch tickets for current tenant and role with strict cache-busting
   const loadTickets = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/v1/tickets', {
+      const response = await fetch(`/api/v1/tickets?_t=${Date.now()}`, {
+        cache: 'no-store',
         headers: {
           'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
+          'x-user-role': currentRole,
+          'pragma': 'no-cache',
+          'cache-control': 'no-cache'
         }
       });
       const data = await response.json();
@@ -64,10 +86,16 @@ export const App: React.FC = () => {
     }
   }, [currentTenantId, currentRole]);
 
-  // Load all available tenants for switcher
+  // Load all available tenants for switcher with strict cache-busting
   const loadTenants = useCallback(async () => {
     try {
-      const res = await fetch('/api/v1/tenants/all');
+      const res = await fetch(`/api/v1/tenants/all?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'pragma': 'no-cache',
+          'cache-control': 'no-cache'
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.tenants) {
@@ -79,13 +107,16 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Load permissions for current tenant and role
+  // Load permissions for current tenant and role with strict cache-busting
   const loadTenantPermissions = useCallback(async () => {
     try {
-      const res = await fetch('/api/v1/tenants/permissions', {
+      const res = await fetch(`/api/v1/tenants/permissions?_t=${Date.now()}`, {
+        cache: 'no-store',
         headers: {
           'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
+          'x-user-role': currentRole,
+          'pragma': 'no-cache',
+          'cache-control': 'no-cache'
         }
       });
       if (res.ok) {
