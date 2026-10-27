@@ -51,6 +51,7 @@ export interface Ticket {
   sla_due_at: string;
   created_at: string;
   updated_at: string;
+  waiting_for_client?: boolean;
 }
 
 export interface Tenant {

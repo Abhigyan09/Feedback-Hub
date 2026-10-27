@@ -14,7 +14,8 @@ import {
   Trash2,
   RefreshCw
 } from 'lucide-react';
-import { UserRole } from '../types';
+import { UserRole, Ticket } from '../types';
+import { normalizeStatus } from '../utils/formatters';
 
 export interface HeaderUser {
   name: string;
@@ -40,6 +41,7 @@ interface DashboardHeaderProps {
   totalOpenTickets: number;
   totalTickets: number;
   urgentTickets: number;
+  tickets?: Ticket[];
   onNewIncidentClick?: () => void;
   onOpenSimulator?: () => void;
   onSeedDemo?: () => void;
@@ -56,6 +58,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   totalOpenTickets,
   totalTickets,
   urgentTickets,
+  tickets = [],
   onNewIncidentClick,
   onOpenSimulator,
   onSeedDemo,
@@ -103,10 +106,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     plan: 'ENTERPRISE'
   };
 
-  // Dynamic SLA metric
-  const slaScore = totalTickets > 0 
-    ? Math.max(90, 100 - (urgentTickets / totalTickets) * 5).toFixed(2)
-    : '100.00';
+  // 100% Dynamic SLA calculation based on real ticket SLA breaches
+  const breachedCount = (tickets || []).filter(
+    t => t.sla_due_at && new Date(t.sla_due_at).getTime() < Date.now() && normalizeStatus(t.status) !== 'Resolved'
+  ).length;
+
+  const numericSla = totalTickets > 0
+    ? Math.max(0, Math.min(100, Math.round(((totalTickets - breachedCount) / totalTickets) * 10000) / 100))
+    : 100;
+  const slaScore = numericSla.toFixed(2);
+  const slaStatusLabel = numericSla >= 99 ? 'HEALTHY' : numericSla >= 90 ? 'WARNING' : 'BREACHED';
+  const slaStatusColor = numericSla >= 99 ? 'text-emerald-600' : numericSla >= 90 ? 'text-amber-600' : 'text-red-600 font-bold';
 
   return (
     <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
@@ -207,9 +217,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
             {/* Dynamic SLA / Health Pill */}
             <div className="hidden md:flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-[2px] text-xs text-slate-600 shadow-2xs">
-              <Sun className="w-3.5 h-3.5 text-amber-500" />
+              <Sun className={`w-3.5 h-3.5 ${numericSla >= 99 ? 'text-amber-500' : numericSla >= 90 ? 'text-amber-600' : 'text-red-500'}`} />
               <span className="font-semibold text-slate-800 text-[11px] font-mono">{slaScore}% SLA</span>
-              <span className="text-emerald-600 text-[10px] font-bold">HEALTHY</span>
+              <span className={`text-[10px] font-bold ${slaStatusColor}`}>{slaStatusLabel}</span>
             </div>
 
             {/* Live Time Pill */}

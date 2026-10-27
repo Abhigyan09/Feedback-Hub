@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Ticket, TeamMember } from '../types';
 import { normalizeSeverity, normalizeStatus, formatTimeAgo } from '../utils/formatters';
 import { 
@@ -16,7 +16,14 @@ import {
   RotateCcw,
   CheckCircle2,
   ExternalLink,
-  SlidersHorizontal
+  ChevronDown,
+  UserCheck,
+  UserX,
+  Sparkles,
+  Globe,
+  Terminal,
+  Activity,
+  Layers
 } from 'lucide-react';
 
 export type SortField = 'title' | 'priority' | 'status' | 'assignee' | 'reported';
@@ -40,6 +47,11 @@ interface TicketsTableProps {
   onSelectTicket: (ticket: Ticket) => void;
   onOpenCreateModal?: () => void;
   onOpenSimulatorModal?: () => void;
+  onSeedDemo?: () => void;
+  onUpdateStatus?: (ticketId: string, status: string) => void;
+  onUpdateAssignee?: (ticketId: string, assigneeId: string | null, assigneeName: string | null) => void;
+  lastUpdated?: Date;
+  isLoading?: boolean;
 }
 
 export const TicketsTable: React.FC<TicketsTableProps> = ({
@@ -59,8 +71,38 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   onResetFilters,
   onSelectTicket,
   onOpenCreateModal,
-  onOpenSimulatorModal
+  onOpenSimulatorModal,
+  onSeedDemo,
+  onUpdateStatus,
+  onUpdateAssignee,
+  lastUpdated,
+  isLoading = false
 }) => {
+  // Format last updated time
+  const [freshnessLabel, setFreshnessLabel] = useState<string>('Just now');
+
+  useEffect(() => {
+    const updateFreshness = () => {
+      if (!lastUpdated) {
+        setFreshnessLabel('Just now');
+        return;
+      }
+      const diffSecs = Math.max(0, Math.floor((Date.now() - lastUpdated.getTime()) / 1000));
+      if (diffSecs < 10) {
+        setFreshnessLabel('Just now');
+      } else if (diffSecs < 60) {
+        setFreshnessLabel(`${diffSecs}s ago`);
+      } else {
+        const mins = Math.floor(diffSecs / 60);
+        setFreshnessLabel(`${mins}m ago`);
+      }
+    };
+
+    updateFreshness();
+    const interval = setInterval(updateFreshness, 5000);
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
+
   const hasActiveFilters = 
     Boolean(searchQuery.trim()) || 
     statusFilter !== 'ALL' || 
@@ -80,6 +122,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   const getStatusWeight = (status: string): number => {
     switch (status) {
       case 'Open': return 4;
+      case 'Triaged': return 3.5;
       case 'In Dev': return 3;
       case 'In QA': return 2;
       case 'Resolved': return 1;
@@ -184,39 +227,64 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     }
   };
 
-  // Status Badge Helper
-  const renderStatusBadge = (status: string) => {
-    const norm = normalizeStatus(status);
-    switch (norm) {
-      case 'Open':
-        return (
-          <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] text-amber-700 border border-amber-200 bg-amber-50">
-            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-            <span>Open</span>
+  // Telemetry Type and Indicator Helper
+  const renderTelemetryIndicator = (ticket: Ticket) => {
+    const t = ticket.telemetry;
+    if (!t) return null;
+
+    const hasBrowser = Boolean(t.user_agent || t.viewport_dimensions);
+    const hasApi = Boolean(
+      t.network_errors?.length || 
+      ticket.category === 'API_FAILURE' || 
+      (t.page_url && (t.page_url.includes('/api/') || t.page_url.startsWith('POST') || t.page_url.startsWith('GET')))
+    );
+    const hasLogs = Boolean(t.console_logs && t.console_logs.length > 0);
+
+    return (
+      <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+        {hasBrowser && (
+          <span 
+            className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-[2px] bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs"
+            title={`Browser Telemetry: ${t.viewport_dimensions || 'Web Viewport'} | ${t.user_agent ? t.user_agent.slice(0, 35) + '...' : 'Browser Engine'}`}
+          >
+            <Globe className="w-3 h-3 text-sky-600 flex-shrink-0" />
+            <span>Browser Telemetry</span>
+            {t.viewport_dimensions && (
+              <span className="font-mono text-[9px] opacity-80 font-normal">({t.viewport_dimensions})</span>
+            )}
           </span>
-        );
-      case 'In Dev':
-        return (
-          <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] text-purple-700 border border-purple-200 bg-purple-50">
-            <span className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-pulse" />
-            <span>In Dev</span>
+        )}
+
+        {hasApi && (
+          <span 
+            className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-[2px] bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs"
+            title={`API Telemetry Attached: ${t.page_url || 'Endpoint failure'}`}
+          >
+            <Terminal className="w-3 h-3 text-rose-600 flex-shrink-0" />
+            <span>API Telemetry</span>
+            {t.network_errors?.[0]?.status && (
+              <span className="font-mono text-[9px] font-bold">HTTP {t.network_errors[0].status}</span>
+            )}
           </span>
-        );
-      case 'In QA':
-        return (
-          <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] text-indigo-700 border border-indigo-200 bg-indigo-50">
-            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-            <span>In QA</span>
+        )}
+
+        {!hasBrowser && !hasApi && (
+          <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-medium rounded-[2px] bg-purple-50 text-purple-700 border border-purple-200">
+            <Activity className="w-3 h-3 text-purple-600" />
+            <span>Telemetry Attached</span>
           </span>
-        );
-      case 'Resolved':
-        return (
-          <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] text-emerald-700 border border-emerald-200 bg-emerald-50">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            <span>Resolved</span>
+        )}
+
+        {hasLogs && (
+          <span 
+            className="inline-flex items-center space-x-1 px-1.5 py-0.2 text-[9px] font-mono rounded-[2px] bg-slate-100 text-slate-600 border border-slate-200"
+            title={`${t.console_logs?.length} console log entries captured`}
+          >
+            <span>{t.console_logs?.length} logs</span>
           </span>
-        );
-    }
+        )}
+      </div>
+    );
   };
 
   // Category Icon Helper
@@ -358,8 +426,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
 
       </div>
 
-      {/* Counter bar */}
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      {/* Counter bar & Data Freshness */}
+      <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
         <div className="flex items-center space-x-2">
           <span>
             Showing <strong className="text-slate-900 font-bold">{filteredAndSortedTickets.length}</strong> of {tickets.length} tickets
@@ -370,14 +438,46 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
             </span>
           )}
         </div>
-        <span className="text-xs text-slate-400 hidden sm:inline">
-          Click row for telemetry inspection • Sort by clicking headers
-        </span>
+
+        {/* Data Freshness Indicator */}
+        <div className="flex items-center space-x-3">
+          <div className="inline-flex items-center space-x-1.5 text-[11px] text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-[2px]">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>Last updated: <strong className="text-slate-800 font-semibold">{freshnessLabel}</strong></span>
+            {lastUpdated && (
+              <span className="text-slate-400 font-mono text-[10px]">
+                ({lastUpdated.toLocaleTimeString()})
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-slate-400 hidden lg:inline">
+            Click row for full telemetry • Inline dropdowns to assign & update
+          </span>
+        </div>
       </div>
 
       {/* Table Container */}
       <div className="overflow-x-auto rounded-[2px] border border-slate-200/90">
-        {tickets.length === 0 ? (
+        {isLoading ? (
+          /* Loading State Skeleton */
+          <div className="py-12 px-6 text-center space-y-4">
+            <div className="w-8 h-8 mx-auto border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-700">Fetching incident stream...</p>
+              <p className="text-[11px] text-slate-400">Synchronizing live telemetry and tickets from multi-tenant engine</p>
+            </div>
+            {/* Shimmer skeleton lines */}
+            <div className="max-w-2xl mx-auto space-y-2 pt-2">
+              <div className="h-9 bg-slate-100 rounded animate-pulse" />
+              <div className="h-9 bg-slate-50 rounded animate-pulse" />
+              <div className="h-9 bg-slate-100 rounded animate-pulse" />
+            </div>
+          </div>
+        ) : tickets.length === 0 ? (
+          /* Empty State: Clear No Active Incidents message with Quick Seed and Simulate Telemetry actions */
           <div className="py-16 px-4 text-center space-y-3">
             <div className="w-14 h-14 mx-auto bg-purple-50 border border-purple-200 rounded-[2px] flex items-center justify-center text-purple-600 shadow-2xs">
               <CheckCircle2 className="w-7 h-7 text-emerald-600" />
@@ -387,17 +487,18 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 Workspace Clean · No Active Incidents
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                No tickets in this tenant database. Live telemetry listeners and WebSocket feeds are online and waiting for inbound events.
+                No active incidents in this tenant database. Live telemetry listeners and WebSocket feeds are online and ready for inbound events.
               </p>
             </div>
-            <div className="flex items-center justify-center space-x-2.5 pt-2">
-              {onOpenCreateModal && (
+            <div className="flex items-center justify-center space-x-2.5 pt-2 flex-wrap gap-y-2">
+              {onSeedDemo && (
                 <button
                   type="button"
-                  onClick={onOpenCreateModal}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[2px] shadow-xs transition-colors"
+                  onClick={onSeedDemo}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-[2px] shadow-xs transition-colors"
                 >
-                  <span>Log New Incident</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Quick Seed Demo Incidents</span>
                 </button>
               )}
               {onOpenSimulatorModal && (
@@ -410,9 +511,19 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                   <span>Simulate SDK Telemetry</span>
                 </button>
               )}
+              {onOpenCreateModal && (
+                <button
+                  type="button"
+                  onClick={onOpenCreateModal}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[2px] shadow-xs transition-colors"
+                >
+                  <span>Log New Incident</span>
+                </button>
+              )}
             </div>
           </div>
         ) : filteredAndSortedTickets.length === 0 ? (
+          /* Filtered Empty State */
           <div className="py-14 px-4 text-center space-y-3">
             <div className="w-12 h-12 mx-auto bg-purple-50 border border-purple-100 rounded-[2px] flex items-center justify-center text-purple-600">
               <Search className="w-6 h-6" />
@@ -449,7 +560,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                   aria-sort={sortField === 'title' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Title & Context</span>
+                    <span>Incident ID & Short Title</span>
                     {renderSortIndicator('title')}
                   </div>
                 </th>
@@ -462,7 +573,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                   aria-sort={sortField === 'priority' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Priority</span>
+                    <span>Severity</span>
                     {renderSortIndicator('priority')}
                   </div>
                 </th>
@@ -470,7 +581,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 {/* Status Column */}
                 <th
                   scope="col"
-                  className="py-3 px-4 w-32 cursor-pointer select-none hover:text-purple-600 transition-colors"
+                  className="py-3 px-4 w-36 cursor-pointer select-none hover:text-purple-600 transition-colors"
                   onClick={() => onSortChange('status')}
                   aria-sort={sortField === 'status' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                 >
@@ -483,7 +594,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 {/* Assignee Column */}
                 <th
                   scope="col"
-                  className="py-3 px-4 w-44 cursor-pointer select-none hover:text-purple-600 transition-colors"
+                  className="py-3 px-4 w-52 cursor-pointer select-none hover:text-purple-600 transition-colors"
                   onClick={() => onSortChange('assignee')}
                   aria-sort={sortField === 'assignee' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                 >
@@ -512,6 +623,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
             <tbody className="divide-y divide-slate-100 text-xs">
               {filteredAndSortedTickets.map((ticket) => {
                 const assignedMember = teamMembers.find((m) => m.id === ticket.assigned_to);
+                const normStatus = normalizeStatus(ticket.status);
 
                 return (
                   <tr
@@ -530,7 +642,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                   >
                     {/* Title & Context Cell */}
                     <td className="py-3.5 px-4">
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                           {/* Ticket Code Tag in Purple */}
                           <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-[2px] shadow-2xs">
@@ -543,16 +655,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                             <span>{(ticket.category || 'BUG').replace('_', ' ')}</span>
                           </span>
 
-                          {/* Telemetry Status Pill */}
-                          {ticket.telemetry?.network_errors?.[0]?.status && (
-                            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] border ${
-                              ticket.telemetry.network_errors[0].status >= 500
-                                ? 'bg-red-50 text-red-700 border-red-200'
-                                : 'bg-slate-100 text-slate-700 border-slate-200'
-                            }`}>
-                              HTTP {ticket.telemetry.network_errors[0].status}
-                            </span>
-                          )}
+                          {/* Telemetry Attached Indicators */}
+                          {renderTelemetryIndicator(ticket)}
                         </div>
 
                         {/* Title */}
@@ -572,36 +676,84 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       {renderPriorityBadge(ticket.severity)}
                     </td>
 
-                    {/* Status Cell */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      {renderStatusBadge(ticket.status)}
+                    {/* Status Cell with Direct Inline Change Dropdown */}
+                    <td className="py-3.5 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="relative inline-block">
+                        <select
+                          value={ticket.status}
+                          onChange={(e) => {
+                            if (onUpdateStatus) {
+                              onUpdateStatus(ticket.id, e.target.value);
+                            }
+                          }}
+                          aria-label={`Change status for incident ${ticket.short_code}`}
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-[2px] border cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-6 shadow-2xs transition-colors ${
+                            normStatus === 'In Dev'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-300'
+                              : normStatus === 'In QA'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-300'
+                              : normStatus === 'Resolved'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-300'
+                              : ticket.status === 'TRIAGED'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-300'
+                              : 'bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300'
+                          }`}
+                        >
+                          <option value="OPEN">Open</option>
+                          <option value="TRIAGED">Triaged</option>
+                          <option value="IN_DEV">In Dev</option>
+                          <option value="IN_QA">In QA</option>
+                          <option value="RESOLVED">Resolved</option>
+                          <option value="CLOSED">Closed</option>
+                        </select>
+                        <ChevronDown className="w-3 h-3 text-slate-500 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </td>
 
-                    {/* Assignee Cell */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      {assignedMember ? (
-                        <div className="flex items-center space-x-2">
-                          <div className={`w-7 h-7 rounded-[2px] border flex items-center justify-center font-bold text-[10px] shadow-2xs ${assignedMember.color}`}>
+                    {/* Assignee Cell with Direct Inline Change Dropdown */}
+                    <td className="py-3.5 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center space-x-2">
+                        {/* Avatar */}
+                        {assignedMember ? (
+                          <div className={`w-6 h-6 rounded-[2px] border flex items-center justify-center font-bold text-[9px] shadow-2xs flex-shrink-0 ${assignedMember.color}`}>
                             {assignedMember.avatarInitials}
                           </div>
-                          <span className="text-slate-800 font-medium">
-                            {assignedMember.name}
-                          </span>
-                        </div>
-                      ) : ticket.assigned_to_name ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-7 h-7 rounded-[2px] border flex items-center justify-center font-bold text-[10px] bg-indigo-100 text-indigo-700 border-indigo-200">
+                        ) : ticket.assigned_to_name ? (
+                          <div className="w-6 h-6 rounded-[2px] border flex items-center justify-center font-bold text-[9px] bg-indigo-100 text-indigo-700 border-indigo-200 flex-shrink-0">
                             {ticket.assigned_to_name.slice(0, 2).toUpperCase()}
                           </div>
-                          <span className="text-slate-800 font-medium">
-                            {ticket.assigned_to_name}
-                          </span>
+                        ) : (
+                          <div className="w-6 h-6 rounded-[2px] border border-dashed border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center text-[10px] flex-shrink-0">
+                            <UserX className="w-3 h-3" />
+                          </div>
+                        )}
+
+                        {/* Inline Assignee Selector */}
+                        <div className="relative inline-block flex-1 max-w-[150px]">
+                          <select
+                            value={ticket.assigned_to || 'UNASSIGNED'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === 'UNASSIGNED') {
+                                onUpdateAssignee?.(ticket.id, null, null);
+                              } else {
+                                const m = teamMembers.find(mem => mem.id === val);
+                                onUpdateAssignee?.(ticket.id, val, m ? m.name : null);
+                              }
+                            }}
+                            aria-label={`Change assignee for incident ${ticket.short_code}`}
+                            className="w-full text-xs font-medium text-slate-700 bg-slate-50 hover:bg-white border border-slate-200 hover:border-purple-300 px-2 py-1 rounded-[2px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-5 truncate shadow-2xs transition-colors"
+                          >
+                            <option value="UNASSIGNED">Unassigned</option>
+                            {teamMembers.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-3 h-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
-                      ) : (
-                        <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-[2px]">
-                          <span>Unassigned</span>
-                        </span>
-                      )}
+                      </div>
                     </td>
 
                     {/* Reported Cell */}

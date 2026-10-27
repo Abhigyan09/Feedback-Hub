@@ -11,6 +11,7 @@ import { TicketInspectorModal } from './components/TicketInspectorModal';
 import { CreateIncidentModal } from './components/CreateIncidentModal';
 import { WidgetSimulatorModal } from './components/WidgetSimulatorModal';
 import { ObservabilityGraphs } from './components/ObservabilityGraphs';
+import { NeedsAttentionSection } from './components/NeedsAttentionSection';
 import { Bell, RefreshCw, Sparkles, Trash2, Cpu } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -34,6 +35,8 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [apiLatencyMs, setApiLatencyMs] = useState<number | null>(null);
   
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -58,9 +61,10 @@ export const App: React.FC = () => {
     return 'Good evening';
   }, []);
 
-  // 1. Fetch Dynamic Tickets from live Backend API
+  // 1. Fetch Dynamic Tickets from live Backend API with real latency measurement
   const fetchTickets = useCallback(async () => {
     setIsLoading(true);
+    const start = performance.now();
     try {
       const res = await fetch('/api/v1/tickets', {
         headers: {
@@ -68,9 +72,12 @@ export const App: React.FC = () => {
           'X-User-Role': currentRole
         }
       });
+      const elapsed = Math.round(performance.now() - start);
+      setApiLatencyMs(elapsed);
       if (res.ok) {
         const data = await res.json();
         setTickets(data.tickets || []);
+        setLastUpdated(new Date());
       }
     } catch (err) {
       console.error('Failed to fetch dynamic tickets:', err);
@@ -185,6 +192,7 @@ export const App: React.FC = () => {
       if (data?.ticket) {
         setAlertBanner(data.message || 'New Incident Received');
         setTickets(prev => [data.ticket, ...prev.filter(t => t.id !== data.ticket.id)]);
+        setLastUpdated(new Date());
         setTimeout(() => setAlertBanner(null), 7000);
       }
     });
@@ -194,6 +202,7 @@ export const App: React.FC = () => {
       if (data?.ticket) {
         setTickets(prev => prev.map(t => t.id === data.ticket.id ? data.ticket : t));
         setSelectedTicket(curr => curr && curr.id === data.ticket.id ? data.ticket : curr);
+        setLastUpdated(new Date());
       } else {
         fetchTickets();
       }
@@ -464,6 +473,7 @@ export const App: React.FC = () => {
           totalOpenTickets={openCount}
           totalTickets={tickets.length}
           urgentTickets={urgentCount}
+          tickets={tickets}
           onNewIncidentClick={() => setIsCreateModalOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
           onSeedDemo={handleSeedDemo}
@@ -486,8 +496,8 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Dashboard Workspace */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        {/* Dashboard Workspace - End to End Screen Layout */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full">
           
           {/* Greeting & Operations Breadcrumb Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -556,6 +566,13 @@ export const App: React.FC = () => {
             </div>
           </div>
 
+          {/* 2. Needs Attention Area - Urgent & Unassigned, SLA Alerts, Client Blockers */}
+          <NeedsAttentionSection
+            tickets={tickets}
+            teamMembers={teamMembers}
+            onSelectTicket={setSelectedTicket}
+          />
+
           {/* 3. Four Summary Cards with 100% dynamic calculations */}
           <SummaryCards
             tickets={tickets}
@@ -571,6 +588,10 @@ export const App: React.FC = () => {
           <ObservabilityGraphs
             tickets={tickets}
             teamMembers={teamMembers}
+            isLoading={isLoading}
+            onSeedDemo={handleSeedDemo}
+            onSimulateTelemetry={() => setIsSimulatorOpen(true)}
+            apiLatencyMs={apiLatencyMs}
             onSelectCategory={(cat) => {
               setSearchQuery(cat);
               setActiveCardFilter(null);
@@ -585,7 +606,7 @@ export const App: React.FC = () => {
             onSelectAssignee={handleSelectTeamMember}
           />
 
-          {/* 5. Live Dynamic Tickets Table */}
+          {/* 6. Live Dynamic Tickets Table */}
           <section aria-labelledby="incident-table-heading" className="space-y-2">
             <h2 id="incident-table-heading" className="sr-only">
               Incidents Table
@@ -620,13 +641,18 @@ export const App: React.FC = () => {
               onSelectTicket={setSelectedTicket}
               onOpenCreateModal={() => setIsCreateModalOpen(true)}
               onOpenSimulatorModal={() => setIsSimulatorOpen(true)}
+              onSeedDemo={handleSeedDemo}
+              onUpdateStatus={handleUpdateTicketStatus}
+              onUpdateAssignee={handleUpdateTicketAssignee}
+              lastUpdated={lastUpdated}
+              isLoading={isLoading}
             />
           </section>
 
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200/80 bg-white py-4 px-6 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <footer className="border-t border-slate-200/80 bg-white py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
           <div className="flex items-center space-x-2">
             <span className="font-bold text-slate-700">FEEDBACK-HUB ENTERPRISE</span>
             <span>•</span>
