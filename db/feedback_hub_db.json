@@ -19,7 +19,7 @@
       "require_email": true,
       "default_squad": "Checkout & Billing Squad",
       "created_at": "2026-09-27T16:48:10.141Z",
-      "updated_at": "2026-10-27T17:15:39.020Z"
+      "updated_at": "2026-10-27T17:47:48.637Z"
     },
     {
       "id": "tenant-medsync-002",
@@ -168,7 +168,7 @@
       },
       "sla_due_at": "2026-10-27T17:18:10.154Z",
       "created_at": "2026-10-27T16:03:10.154Z",
-      "updated_at": "2026-10-27T16:59:40.470Z"
+      "updated_at": "2026-10-27T17:47:15.816Z"
     },
     {
       "id": "ticket-1042",
@@ -316,25 +316,6 @@
       "updated_at": "2026-10-27T15:48:10.154Z"
     },
     {
-      "id": "ticket-1048",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FB-1048",
-      "title": "Custom Domain SSL Handshake DNS Records Assistance",
-      "description": "Need verification DNS TXT and CNAME records for enterprise custom domain routing SSL certificate automated provisioning.",
-      "category": "HELP",
-      "severity": "MEDIUM",
-      "status": "OPEN",
-      "reporter_email": "infra-lead@acme.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-03",
-      "assigned_to_name": "Amit Patel (Full-Stack Reliability Dev)",
-      "domain_origin": "payments.acme.com",
-      "created_at": "2026-10-27T15:18:10.154Z",
-      "updated_at": "2026-10-27T15:18:10.154Z"
-    },
-    {
       "id": "ticket-2001",
       "tenant_id": "tenant-medsync-002",
       "product_id": "prod-telehealth-portal",
@@ -418,6 +399,17 @@
       "content": "Regression test passed in container staging-01",
       "is_internal_only": false,
       "created_at": "2026-10-27T16:59:40.516Z"
+    },
+    {
+      "id": "ev-1793123235816",
+      "ticket_id": "ticket-1041",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Marcus Chen (Support Specialist)",
+      "author_role": "support_agent",
+      "event_type": "STATUS_CHANGE",
+      "content": "Support agent dynamically advancing to IN_DEV under granted permission.",
+      "is_internal_only": false,
+      "created_at": "2026-10-27T17:47:15.816Z"
     }
   ],
   "permissionsMatrix": {
@@ -449,8 +441,8 @@
       },
       "tenant_admin": {
         "tickets:view": true,
-        "tickets:create": true,
-        "tickets:edit": true,
+        "tickets:create": false,
+        "tickets:edit": false,
         "tickets:delete": true,
         "tickets:change_status": true,
         "tickets:assign": true,
@@ -726,5 +718,5 @@
       }
     }
   },
-  "last_updated": "2026-10-27T17:15:39.385Z"
+  "last_updated": "2026-10-27T17:47:49.155Z"
 }

@@ -117,7 +117,7 @@ tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenan
 });
 
 // 3. GET DYNAMIC ROLE PERMISSIONS MATRIX
-tenantRouter.get('/permissions', requirePermission('permissions:view'), (req: Request, res: Response) => {
+tenantRouter.get('/permissions', (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const matrix = tenantStore.getPermissionsMatrix(tenantId);
 
@@ -131,9 +131,22 @@ tenantRouter.get('/permissions', requirePermission('permissions:view'), (req: Re
 });
 
 // 4. UPDATE DYNAMIC ROLE PERMISSIONS (Granular Role Customization)
-tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (req: Request, res: Response) => {
+tenantRouter.put('/permissions', async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
+  const userRole = req.auth!.role;
   const { role, permissions, updates } = req.body;
+
+  // Authorization check: platform admins or roles granted permissions:edit
+  const canEdit = userRole === 'super_admin' || 
+                  userRole === 'tenant_admin' || 
+                  tenantStore.hasPermission(tenantId, userRole, 'permissions:edit');
+
+  if (!canEdit) {
+    return res.status(403).json({
+      error: 'Permission Denied',
+      message: `Your current role '${userRole}' is not granted 'permissions:edit' to customize the RBAC matrix.`
+    });
+  }
 
   // Single Role update mode
   if (role && permissions && typeof permissions === 'object') {
@@ -202,9 +215,21 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
 });
 
 // 5. RESET ROLE PERMISSIONS TO PRESETS
-tenantRouter.post('/permissions/reset', requirePermission('permissions:reset'), async (req: Request, res: Response) => {
+tenantRouter.post('/permissions/reset', async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
+  const userRole = req.auth!.role;
   const { role } = req.body;
+
+  const canReset = userRole === 'super_admin' || 
+                   userRole === 'tenant_admin' || 
+                   tenantStore.hasPermission(tenantId, userRole, 'permissions:reset');
+
+  if (!canReset) {
+    return res.status(403).json({
+      error: 'Permission Denied',
+      message: `Your current role '${userRole}' is not granted 'permissions:reset' to restore RBAC presets.`
+    });
+  }
 
   const targetRole = role && ALL_ROLES.includes(role) ? (role as UserRole) : undefined;
   const resetMatrix = tenantStore.resetRolePermissions(tenantId, targetRole);

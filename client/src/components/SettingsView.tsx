@@ -121,13 +121,15 @@ interface SettingsViewProps {
   currentRole?: UserRole;
   onTenantUpdated?: () => void;
   permissionsMatrix?: RolePermissionsMatrix | null;
+  onPermissionsUpdated?: (newMatrix: RolePermissionsMatrix) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ 
   currentTenantId,
   currentRole = 'developer',
   onTenantUpdated,
-  permissionsMatrix: initialPermissionsMatrix
+  permissionsMatrix: initialPermissionsMatrix,
+  onPermissionsUpdated
 }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -191,12 +193,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [testRoleKey, setTestRoleKey] = useState<UserRole>(currentRole);
   const [copySourceRole, setCopySourceRole] = useState<UserRole>('developer');
 
-  // Sync prop permissionsMatrix if passed
+  // Sync prop permissionsMatrix if passed and no unsaved local changes
   useEffect(() => {
-    if (initialPermissionsMatrix) {
+    if (initialPermissionsMatrix && !hasUnsavedPerms) {
       setPermissionsMatrix(initialPermissionsMatrix);
     }
-  }, [initialPermissionsMatrix]);
+  }, [initialPermissionsMatrix, hasUnsavedPerms]);
 
   // UI Feedback States
   const [isSaving, setIsSaving] = useState(false);
@@ -290,7 +292,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       if (permRes.ok) {
         const permData = await permRes.json();
         if (permData.definitions) setPermissionDefinitions(permData.definitions);
-        if (permData.matrix) setPermissionsMatrix(permData.matrix);
+        if (permData.matrix) {
+          setPermissionsMatrix(permData.matrix);
+          if (onPermissionsUpdated) onPermissionsUpdated(permData.matrix);
+        }
         setHasUnsavedPerms(false);
       }
     } catch (err: any) {
@@ -600,7 +605,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        if (data.matrix) setPermissionsMatrix(data.matrix);
+        if (data.matrix) {
+          setPermissionsMatrix(data.matrix);
+          if (onPermissionsUpdated) onPermissionsUpdated(data.matrix);
+        }
         setHasUnsavedPerms(false);
         setPermsSuccessMessage(`Permissions for role '${ROLE_METADATA[selectedRoleForPerms].label}' saved to database!`);
         setTimeout(() => setPermsSuccessMessage(null), 5000);
@@ -638,7 +646,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        if (data.matrix) setPermissionsMatrix(data.matrix);
+        if (data.matrix) {
+          setPermissionsMatrix(data.matrix);
+          if (onPermissionsUpdated) onPermissionsUpdated(data.matrix);
+        }
         setHasUnsavedPerms(false);
         setPermsSuccessMessage(data.message || `Permissions for ${roleName} reset to default baseline.`);
         setTimeout(() => setPermsSuccessMessage(null), 5000);
@@ -1549,9 +1560,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={() => handleResetPermissions()}
-              disabled={isSavingPerms}
-              className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
-              title="Restore baseline security presets"
+              disabled={isSavingPerms || !canResetPermissions}
+              className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+              title={canResetPermissions ? "Restore baseline security presets" : "Requires permissions:reset"}
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
               <span>Reset Defaults</span>
@@ -1561,18 +1572,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={handleSavePermissions}
-              disabled={isSavingPerms}
-              className={`px-4 py-1.5 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-xs ${
+              disabled={isSavingPerms || !canEditPermissions}
+              className={`px-4 py-1.5 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs ${
                 hasUnsavedPerms
                   ? 'bg-[#0066FF] hover:bg-blue-600 text-white'
                   : 'bg-slate-900 hover:bg-slate-800 text-white'
               }`}
+              title={canEditPermissions ? "Save RBAC permissions" : "Requires permissions:edit"}
             >
               {isSavingPerms ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               <span>{isSavingPerms ? 'Saving...' : hasUnsavedPerms ? 'Save Changes (Unsaved)' : 'Save Permissions'}</span>
             </button>
           </div>
         </div>
+
+        {/* Read-Only Notice if user cannot edit permissions */}
+        {!canEditPermissions && (
+          <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2 shadow-2xs font-mono">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Read-Only Mode:</strong> Your active role ({ROLE_METADATA[currentRole]?.label || currentRole}) has view permissions. Modifying permissions requires <code>permissions:edit</code> or administrator privileges.
+            </span>
+          </div>
+        )}
 
         {/* Unsaved Changes Notification Banner */}
         {hasUnsavedPerms && (
@@ -1694,17 +1716,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </select>
                   <button
                     type="button"
+                    disabled={!canEditPermissions}
                     onClick={() => handleCopyPermissions(copySourceRole, selectedRoleForPerms)}
-                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={canEditPermissions ? "Clone permissions" : "Requires permissions:edit"}
                   >
                     Apply
                   </button>
                 </div>
                 <button
                   type="button"
+                  disabled={!canResetPermissions}
                   onClick={() => handleResetPermissions(selectedRoleForPerms)}
-                  className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-amber-800 text-xs transition-colors cursor-pointer"
-                  title="Reset this role to baseline defaults"
+                  className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-amber-800 text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={canResetPermissions ? "Reset this role to baseline defaults" : "Requires permissions:reset"}
                 >
                   Reset
                 </button>
@@ -1801,16 +1826,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <div className="flex items-center space-x-2 shrink-0 text-xs">
                         <button
                           type="button"
+                          disabled={!canEditPermissions}
                           onClick={() => handleGrantAllInModule(selectedRoleForPerms, modKey)}
-                          className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
+                          className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Enable All
                         </button>
                         <span className="text-slate-300">|</span>
                         <button
                           type="button"
+                          disabled={!canEditPermissions}
                           onClick={() => handleRevokeAllInModule(selectedRoleForPerms, modKey)}
-                          className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-rose-600 hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
+                          className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-rose-600 hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Disable All
                         </button>
@@ -1827,13 +1854,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <div
                             key={def.key}
                             onClick={() => {
-                              if (!isSuperAdminEditLock) {
+                              if (!isSuperAdminEditLock && canEditPermissions) {
                                 handleTogglePermission(selectedRoleForPerms, def.key);
                               }
                             }}
                             className={`px-4 py-2.5 flex items-center justify-between gap-3 transition-colors select-none ${
                               isGranted ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/30 hover:bg-slate-50/80'
-                            } ${!isSuperAdminEditLock ? 'cursor-pointer' : 'cursor-default'}`}
+                            } ${!isSuperAdminEditLock && canEditPermissions ? 'cursor-pointer' : 'cursor-default'}`}
                           >
                             {/* Left: Checkbox + Name + Code Key + Description */}
                             <div className="flex items-start space-x-3 min-w-0 flex-1">
@@ -1960,16 +1987,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (!isSuperAdminLock) {
+                                    if (!isSuperAdminLock && canEditPermissions) {
                                       handleTogglePermission(role, def.key);
                                     }
                                   }}
-                                  disabled={isSuperAdminLock}
+                                  disabled={isSuperAdminLock || !canEditPermissions}
                                   className={`w-7 h-7 mx-auto flex items-center justify-center transition-colors border ${
                                     isGranted
                                       ? 'bg-emerald-600 border-emerald-700 text-white shadow-2xs'
                                       : 'bg-slate-100 border-slate-200 text-slate-400 hover:border-slate-300'
-                                  } ${!isSuperAdminLock ? 'cursor-pointer hover:scale-105' : 'cursor-default opacity-80'}`}
+                                  } ${!isSuperAdminLock && canEditPermissions ? 'cursor-pointer hover:scale-105' : 'cursor-default opacity-80'}`}
                                   title={`${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
                                 >
                                   {isSuperAdminLock ? (
