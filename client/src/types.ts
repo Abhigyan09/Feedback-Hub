@@ -87,3 +87,47 @@ export interface Product {
   created_at: string;
   updated_at?: string;
 }
+
+export type PermissionModule = 'tickets' | 'products' | 'tenant' | 'permissions' | 'audit';
+
+export type PermissionKey =
+  // Tickets Module
+  | 'tickets:view'
+  | 'tickets:create'
+  | 'tickets:edit'
+  | 'tickets:delete'
+  | 'tickets:change_status'
+  | 'tickets:assign'
+  | 'tickets:view_telemetry_internal'
+  | 'tickets:view_internal_notes'
+  | 'tickets:create_internal_notes'
+  // Products Module
+  | 'products:view'
+  | 'products:create'
+  | 'products:edit'
+  | 'products:delete'
+  | 'products:rotate_keys'
+  // Tenant & Security Module
+  | 'tenant:view_profile'
+  | 'tenant:edit_profile'
+  | 'tenant:manage_domains'
+  | 'tenant:manage_policies'
+  // Permissions Management Module
+  | 'permissions:view'
+  | 'permissions:edit'
+  | 'permissions:reset'
+  // Audit & Telemetry Module
+  | 'audit:view'
+  | 'audit:test_bridge';
+
+export interface PermissionDefinition {
+  key: PermissionKey;
+  module: PermissionModule;
+  action: string;
+  name: string;
+  description: string;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+export type RolePermissionsMatrix = Record<UserRole, Record<PermissionKey, boolean>>;
+

@@ -48,28 +48,28 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="border-b border-slate-200 bg-white shadow-xs sticky top-0 z-40 select-none">
-      <div className="max-w-[1700px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+    <header className="border-b border-slate-200 bg-white shadow-xs sticky top-0 z-40 select-none w-full shrink-0">
+      <div className="max-w-[1700px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 w-full">
         
-        {/* Left Side: Brand, Tenant Selector, Role Selector, SLA & Time Badges */}
-        <div className="flex items-center space-x-3 overflow-x-auto py-1 scrollbar-none">
+        {/* Left Side: Brand, Tenant Selector, Role Selector */}
+        <div className="flex items-center space-x-2.5 py-1 min-w-0">
           
           {/* Brand Square Logo */}
           <div className="flex items-center space-x-1.5 shrink-0">
             <div className="w-8 h-8 bg-[#6366F1] flex items-center justify-center font-mono font-bold text-white text-xs tracking-wider shadow-sm">
               FH
             </div>
-            <span className="text-slate-400 font-mono text-xs">›</span>
+            <span className="text-slate-400 font-mono text-xs hidden sm:inline">›</span>
           </div>
 
           {/* Tenant Switcher Dropdown */}
-          <div className="relative shrink-0">
-            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-3 py-1.5 text-xs text-slate-800 font-medium transition-colors shadow-2xs">
-              <Building2 className="w-3.5 h-3.5 text-purple-600" />
+          <div className="relative shrink min-w-0">
+            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 text-xs text-slate-800 font-medium transition-colors shadow-2xs">
+              <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
               <select
                 value={currentTenantId}
                 onChange={(e) => onTenantChange(e.target.value)}
-                className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer pr-1"
+                className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[170px] md:max-w-[210px] truncate"
               >
                 {tenants && tenants.length > 0 ? (
                   tenants.map(t => (
@@ -86,13 +86,13 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Role Switcher Dropdown */}
-          <div className="relative shrink-0">
-            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-3 py-1.5 text-xs text-slate-800 font-medium transition-colors shadow-2xs">
-              <Shield className="w-3.5 h-3.5 text-purple-600" />
+          <div className="relative shrink min-w-0">
+            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 text-xs text-slate-800 font-medium transition-colors shadow-2xs">
+              <Shield className="w-3.5 h-3.5 text-purple-600 shrink-0" />
               <select
                 value={currentRole}
                 onChange={(e) => onRoleChange(e.target.value as UserRole)}
-                className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer pr-1"
+                className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[160px] md:max-w-[200px] truncate"
               >
                 <option value="developer" className="bg-white text-slate-900">Developer (Rahul Sharma)</option>
                 <option value="squad_lead" className="bg-white text-slate-900">Squad Lead (Vikram Mehta)</option>
@@ -104,27 +104,21 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* 100.00% SLA Healthy Square Badge */}
-          <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 bg-amber-50/90 border border-amber-200 text-amber-800 text-xs font-mono font-semibold shrink-0">
+          {/* 100.00% SLA Healthy Square Badge (Shown only on ultra-wide screens) */}
+          <div className="hidden 2xl:flex items-center space-x-1.5 px-2.5 py-1 bg-amber-50/90 border border-amber-200 text-amber-800 text-xs font-mono font-semibold shrink-0">
             <Sun className="w-3.5 h-3.5 text-amber-600" />
             <span>100.00% SLA HEALTHY</span>
-          </div>
-
-          {/* Date & Time Square Badge */}
-          <div className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 bg-purple-50/90 border border-purple-200 text-purple-800 text-xs font-mono font-semibold shrink-0">
-            <Clock className="w-3.5 h-3.5 text-purple-600" />
-            <span>{currentTime || '22:55 MON, OCT 26'}</span>
           </div>
 
         </div>
 
         {/* Right Side: Action Buttons, Notification Bell, User Profile */}
-        <div className="flex items-center space-x-3 shrink-0">
+        <div className="flex items-center space-x-2.5 shrink-0">
           
-          {/* Simulate Telemetry Button */}
+          {/* Simulate Telemetry Button (Shown on wide screens) */}
           <button
             onClick={onOpenWidgetSimulator}
-            className="hidden sm:flex items-center space-x-1.5 px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200 text-xs font-medium transition-colors shadow-2xs cursor-pointer"
+            className="hidden xl:flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200 text-xs font-medium transition-colors shadow-2xs cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-purple-600" />
             <span>Simulate Telemetry</span>
@@ -133,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* + New Incident Button */}
           <button
             onClick={onOpenWidgetSimulator}
-            className="flex items-center space-x-1.5 px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Incident</span>
@@ -157,20 +151,20 @@ export const Header: React.FC<HeaderProps> = ({
                currentRole === 'developer' ? 'RS' :
                currentRole === 'support_agent' ? 'MC' : 'SJ'}
             </div>
-            <div className="hidden md:block leading-tight text-left">
+            <div className="hidden lg:block leading-tight text-left max-w-[150px] xl:max-w-[200px]">
               <span className="block text-xs font-bold text-slate-900 truncate">
-                {currentRole === 'super_admin' ? 'Alex Turner (Super Admin)' :
-                 currentRole === 'tenant_admin' ? 'Elena Rostova (Tenant Admin)' :
-                 currentRole === 'squad_lead' ? 'Vikram Mehta (API Squad Lead)' :
-                 currentRole === 'developer' ? 'Rahul Sharma (Dev)' :
-                 currentRole === 'support_agent' ? 'Marcus Chen (Support)' : 'Sarah Jenkins (Client)'}
+                {currentRole === 'super_admin' ? 'Alex Turner' :
+                 currentRole === 'tenant_admin' ? 'Elena Rostova' :
+                 currentRole === 'squad_lead' ? 'Vikram Mehta' :
+                 currentRole === 'developer' ? 'Rahul Sharma' :
+                 currentRole === 'support_agent' ? 'Marcus Chen' : 'Sarah Jenkins'}
               </span>
               <span className="block text-[10px] text-slate-500 font-mono truncate">
-                {currentRole === 'super_admin' ? 'Platform Administrator' :
-                 currentRole === 'tenant_admin' ? 'Tenant Security & Org Admin' :
-                 currentRole === 'squad_lead' ? 'Engineering Lead & Arch' :
-                 currentRole === 'developer' ? 'Senior Backend Dev' :
-                 currentRole === 'support_agent' ? 'Customer Support Specialist' : 'Client Operations Director'}
+                {currentRole === 'super_admin' ? 'Super Admin' :
+                 currentRole === 'tenant_admin' ? 'Tenant Admin' :
+                 currentRole === 'squad_lead' ? 'Squad Lead' :
+                 currentRole === 'developer' ? 'Developer' :
+                 currentRole === 'support_agent' ? 'Support' : 'Client User'}
               </span>
             </div>
           </div>

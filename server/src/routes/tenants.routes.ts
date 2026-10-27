@@ -1,14 +1,15 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
-import { tenantStore, isPostgresConnected, pool } from '../config/db.js';
-import { requireRole } from '../middleware/rbac.js';
+import { tenantStore, isPostgresConnected, pool, persistRolePermissionsToDb } from '../config/db.js';
+import { requireRole, requirePermission, requireAnyPermission } from '../middleware/rbac.js';
 import { broadcastTicketEvent } from '../services/socket.js';
-import { Product } from '../types/index.js';
+import { Product, UserRole, PermissionKey } from '../types/index.js';
+import { PERMISSION_DEFINITIONS, ALL_ROLES } from '../config/permissions.js';
 
 export const tenantRouter = Router();
 
-// 1. GET TENANT METADATA & MONITORED PRODUCTS (Engineering & Admins)
-tenantRouter.get('/current', requireRole(['super_admin', 'tenant_admin', 'squad_lead', 'developer']), (req: Request, res: Response) => {
+// 1. GET TENANT METADATA & MONITORED PRODUCTS
+tenantRouter.get('/current', requireAnyPermission(['tenant:view_profile', 'permissions:view']), (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const tenant = tenantStore.tenants.find(t => t.id === tenantId);
   if (!tenant) {
@@ -17,17 +18,19 @@ tenantRouter.get('/current', requireRole(['super_admin', 'tenant_admin', 'squad_
 
   const products = tenantStore.products.filter(p => p.tenant_id === tenantId);
   const users = tenantStore.users.filter(u => u.tenant_id === tenantId);
+  const permissionsMatrix = tenantStore.getPermissionsMatrix(tenantId);
 
   res.json({
     tenant,
     products,
     team_members: users,
-    active_auth: req.auth
+    active_auth: req.auth,
+    permissions_matrix: permissionsMatrix
   });
 });
 
-// 2. UPDATE ACTIVE TENANT SETTINGS (Requires Tenant Administrator or Super Admin Role)
-tenantRouter.put('/current', requireRole(['super_admin', 'tenant_admin']), async (req: Request, res: Response) => {
+// 2. UPDATE ACTIVE TENANT SETTINGS
+tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenant:manage_policies', 'tenant:manage_domains']), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const { 
     name, 
@@ -68,8 +71,30 @@ tenantRouter.put('/current', requireRole(['super_admin', 'tenant_admin']), async
   if (isPostgresConnected) {
     try {
       await pool.query(
-        `UPDATE tenants SET name = $1, allowed_domains = $2, plan = $3, updated_at = NOW() WHERE id = $4`,
-        [tenant.name, tenant.allowed_domains, tenant.plan, tenantId]
+        `UPDATE tenants SET 
+          name = $1, 
+          allowed_domains = $2, 
+          plan = $3, 
+          webhook_url = $4, 
+          notification_email = $5, 
+          default_squad = $6, 
+          auto_capture_telemetry = $7, 
+          auto_capture_network = $8, 
+          require_email = $9, 
+          updated_at = NOW() 
+         WHERE id = $10`,
+        [
+          tenant.name, 
+          tenant.allowed_domains, 
+          tenant.plan, 
+          tenant.webhook_url, 
+          tenant.notification_email, 
+          tenant.default_squad, 
+          tenant.auto_capture_telemetry, 
+          tenant.auto_capture_network, 
+          tenant.require_email, 
+          tenantId
+        ]
       );
     } catch (dbErr) {
       console.error('[Database Tenant Update Error]', dbErr);
@@ -89,8 +114,125 @@ tenantRouter.put('/current', requireRole(['super_admin', 'tenant_admin']), async
   });
 });
 
-// 3. CREATE NEW MONITORED PRODUCT & GENERATE API KEY (Requires Admin Role)
-tenantRouter.post('/products', requireRole(['super_admin', 'tenant_admin']), async (req: Request, res: Response) => {
+// 3. GET DYNAMIC ROLE PERMISSIONS MATRIX
+tenantRouter.get('/permissions', requirePermission('permissions:view'), (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const matrix = tenantStore.getPermissionsMatrix(tenantId);
+
+  res.json({
+    tenant_id: tenantId,
+    matrix,
+    definitions: PERMISSION_DEFINITIONS,
+    roles: ALL_ROLES,
+    current_role: req.auth!.role
+  });
+});
+
+// 4. UPDATE DYNAMIC ROLE PERMISSIONS (Granular Role Customization)
+tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const { role, permissions, updates } = req.body;
+
+  // Single Role update mode
+  if (role && permissions && typeof permissions === 'object') {
+    if (!ALL_ROLES.includes(role)) {
+      return res.status(400).json({ error: `Invalid role: ${role}` });
+    }
+
+    // Safety constraint: Prevent removing permissions:edit from super_admin to prevent irreversible lockout
+    if (role === 'super_admin' && permissions['permissions:edit'] === false) {
+      permissions['permissions:edit'] = true;
+    }
+
+    const updatedMatrix = tenantStore.updateRolePermissions(tenantId, role as UserRole, permissions);
+    await persistRolePermissionsToDb(tenantId, role as UserRole, updatedMatrix[role as UserRole]);
+
+    // Broadcast permissions change real-time
+    broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
+      tenantId,
+      role,
+      matrix: updatedMatrix,
+      message: `Permissions updated for role '${role}'.`
+    });
+
+    return res.json({
+      success: true,
+      message: `Permissions for role '${role}' updated and saved successfully.`,
+      matrix: updatedMatrix
+    });
+  }
+
+  // Batch updates mode
+  if (Array.isArray(updates)) {
+    for (const item of updates) {
+      const { role: itemRole, permissionKey, isGranted } = item;
+      if (ALL_ROLES.includes(itemRole)) {
+        if (itemRole === 'super_admin' && permissionKey === 'permissions:edit' && !isGranted) {
+          continue; // lockout protection
+        }
+        tenantStore.updateRolePermissions(tenantId, itemRole as UserRole, {
+          [permissionKey]: Boolean(isGranted)
+        } as Partial<Record<PermissionKey, boolean>>);
+      }
+    }
+
+    const matrix = tenantStore.getPermissionsMatrix(tenantId);
+    for (const r of ALL_ROLES) {
+      await persistRolePermissionsToDb(tenantId, r, matrix[r]);
+    }
+
+    broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
+      tenantId,
+      matrix,
+      message: 'Batch role permissions matrix updated.'
+    });
+
+    return res.json({
+      success: true,
+      message: 'Batch role permissions matrix successfully persisted.',
+      matrix
+    });
+  }
+
+  res.status(400).json({ error: 'Invalid payload: provide { role, permissions } or { updates }.' });
+});
+
+// 5. RESET ROLE PERMISSIONS TO PRESETS
+tenantRouter.post('/permissions/reset', requirePermission('permissions:reset'), async (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const { role } = req.body;
+
+  const targetRole = role && ALL_ROLES.includes(role) ? (role as UserRole) : undefined;
+  const resetMatrix = tenantStore.resetRolePermissions(tenantId, targetRole);
+
+  if (targetRole) {
+    await persistRolePermissionsToDb(tenantId, targetRole, resetMatrix[targetRole]);
+  } else {
+    for (const r of ALL_ROLES) {
+      await persistRolePermissionsToDb(tenantId, r, resetMatrix[r]);
+    }
+  }
+
+  broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
+    tenantId,
+    targetRole: targetRole || 'ALL',
+    matrix: resetMatrix,
+    message: targetRole 
+      ? `Role '${targetRole}' reset to bank-grade baseline defaults.`
+      : 'All tenant roles reset to bank-grade baseline defaults.'
+  });
+
+  res.json({
+    success: true,
+    message: targetRole 
+      ? `Role '${targetRole}' reset to baseline defaults.` 
+      : 'All role permissions reset to bank-grade baseline defaults.',
+    matrix: resetMatrix
+  });
+});
+
+// 6. CREATE NEW MONITORED PRODUCT & GENERATE API KEY
+tenantRouter.post('/products', requirePermission('products:create'), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const { name, environment = 'production', description = '' } = req.body;
 
@@ -120,9 +262,9 @@ tenantRouter.post('/products', requireRole(['super_admin', 'tenant_admin']), asy
   if (isPostgresConnected) {
     try {
       await pool.query(
-        `INSERT INTO products (id, tenant_id, name, slug, api_key_hash, environment, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-        [newProduct.id, tenantId, newProduct.name, newProduct.slug, newProduct.api_key_hash, newProduct.environment]
+        `INSERT INTO products (id, tenant_id, name, slug, description, api_key_hash, raw_api_key, environment, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+        [newProduct.id, tenantId, newProduct.name, newProduct.slug, newProduct.description, newProduct.api_key_hash, newProduct.raw_api_key, newProduct.environment]
       );
     } catch (dbErr) {
       console.error('[Database Product Insert Error]', dbErr);
@@ -136,9 +278,10 @@ tenantRouter.post('/products', requireRole(['super_admin', 'tenant_admin']), asy
   });
 });
 
-// 4. UPDATE OR ROTATE PRODUCT API KEY (Requires Admin Role)
-tenantRouter.put('/products/:id', requireRole(['super_admin', 'tenant_admin']), async (req: Request, res: Response) => {
+// 7. UPDATE OR ROTATE PRODUCT API KEY
+tenantRouter.put('/products/:id', requireAnyPermission(['products:edit', 'products:rotate_keys']), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
+  const role = req.auth!.role;
   const { id } = req.params;
   const { name, environment, description, rotate_key } = req.body;
 
@@ -147,24 +290,30 @@ tenantRouter.put('/products/:id', requireRole(['super_admin', 'tenant_admin']), 
     return res.status(404).json({ error: 'Product not found in this tenant scope.' });
   }
 
-  if (name !== undefined) product.name = name.trim();
-  if (environment !== undefined) product.environment = environment;
-  if (description !== undefined) product.description = description.trim();
-  product.updated_at = new Date().toISOString();
-
-  // Key rotation
+  // Key rotation requires specific permission
   if (rotate_key) {
+    if (!tenantStore.hasPermission(tenantId, role, 'products:rotate_keys')) {
+      return res.status(403).json({
+        error: 'Permission Denied',
+        message: `Your current role '${role}' is not granted 'products:rotate_keys' to rotate API keys.`
+      });
+    }
     const rawApiKey = `fb_live_${product.slug}_${crypto.randomBytes(8).toString('hex')}`;
     product.raw_api_key = rawApiKey;
     product.api_key_hash = crypto.createHash('sha256').update(rawApiKey).digest('hex');
   }
 
+  if (name !== undefined) product.name = name.trim();
+  if (environment !== undefined) product.environment = environment;
+  if (description !== undefined) product.description = description.trim();
+  product.updated_at = new Date().toISOString();
+
   // If live Postgres
   if (isPostgresConnected) {
     try {
       await pool.query(
-        `UPDATE products SET name = $1, environment = $2, api_key_hash = $3 WHERE id = $4 AND tenant_id = $5`,
-        [product.name, product.environment, product.api_key_hash, id, tenantId]
+        `UPDATE products SET name = $1, environment = $2, api_key_hash = $3, raw_api_key = $4, description = $5, updated_at = NOW() WHERE id = $6 AND tenant_id = $7`,
+        [product.name, product.environment, product.api_key_hash, product.raw_api_key, product.description, id, tenantId]
       );
     } catch (dbErr) {
       console.error('[Database Product Update Error]', dbErr);
@@ -178,8 +327,8 @@ tenantRouter.put('/products/:id', requireRole(['super_admin', 'tenant_admin']), 
   });
 });
 
-// 4.1 DIAGNOSTIC TEST PING FOR SDK INGESTION (Engineering & Admins)
-tenantRouter.get('/ping-ingest', requireRole(['super_admin', 'tenant_admin', 'squad_lead', 'developer']), (req: Request, res: Response) => {
+// 8. DIAGNOSTIC TEST PING FOR SDK INGESTION
+tenantRouter.get('/ping-ingest', requirePermission('audit:test_bridge'), (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const tenant = tenantStore.tenants.find(t => t.id === tenantId);
   const products = tenantStore.products.filter(p => p.tenant_id === tenantId);
@@ -196,8 +345,8 @@ tenantRouter.get('/ping-ingest', requireRole(['super_admin', 'tenant_admin', 'sq
   });
 });
 
-// 5. DELETE MONITORED PRODUCT (Requires Admin Role)
-tenantRouter.delete('/products/:id', requireRole(['super_admin', 'tenant_admin']), async (req: Request, res: Response) => {
+// 9. DELETE MONITORED PRODUCT
+tenantRouter.delete('/products/:id', requirePermission('products:delete'), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const { id } = req.params;
 
@@ -222,7 +371,7 @@ tenantRouter.delete('/products/:id', requireRole(['super_admin', 'tenant_admin']
   });
 });
 
-// 6. LIST ALL TENANTS (FOR SWITCHER)
+// 10. LIST ALL TENANTS (FOR SWITCHER)
 tenantRouter.get('/all', (req: Request, res: Response) => {
   res.json({
     tenants: tenantStore.tenants.map(t => ({

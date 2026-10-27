@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { tenantStore, isPostgresConnected, pool } from '../config/db.js';
-import { requireRole } from '../middleware/rbac.js';
+import { requirePermission } from '../middleware/rbac.js';
 import { broadcastTicketEvent } from '../services/socket.js';
 import { decryptSensitiveData } from '../services/crypto.js';
 import { TicketEvent } from '../types/index.js';
@@ -8,35 +8,40 @@ import { TicketEvent } from '../types/index.js';
 export const ticketRouter = Router();
 
 // 1. GET ALL TICKETS FOR CURRENT TENANT
-ticketRouter.get('/', (req: Request, res: Response) => {
+ticketRouter.get('/', requirePermission('tickets:view'), (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
 
   // STRICT MULTI-TENANT FILTER
   let tickets = tenantStore.tickets.filter(t => t.tenant_id === tenantId);
 
-  // Strict RBAC: Strip confidential internal telemetry details based on role
-  if (userRole === 'client_user') {
-    tickets = tickets.map(t => ({
-      ...t,
-      telemetry: t.telemetry ? {
-        page_url: t.telemetry.page_url,
-        app_version: t.telemetry.app_version,
-        viewport_dimensions: t.telemetry.viewport_dimensions,
-        screenshot_url: t.telemetry.screenshot_url
-      } : undefined
-    }));
-  } else if (userRole === 'support_agent') {
-    tickets = tickets.map(t => ({
-      ...t,
-      telemetry: t.telemetry ? {
-        page_url: t.telemetry.page_url,
-        app_version: t.telemetry.app_version,
-        viewport_dimensions: t.telemetry.viewport_dimensions,
-        network_errors: t.telemetry.network_errors,
-        screenshot_url: t.telemetry.screenshot_url
-      } : undefined
-    }));
+  // Dynamic Granular Permission Check for Telemetry
+  const canViewInternalTelemetry = tenantStore.hasPermission(tenantId, userRole, 'tickets:view_telemetry_internal');
+
+  if (!canViewInternalTelemetry) {
+    if (userRole === 'support_agent') {
+      tickets = tickets.map(t => ({
+        ...t,
+        telemetry: t.telemetry ? {
+          page_url: t.telemetry.page_url,
+          app_version: t.telemetry.app_version,
+          viewport_dimensions: t.telemetry.viewport_dimensions,
+          network_errors: t.telemetry.network_errors,
+          screenshot_url: t.telemetry.screenshot_url
+        } : undefined
+      }));
+    } else {
+      // General non-telemetry role (client or restricted)
+      tickets = tickets.map(t => ({
+        ...t,
+        telemetry: t.telemetry ? {
+          page_url: t.telemetry.page_url,
+          app_version: t.telemetry.app_version,
+          viewport_dimensions: t.telemetry.viewport_dimensions,
+          screenshot_url: t.telemetry.screenshot_url
+        } : undefined
+      }));
+    }
   }
 
   res.json({
@@ -48,7 +53,7 @@ ticketRouter.get('/', (req: Request, res: Response) => {
 });
 
 // 2. GET SINGLE TICKET WITH FULL TELEMETRY & EVENT STREAM
-ticketRouter.get('/:id', (req: Request, res: Response) => {
+ticketRouter.get('/:id', requirePermission('tickets:view'), (req: Request, res: Response) => {
   const { id } = req.params;
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
@@ -61,26 +66,30 @@ ticketRouter.get('/:id', (req: Request, res: Response) => {
   // Fetch events for this ticket
   let events = tenantStore.events.filter(e => e.ticket_id === id && e.tenant_id === tenantId);
 
-  // Strict RBAC: Client users and support agents cannot view internal developer quarantine notes
-  if (userRole === 'client_user' || userRole === 'support_agent') {
+  // Dynamic Permission: Only roles granted 'tickets:view_internal_notes' can see internal quarantine notes
+  const canViewInternalNotes = tenantStore.hasPermission(tenantId, userRole, 'tickets:view_internal_notes');
+  if (!canViewInternalNotes) {
     events = events.filter(e => !e.is_internal_only);
   }
 
-  // Strict RBAC for telemetry:
+  // Dynamic Permission for Telemetry Inspection & Decryption
+  const canViewInternalTelemetry = tenantStore.hasPermission(tenantId, userRole, 'tickets:view_telemetry_internal');
   let sanitizedTelemetry = ticket.telemetry ? { ...ticket.telemetry } : undefined;
 
   if (sanitizedTelemetry) {
-    if (userRole === 'client_user') {
-      // Clients only see user environment, no internal logs or bank encrypted secrets
-      delete sanitizedTelemetry.console_logs;
-      delete sanitizedTelemetry.network_errors;
-      delete sanitizedTelemetry.encrypted_sensitive_data;
-    } else if (userRole === 'support_agent') {
-      // Support sees network status, but no decrypted AES sensitive payloads or raw browser consoles
-      delete sanitizedTelemetry.console_logs;
-      delete sanitizedTelemetry.encrypted_sensitive_data;
-    } else if (['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(userRole)) {
-      // Engineering and admins decrypt sensitive data
+    if (!canViewInternalTelemetry) {
+      if (userRole === 'support_agent') {
+        // Support sees network status, but no decrypted AES sensitive payloads or raw browser consoles
+        delete sanitizedTelemetry.console_logs;
+        delete sanitizedTelemetry.encrypted_sensitive_data;
+      } else {
+        // Redact all sensitive fields
+        delete sanitizedTelemetry.console_logs;
+        delete sanitizedTelemetry.network_errors;
+        delete sanitizedTelemetry.encrypted_sensitive_data;
+      }
+    } else {
+      // Authorized engineering role: Decrypt AES-256 payload
       if (sanitizedTelemetry.encrypted_sensitive_data) {
         sanitizedTelemetry.encrypted_sensitive_data = decryptSensitiveData(sanitizedTelemetry.encrypted_sensitive_data);
       }
@@ -96,18 +105,18 @@ ticketRouter.get('/:id', (req: Request, res: Response) => {
   });
 });
 
-// 3. UPDATE TICKET STATUS (Requires Developer, Squad Lead, Admin, or Support Triage)
-ticketRouter.patch('/:id/status', requireRole(['super_admin', 'tenant_admin', 'squad_lead', 'developer', 'support_agent']), (req: Request, res: Response) => {
+// 3. UPDATE TICKET STATUS
+ticketRouter.patch('/:id/status', requirePermission('tickets:change_status'), (req: Request, res: Response) => {
   const { id } = req.params;
   const { status, note } = req.body;
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
 
-  // Support Agent RBAC guard
+  // Support Agent safety guard
   if (userRole === 'support_agent' && status !== 'TRIAGED' && status !== 'OPEN') {
     return res.status(403).json({
       error: 'Permission Denied',
-      message: 'Support agents are only authorized to triage tickets to TRIAGED or OPEN. Advancing to IN_DEV or RESOLVED requires an engineering or lead role.'
+      message: 'Support agents are authorized for triage (TRIAGED or OPEN). Advancing to IN_DEV or RESOLVED requires an engineering or lead role.'
     });
   }
 
@@ -145,7 +154,7 @@ ticketRouter.patch('/:id/status', requireRole(['super_admin', 'tenant_admin', 's
 });
 
 // 4. ADD TIMELINE EVENT / DEV NOTE
-ticketRouter.post('/:id/events', (req: Request, res: Response) => {
+ticketRouter.post('/:id/events', requirePermission('tickets:view'), (req: Request, res: Response) => {
   const { id } = req.params;
   const { content, is_internal_only } = req.body;
   const tenantId = req.auth!.tenantId;
@@ -156,8 +165,11 @@ ticketRouter.post('/:id/events', (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
-  // Client cannot create internal dev notes
-  const internalFlag = userRole === 'client_user' ? false : Boolean(is_internal_only);
+  // Dynamic Permission: Posting internal notes requires 'tickets:create_internal_notes'
+  let internalFlag = Boolean(is_internal_only);
+  if (internalFlag && !tenantStore.hasPermission(tenantId, userRole, 'tickets:create_internal_notes')) {
+    internalFlag = false; // Fallback to public client reply if not permitted to post internal quarantined notes
+  }
 
   const event: TicketEvent = {
     id: `ev-${Date.now()}`,
@@ -182,10 +194,11 @@ ticketRouter.post('/:id/events', (req: Request, res: Response) => {
   });
 });
 
-// 5. EDIT & UPDATE TICKET (Requires Developer or Squad Lead Role)
-ticketRouter.put('/:id', requireRole(['super_admin', 'tenant_admin', 'squad_lead', 'developer']), async (req: Request, res: Response) => {
+// 5. EDIT & UPDATE TICKET
+ticketRouter.put('/:id', requirePermission('tickets:edit'), async (req: Request, res: Response) => {
   const { id } = req.params;
   const tenantId = req.auth!.tenantId;
+  const userRole = req.auth!.role;
   const { 
     title, 
     description, 
@@ -201,6 +214,17 @@ ticketRouter.put('/:id', requireRole(['super_admin', 'tenant_admin', 'squad_lead
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found in this tenant scope.' });
+  }
+
+  // Check assignment permission if assignee is changing
+  if ((assigned_to !== undefined || assigned_squad !== undefined) && 
+      (assigned_to !== ticket.assigned_to || assigned_squad !== ticket.assigned_squad)) {
+    if (!tenantStore.hasPermission(tenantId, userRole, 'tickets:assign')) {
+      return res.status(403).json({
+        error: 'Permission Denied',
+        message: `Your current role '${userRole}' is not granted 'tickets:assign' to reassign squads or developers.`
+      });
+    }
   }
 
   const oldTitle = ticket.title;
@@ -230,8 +254,8 @@ ticketRouter.put('/:id', requireRole(['super_admin', 'tenant_admin', 'squad_lead
   if (isPostgresConnected) {
     try {
       await pool.query(
-        `UPDATE tickets SET title = $1, description = $2, category = $3, severity = $4, status = $5, assigned_squad = $6, updated_at = NOW() WHERE id = $7 AND tenant_id = $8`,
-        [ticket.title, ticket.description, ticket.category, ticket.severity, ticket.status, ticket.assigned_squad, id, tenantId]
+        `UPDATE tickets SET title = $1, description = $2, category = $3, severity = $4, status = $5, assigned_squad = $6, assigned_to_name = $7, rating = $8, updated_at = NOW() WHERE id = $9 AND tenant_id = $10`,
+        [ticket.title, ticket.description, ticket.category, ticket.severity, ticket.status, ticket.assigned_squad, ticket.assigned_to_name || null, ticket.rating !== undefined ? ticket.rating : null, id, tenantId]
       );
     } catch (dbErr) {
       console.error('[Database Update Error]', dbErr);
@@ -277,8 +301,8 @@ ticketRouter.put('/:id', requireRole(['super_admin', 'tenant_admin', 'squad_lead
   });
 });
 
-// 6. DELETE TICKET (Requires Squad Lead or Administrator Role)
-ticketRouter.delete('/:id', requireRole(['super_admin', 'tenant_admin', 'squad_lead']), async (req: Request, res: Response) => {
+// 6. DELETE TICKET
+ticketRouter.delete('/:id', requirePermission('tickets:delete'), async (req: Request, res: Response) => {
   const { id } = req.params;
   const tenantId = req.auth!.tenantId;
 

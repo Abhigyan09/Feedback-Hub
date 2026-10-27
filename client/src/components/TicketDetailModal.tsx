@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus } from '../types';
+import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix } from '../types';
 import { 
   X, 
   Terminal, 
@@ -35,6 +35,7 @@ interface TicketDetailModalProps {
   onAddEvent: (ticketId: string, content: string, isInternalOnly: boolean) => Promise<void>;
   onUpdateTicket?: (ticketId: string, updatedFields: Partial<Ticket>) => Promise<void>;
   onDeleteTicket?: (ticketId: string) => Promise<void>;
+  permissionsMatrix?: RolePermissionsMatrix | null;
 }
 
 export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
@@ -44,7 +45,8 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   onUpdateStatus,
   onAddEvent,
   onUpdateTicket,
-  onDeleteTicket
+  onDeleteTicket,
+  permissionsMatrix
 }) => {
   const [activeTab, setActiveTab] = useState<'TELEMETRY' | 'TIMELINE'>('TELEMETRY');
   const [events, setEvents] = useState<TicketEvent[]>([]);
@@ -101,15 +103,37 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
   if (!ticket) return null;
 
-  // Precise Role-Based Permissions
-  const canEditTicket = ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
-  const canDeleteTicket = ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
-  const canAssignAnyDeveloper = ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
-  const canSelfAssign = currentRole === 'developer';
-  const canChangeStatus = ['super_admin', 'tenant_admin', 'squad_lead', 'developer', 'support_agent'].includes(currentRole);
-  const canPostInternalNotes = ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
-  const canViewTechnicalTelemetry = ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
+  // Dynamic RBAC Permission Checks (with fallback)
+  const canEditTicket = permissionsMatrix 
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:edit']))
+    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
+
+  const canDeleteTicket = permissionsMatrix 
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:delete']))
+    : ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
+
+  const canAssignAnyDeveloper = permissionsMatrix 
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:assign']))
+    : ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
+
+  const canSelfAssign = permissionsMatrix
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:assign']))
+    : (currentRole === 'developer');
+
+  const canChangeStatus = permissionsMatrix 
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:change_status']))
+    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer', 'support_agent'].includes(currentRole);
+
+  const canPostInternalNotes = permissionsMatrix 
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:create_internal_notes']))
+    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
+
+  const canViewTechnicalTelemetry = permissionsMatrix 
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:view_telemetry_internal']))
+    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
+
   const isClientRole = currentRole === 'client_user';
+
 
   const roleAuthorNames: Record<UserRole, string> = {
     super_admin: 'Alex Turner (Super Admin)',
@@ -226,26 +250,22 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
           <div className="flex items-center space-x-2 shrink-0">
             {!isEditing && !isConfirmingDelete && (
               <>
-                {canEditTicket && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    title="Edit Ticket Details"
-                    className="px-2.5 py-1 text-xs font-mono border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 bg-white flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <Pencil className="w-3 h-3 text-purple-600" />
-                    <span>Edit</span>
-                  </button>
-                )}
-                {canDeleteTicket && (
-                  <button
-                    onClick={() => setIsConfirmingDelete(true)}
-                    title="Delete Ticket (Lead & Admin Only)"
-                    className="px-2.5 py-1 text-xs font-mono border border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 bg-red-50 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Delete</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsEditing(true)}
+                  title="Edit Ticket Details"
+                  className="px-2.5 py-1 text-xs font-mono border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 bg-white flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                >
+                  <Pencil className="w-3 h-3 text-purple-600" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => setIsConfirmingDelete(true)}
+                  title="Delete Ticket"
+                  className="px-2.5 py-1 text-xs font-mono border border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 bg-red-50 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Delete</span>
+                </button>
               </>
             )}
 
@@ -682,7 +702,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                           AES-256-GCM Decrypted Diagnostic Context
                         </h4>
                       </div>
-                      <pre className="bg-emerald-50 border border-emerald-200 p-3 font-mono text-xs text-emerald-900 overflow-x-auto">
+                      <pre className="bg-emerald-50 border border-emerald-200 p-3 font-mono text-xs text-emerald-900 whitespace-pre-wrap break-all max-w-full">
                         {ticket.telemetry.encrypted_sensitive_data}
                       </pre>
                     </div>

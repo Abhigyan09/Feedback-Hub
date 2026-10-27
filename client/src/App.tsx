@@ -6,7 +6,7 @@ import { TicketList } from './components/TicketList';
 import { TicketDetailModal } from './components/TicketDetailModal';
 import { WidgetSimulatorModal } from './components/WidgetSimulatorModal';
 import { SettingsView } from './components/SettingsView';
-import { Ticket, Tenant, UserRole } from './types';
+import { Ticket, Tenant, UserRole, RolePermissionsMatrix } from './types';
 import { 
   Activity, 
   ShieldAlert, 
@@ -27,14 +27,16 @@ import {
 
 export const App: React.FC = () => {
   const [currentTenantId, setCurrentTenantId] = useState<string>('tenant-acme-corp-001');
-  const [currentRole, setCurrentRole] = useState<UserRole>('developer');
+  const [currentRole, setCurrentRole] = useState<UserRole>('tenant_admin');
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [permissionsMatrix, setPermissionsMatrix] = useState<RolePermissionsMatrix | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isWidgetSimulatorOpen, setIsWidgetSimulatorOpen] = useState<boolean>(false);
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
+
 
   // Sidebar navigation state
   const [currentView, setCurrentView] = useState<SidebarView>('dashboard');
@@ -77,6 +79,26 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Load permissions for current tenant and role
+  const loadTenantPermissions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/tenants/permissions', {
+        headers: {
+          'x-tenant-id': currentTenantId,
+          'x-user-role': currentRole
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.matrix) {
+          setPermissionsMatrix(data.matrix);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load permissions matrix:', err);
+    }
+  }, [currentTenantId, currentRole]);
+
   useEffect(() => {
     loadTenants();
   }, [loadTenants]);
@@ -84,6 +106,10 @@ export const App: React.FC = () => {
   useEffect(() => {
     loadTickets();
   }, [loadTickets]);
+
+  useEffect(() => {
+    loadTenantPermissions();
+  }, [loadTenantPermissions]);
 
   // Real-time WebSocket connection
   useEffect(() => {
@@ -127,10 +153,23 @@ export const App: React.FC = () => {
       loadTickets();
     });
 
+    // Real-time permissions updated across clients
+    socket.on('PERMISSIONS_UPDATED', (data: { matrix?: RolePermissionsMatrix; message?: string }) => {
+      if (data.matrix) {
+        setPermissionsMatrix(data.matrix);
+      }
+      if (data.message) {
+        setAlertBanner(data.message);
+        setTimeout(() => setAlertBanner(null), 5000);
+      }
+      loadTickets();
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, [currentTenantId, currentRole, loadTickets, loadTenants]);
+  }, [currentTenantId, currentRole, loadTickets, loadTenants, loadTenantPermissions]);
+
 
   // Handle status update
   const handleUpdateStatus = async (ticketId: string, newStatus: string, note?: string) => {
@@ -232,9 +271,9 @@ export const App: React.FC = () => {
   const otherResolvedCount = resolvedTickets.length - resolvedBugsCount;
 
   return (
-    <div className="min-h-screen bg-[#f4f6fb] text-slate-900 flex font-sans select-none">
+    <div className="h-screen w-screen overflow-hidden bg-[#f4f6fb] text-slate-900 flex font-sans select-none">
       
-      {/* Sleek Dark Left Sidebar (Square Corners) */}
+      {/* Sleek Dark Left Sidebar (Square Corners - Sticky / Fixed) */}
       <Sidebar
         currentView={currentView}
         onSelectView={setCurrentView}
@@ -245,8 +284,8 @@ export const App: React.FC = () => {
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#f4f6fb]">
+      {/* Main Content Area - Dedicated Vertical Scroll Container */}
+      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-y-auto overflow-x-hidden bg-[#f4f6fb]">
         
         {/* Header (Clean Light Square Style) */}
         <Header
@@ -273,7 +312,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Dynamic Main Body Content */}
-        <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
+        <main className="flex-1 max-w-[1700px] w-full min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
           
           {/* VIEW 1: DASHBOARD (Matching Reference Image) */}
           {currentView === 'dashboard' && (
@@ -493,26 +532,76 @@ export const App: React.FC = () => {
           {/* VIEW 2: TOTAL TICKETS */}
           {currentView === 'total-tickets' && (
             <div className="space-y-6 animate-in fade-in duration-150">
+              
+              {/* Header Box */}
               <div className="bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
-                    <Layers className="w-5 h-5 text-indigo-600" />
-                    <span>Total Tickets ({totalCount})</span>
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Complete registry of all ingested incidents, bug reports, feature ideas, and satisfaction ratings across all client products.
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2.5">
+                    <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                      <Layers className="w-5 h-5 text-indigo-600" />
+                      <span>Total Tickets Registry</span>
+                    </h2>
+                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">
+                      {totalCount} Total
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Complete registry of all ingested incidents, bug reports, feature ideas, and customer feedback across all client products.
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setIsWidgetSimulatorOpen(true)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold self-start sm:self-auto flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>+ Ingest New Incident</span>
-                </button>
+                <div className="flex items-center space-x-2.5 shrink-0">
+                  <button
+                    onClick={() => setIsWidgetSimulatorOpen(true)}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>+ Ingest Incident</span>
+                  </button>
+                  <button
+                    onClick={loadTickets}
+                    disabled={isLoading}
+                    className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
               </div>
 
+              {/* 4 Summary Stat Cards for Total Tickets */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Total Ingested</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-slate-900">{totalCount}</span>
+                    <span className="text-[10px] font-mono text-indigo-600 font-bold bg-indigo-50 border border-indigo-200 px-2 py-0.5">100% Registry</span>
+                  </div>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block font-mono">Active Triage</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-amber-700">{openCount + inDevCount}</span>
+                    <span className="text-[10px] font-mono text-amber-700 font-bold bg-amber-50 border border-amber-200 px-2 py-0.5">Open & Dev</span>
+                  </div>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider block font-mono">Urgent & High</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-rose-700">{criticalCount}</span>
+                    <span className="text-[10px] font-mono text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-0.5">P0/P1 Priority</span>
+                  </div>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block font-mono">Resolved Benchmark</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-emerald-700">{resolvedCount}</span>
+                    <span className="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5">Verified</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Ticket Queue */}
               <TicketList
                 tickets={tickets}
                 onSelectTicket={setSelectedTicket}
@@ -528,16 +617,69 @@ export const App: React.FC = () => {
           {/* VIEW 3: TICKETS RESOLVED */}
           {currentView === 'resolved-tickets' && (
             <div className="space-y-6 animate-in fade-in duration-150">
-              <div className="bg-white border border-slate-200 p-5 shadow-2xs">
-                <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>Tickets Resolved ({resolvedCount})</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Closed and verified incidents meeting enterprise SLA resolution benchmarks.
-                </p>
+              
+              {/* Header Box */}
+              <div className="bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2.5">
+                    <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      <span>Resolved Incidents & SLA Compliance</span>
+                    </h2>
+                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-emerald-50 border border-emerald-200 text-emerald-700">
+                      {resolvedCount} Resolved
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Closed and verified incidents meeting enterprise SLA resolution benchmarks with complete audit trail.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2.5 shrink-0">
+                  <button
+                    onClick={loadTickets}
+                    disabled={isLoading}
+                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
               </div>
 
+              {/* 4 Summary Stat Cards for Resolved Tickets */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block font-mono">Total Resolved</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-emerald-700">{resolvedCount}</span>
+                    <span className="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5">100% Closed</span>
+                  </div>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider block font-mono">Bugs Fixed</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-slate-900">{resolvedBugsCount}</span>
+                    <span className="text-[10px] font-mono text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 px-2 py-0.5">Code Fixes</span>
+                  </div>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-purple-600 uppercase tracking-wider block font-mono">Ideas Implemented</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-slate-900">{otherResolvedCount}</span>
+                    <span className="text-[10px] font-mono text-purple-700 font-bold bg-purple-50 border border-purple-200 px-2 py-0.5">Delivered</span>
+                  </div>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block font-mono">Resolution SLA</span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-2xl font-bold font-mono text-emerald-700">99.8%</span>
+                    <span className="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5">On-Time</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Ticket Queue */}
               <TicketList
                 tickets={resolvedTickets}
                 onSelectTicket={setSelectedTicket}
@@ -546,6 +688,7 @@ export const App: React.FC = () => {
                 onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
                 onUpdateStatus={handleUpdateStatus}
                 onDeleteTicket={handleDeleteTicket}
+                isResolvedOnly={true}
               />
             </div>
           )}
@@ -556,9 +699,11 @@ export const App: React.FC = () => {
               <SettingsView 
                 currentTenantId={currentTenantId}
                 currentRole={currentRole}
+                permissionsMatrix={permissionsMatrix}
                 onTenantUpdated={() => {
                   loadTenants();
                   loadTickets();
+                  loadTenantPermissions();
                 }}
               />
             </div>
@@ -582,7 +727,9 @@ export const App: React.FC = () => {
         onAddEvent={handleAddEvent}
         onUpdateTicket={handleUpdateTicket}
         onDeleteTicket={handleDeleteTicket}
+        permissionsMatrix={permissionsMatrix}
       />
+
 
       {/* Embed Widget Simulator Modal */}
       <WidgetSimulatorModal

@@ -1,7 +1,8 @@
 import pg from 'pg';
 import { ENV } from './env.js';
-import { Tenant, User, Product, Ticket, TicketEvent } from '../types/index.js';
+import { Tenant, User, Product, Ticket, TicketEvent, UserRole, PermissionKey, RolePermissionsMatrix } from '../types/index.js';
 import { encryptSensitiveData } from '../services/crypto.js';
+import { createDefaultPermissionsMatrix, DEFAULT_ROLE_PERMISSIONS, ALL_ROLES, PERMISSION_DEFINITIONS } from './permissions.js';
 
 const { Pool } = pg;
 
@@ -22,10 +23,12 @@ export class MultiTenantStore {
   public products: Product[] = [];
   public tickets: Ticket[] = [];
   public events: TicketEvent[] = [];
+  public permissionsMatrix: Record<string, RolePermissionsMatrix> = {};
 
   constructor() {
     this.seedInitialData();
   }
+
 
   private seedInitialData() {
     // 1. Tenant A: Fintech Enterprise Client
@@ -143,18 +146,144 @@ export class MultiTenantStore {
     // Starting clean: No dummy tickets or dummy events
     this.tickets = [];
     this.events = [];
+
+    // Seed default bank-grade role permissions matrix for each tenant
+    this.permissionsMatrix[tenantA.id] = createDefaultPermissionsMatrix();
+    this.permissionsMatrix[tenantB.id] = createDefaultPermissionsMatrix();
+  }
+
+  /**
+   * Retrieves the current permissions matrix for a tenant.
+   * If not already initialized, seeds with bank-grade defaults.
+   */
+  public getPermissionsMatrix(tenantId: string): RolePermissionsMatrix {
+    if (!this.permissionsMatrix[tenantId]) {
+      this.permissionsMatrix[tenantId] = createDefaultPermissionsMatrix();
+    }
+    return this.permissionsMatrix[tenantId];
+  }
+
+  /**
+   * Check if a specific role possesses a permission in the given tenant.
+   * Super Admins inherently bypass tenant restrictions for system recovery.
+   */
+  public hasPermission(tenantId: string, role: UserRole, permissionKey: PermissionKey): boolean {
+    if (role === 'super_admin') {
+      return true;
+    }
+    const matrix = this.getPermissionsMatrix(tenantId);
+    const rolePerms = matrix[role];
+    if (!rolePerms) {
+      return false;
+    }
+    return Boolean(rolePerms[permissionKey]);
+  }
+
+  /**
+   * Update permissions for a specific role in a tenant.
+   */
+  public updateRolePermissions(
+    tenantId: string, 
+    role: UserRole, 
+    permissions: Partial<Record<PermissionKey, boolean>>
+  ): RolePermissionsMatrix {
+    const matrix = this.getPermissionsMatrix(tenantId);
+    if (!matrix[role]) {
+      matrix[role] = { ...DEFAULT_ROLE_PERMISSIONS[role] };
+    }
+    matrix[role] = {
+      ...matrix[role],
+      ...permissions
+    };
+    return matrix;
+  }
+
+  /**
+   * Reset role permissions for a tenant (either a specific role or all roles).
+   */
+  public resetRolePermissions(tenantId: string, targetRole?: UserRole): RolePermissionsMatrix {
+    const matrix = this.getPermissionsMatrix(tenantId);
+    if (targetRole) {
+      matrix[targetRole] = { ...DEFAULT_ROLE_PERMISSIONS[targetRole] };
+    } else {
+      for (const role of ALL_ROLES) {
+        matrix[role] = { ...DEFAULT_ROLE_PERMISSIONS[role] };
+      }
+    }
+    return matrix;
   }
 }
 
 export const tenantStore = new MultiTenantStore();
 
+/**
+ * Persist role permissions to live PostgreSQL database if connected.
+ */
+export async function persistRolePermissionsToDb(
+  tenantId: string, 
+  role: UserRole, 
+  permissions: Record<PermissionKey, boolean>
+) {
+  if (!isPostgresConnected) return;
+
+  try {
+    for (const [key, isGranted] of Object.entries(permissions)) {
+      const def = PERMISSION_DEFINITIONS.find(p => p.key === key);
+      const moduleName = def?.module || key.split(':')[0] || 'general';
+      const actionName = def?.action || key.split(':')[1] || 'action';
+      const desc = def?.description || '';
+
+      await pool.query(
+        `INSERT INTO role_permissions (tenant_id, role, permission_key, module, action, description, is_granted, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+         ON CONFLICT (tenant_id, role, permission_key)
+         DO UPDATE SET is_granted = $7, updated_at = NOW()`,
+        [tenantId, role, key, moduleName, actionName, desc, isGranted]
+      );
+    }
+  } catch (err) {
+    console.error('[Database Permissions Persist Error]', err);
+  }
+}
+
+/**
+ * Synchronize role permissions from live PostgreSQL database into in-memory store.
+ */
+export async function loadRolePermissionsFromDb(tenantId: string): Promise<void> {
+  if (!isPostgresConnected) return;
+
+  try {
+    const res = await pool.query(
+      `SELECT role, permission_key, is_granted FROM role_permissions WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    if (res.rows.length > 0) {
+      const matrix = tenantStore.getPermissionsMatrix(tenantId);
+      for (const row of res.rows) {
+        const role = row.role as UserRole;
+        const key = row.permission_key as PermissionKey;
+        if (matrix[role]) {
+          matrix[role][key] = Boolean(row.is_granted);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Database Permissions Load Error]', err);
+  }
+}
+
 // Attempt test connection to Postgres
 pool.query('SELECT NOW()')
-  .then(() => {
+  .then(async () => {
     isPostgresConnected = true;
     console.log('[Database] Connected to PostgreSQL 16 successfully with RLS enabled.');
+    // Attempt to sync permissions for initial tenants
+    await loadRolePermissionsFromDb('tenant-acme-corp-001');
+    await loadRolePermissionsFromDb('tenant-medsync-002');
   })
   .catch((err) => {
     isPostgresConnected = false;
     console.log('[Database] PostgreSQL instance not detected. Operating with Active In-Memory Multi-Tenant Store.');
   });
+

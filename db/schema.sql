@@ -27,8 +27,15 @@ CREATE TABLE tenants (
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
     plan VARCHAR(50) DEFAULT 'ENTERPRISE',
+    isolation_standard VARCHAR(100) DEFAULT 'PostgreSQL 16 RLS (Bank-Grade)',
     is_active BOOLEAN DEFAULT TRUE,
     allowed_domains TEXT[] DEFAULT '{}',
+    webhook_url TEXT,
+    notification_email VARCHAR(255),
+    auto_capture_telemetry BOOLEAN DEFAULT TRUE,
+    auto_capture_network BOOLEAN DEFAULT TRUE,
+    require_email BOOLEAN DEFAULT FALSE,
+    default_squad VARCHAR(100) DEFAULT 'Core Platform & API Squad',
     security_settings JSONB DEFAULT '{
         "mfa_enforced": true,
         "session_timeout_minutes": 60,
@@ -61,11 +68,14 @@ CREATE TABLE products (
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(100) NOT NULL,
+    description TEXT,
     api_key_hash VARCHAR(255) NOT NULL,
+    raw_api_key VARCHAR(255),
     environment VARCHAR(50) DEFAULT 'production',
     webhook_url TEXT,
     webhook_secret_encrypted TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT unique_tenant_product_slug UNIQUE (tenant_id, slug)
 );
 CREATE INDEX idx_products_tenant ON products(tenant_id);
@@ -85,6 +95,9 @@ CREATE TABLE tickets (
     reporter_email VARCHAR(255),
     assigned_squad VARCHAR(100) DEFAULT 'CORE_API',
     assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+    assigned_to_name VARCHAR(255),
+    domain_origin VARCHAR(255),
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
     sla_due_at TIMESTAMPTZ,
     resolved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -139,6 +152,23 @@ CREATE TABLE audit_logs (
 );
 CREATE INDEX idx_audit_tenant_time ON audit_logs(tenant_id, timestamp DESC);
 
+-- 9. ROLE PERMISSIONS (Dynamic Granular RBAC Mapping per Tenant & Role)
+CREATE TABLE role_permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    role user_role NOT NULL,
+    permission_key VARCHAR(100) NOT NULL,
+    module VARCHAR(50) NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    description VARCHAR(255),
+    is_granted BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_tenant_role_permission UNIQUE (tenant_id, role, permission_key)
+);
+CREATE INDEX idx_role_permissions_tenant_role ON role_permissions(tenant_id, role);
+CREATE INDEX idx_role_permissions_tenant_perm ON role_permissions(tenant_id, permission_key);
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -147,6 +177,7 @@ ALTER TABLE ticket_telemetry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ticket_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
 
 -- Dynamic Tenant Context Check
 CREATE POLICY rls_tickets_tenant ON tickets
@@ -174,3 +205,8 @@ CREATE POLICY rls_products_tenant ON products
 CREATE POLICY rls_audit_tenant ON audit_logs
     FOR SELECT
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
+
+CREATE POLICY rls_role_permissions_tenant ON role_permissions
+    FOR ALL
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
+
