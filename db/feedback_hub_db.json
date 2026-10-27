@@ -19,7 +19,7 @@
       "require_email": true,
       "default_squad": "Checkout & Billing Squad",
       "created_at": "2026-09-27T16:48:10.141Z",
-      "updated_at": "2026-10-27T16:57:18.528Z"
+      "updated_at": "2026-10-27T17:15:39.020Z"
     },
     {
       "id": "tenant-medsync-002",
@@ -726,5 +726,5 @@
       }
     }
   },
-  "last_updated": "2026-10-27T16:59:40.516Z"
+  "last_updated": "2026-10-27T17:15:39.385Z"
 }
