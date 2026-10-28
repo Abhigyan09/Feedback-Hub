@@ -256,32 +256,6 @@
       "updated_at": "2026-10-27T16:33:10.154Z"
     },
     {
-      "id": "ticket-1043",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-dashboard",
-      "product_name": "Merchant Admin Portal",
-      "short_code": "FB-1043",
-      "title": "Merchant Settlement Reconciliation Discrepancy in EUR/USD Export",
-      "description": "Rounding discrepancy of $0.01 observed on EUR/USD currency conversion when generating monthly settlement ledger CSV for European merchants.",
-      "category": "BUG",
-      "severity": "HIGH",
-      "status": "IN_QA",
-      "reporter_email": "accounting@merchant-partner.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-02",
-      "assigned_to_name": "Priya Nair (Frontend Platform Dev)",
-      "domain_origin": "merchant.acme.com",
-      "telemetry": {
-        "page_url": "https://merchant.acme.com/reports/settlement",
-        "domain_origin": "merchant.acme.com",
-        "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-        "viewport_dimensions": "1680x1050"
-      },
-      "sla_due_at": "2026-10-27T18:48:10.154Z",
-      "created_at": "2026-10-27T13:48:10.154Z",
-      "updated_at": "2026-10-27T16:08:10.154Z"
-    },
-    {
       "id": "ticket-1044",
       "tenant_id": "tenant-acme-corp-001",
       "product_id": "prod-checkout-gateway",
@@ -773,5 +747,5 @@
       }
     }
   },
-  "last_updated": "2026-10-28T13:51:56.843Z"
+  "last_updated": "2026-10-28T15:31:01.050Z"
 }

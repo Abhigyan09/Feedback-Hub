@@ -53,10 +53,21 @@ ticketRouter.get('/', requirePermission('tickets:view'), (req: Request, res: Res
 });
 
 // CLEAR ALL TICKETS FOR CURRENT TENANT
-ticketRouter.delete('/clear', (req: Request, res: Response) => {
+ticketRouter.delete('/clear', async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   tenantStore.tickets = tenantStore.tickets.filter(t => t.tenant_id !== tenantId);
   tenantStore.events = tenantStore.events.filter(e => e.tenant_id !== tenantId);
+
+  // If live Postgres is connected, purge from DB
+  if (isPostgresConnected) {
+    try {
+      await pool.query('DELETE FROM tickets WHERE tenant_id = $1', [tenantId]);
+      await pool.query('DELETE FROM ticket_events WHERE tenant_id = $1', [tenantId]);
+    } catch (err) {
+      console.error('[Database Clear Error]', err);
+    }
+  }
+
   tenantStore.saveToDisk();
 
   broadcastTicketEvent(tenantId, 'TICKET_UPDATED', { ticket: null as any, event: null as any });
@@ -65,7 +76,7 @@ ticketRouter.delete('/clear', (req: Request, res: Response) => {
 });
 
 // QUICK-SEED 3 DYNAMIC LIVE INCIDENTS
-ticketRouter.post('/seed-demo', (req: Request, res: Response) => {
+ticketRouter.post('/seed-demo', async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const now = Date.now();
   
@@ -155,6 +166,7 @@ ticketRouter.post('/seed-demo', (req: Request, res: Response) => {
 
   sampleData.forEach(t => tenantStore.tickets.unshift(t));
   tenantStore.saveToDisk();
+
   sampleData.forEach(t => broadcastTicketEvent(tenantId, 'NEW_TICKET_ALERT', { ticket: t, message: `Dynamic Incident ${t.short_code} seeded.` }));
 
   res.status(201).json({

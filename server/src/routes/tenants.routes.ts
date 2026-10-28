@@ -9,7 +9,7 @@ import { PERMISSION_DEFINITIONS, ALL_ROLES } from '../config/permissions.js';
 export const tenantRouter = Router();
 
 // 1. GET TENANT METADATA & MONITORED PRODUCTS
-tenantRouter.get('/current', requireAnyPermission(['tenant:view_profile', 'permissions:view']), (req: Request, res: Response) => {
+tenantRouter.get('/current', (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const tenant = tenantStore.tenants.find(t => t.id === tenantId);
   if (!tenant) {

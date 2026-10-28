@@ -121,17 +121,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   return (
     <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="h-16 flex items-center justify-between gap-3">
+        <div className="h-16 flex items-center justify-between gap-3 overflow-hidden">
           
           {/* Left section: Dynamic Tenant & Role selector pill & Live status pills */}
-          <div className="flex items-center space-x-2.5 min-w-0">
+          <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0">
             
             {/* Dynamic Tenant Selector Dropdown */}
-            <div className="relative" ref={tenantMenuRef}>
+            <div className="relative flex-shrink-0" ref={tenantMenuRef}>
               <button
                 type="button"
                 onClick={() => setIsTenantMenuOpen(prev => !prev)}
-                className="flex items-center space-x-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-[2px] cursor-pointer transition-colors shadow-2xs group text-left"
+                className="flex items-center space-x-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-[2px] cursor-pointer transition-colors shadow-2xs group text-left whitespace-nowrap"
                 aria-label="Select Active Tenant"
               >
                 <Building2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
@@ -174,18 +174,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
 
             {/* Role Switcher Pill */}
-            <div className="relative hidden sm:block" ref={roleMenuRef}>
+            <div className="relative hidden sm:block flex-shrink-0" ref={roleMenuRef}>
               <button
                 type="button"
                 onClick={() => setIsRoleMenuOpen(prev => !prev)}
-                className="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-[2px] cursor-pointer text-xs transition-colors shadow-2xs"
+                className="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-[2px] cursor-pointer text-xs transition-colors shadow-2xs whitespace-nowrap"
                 title="Switch Active RBAC Role"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                <span className="font-semibold text-slate-700 capitalize text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+                <span className="font-semibold text-slate-700 capitalize text-[11px] whitespace-nowrap">
                   {currentRole.replace('_', ' ')}
                 </span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <ChevronDown className="w-3 h-3 text-slate-400 flex-shrink-0" />
               </button>
 
               {isRoleMenuOpen && (
@@ -193,7 +193,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Test RBAC Role
                   </div>
-                  {(['super_admin', 'tenant_admin', 'squad_lead', 'developer', 'support_agent', 'client_user'] as UserRole[]).map(role => (
+                  {(['developer', 'squad_lead', 'client_user', 'tenant_admin'] as UserRole[]).map(role => (
                     <button
                       key={role}
                       type="button"
@@ -215,52 +215,39 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               )}
             </div>
 
-            {/* Dynamic SLA / Health Pill */}
-            <div className="hidden md:flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-[2px] text-xs text-slate-600 shadow-2xs">
-              <Sun className={`w-3.5 h-3.5 ${numericSla >= 99 ? 'text-amber-500' : numericSla >= 90 ? 'text-amber-600' : 'text-red-500'}`} />
-              <span className="font-semibold text-slate-800 text-[11px] font-mono">{slaScore}% SLA</span>
-              <span className={`text-[10px] font-bold ${slaStatusColor}`}>{slaStatusLabel}</span>
+            {/* Dynamic SLA / Health Pill - hidden on smaller viewports */}
+            <div className="hidden lg:flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-[2px] text-xs text-slate-600 shadow-2xs whitespace-nowrap flex-shrink-0">
+              <Sun className={`w-3.5 h-3.5 flex-shrink-0 ${numericSla >= 99 ? 'text-amber-500' : numericSla >= 90 ? 'text-amber-600' : 'text-red-500'}`} />
+              <span className="font-semibold text-slate-800 text-[11px] font-mono whitespace-nowrap">{slaScore}% SLA</span>
+              <span className={`text-[10px] font-bold whitespace-nowrap ${slaStatusColor}`}>{slaStatusLabel}</span>
             </div>
 
-            {/* Live Time Pill */}
-            <div className="hidden lg:flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-[2px] text-xs text-slate-600 shadow-2xs font-mono">
-              <Clock className="w-3.5 h-3.5 text-purple-600" />
-              <span className="font-medium text-slate-700 text-[11px]">{currentTime || 'LIVE CLOCK'}</span>
+            {/* Live Time Pill - shown on extra large viewports */}
+            <div className="hidden xl:flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-[2px] text-xs text-slate-600 shadow-2xs font-mono whitespace-nowrap flex-shrink-0">
+              <Clock className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+              <span className="font-medium text-slate-700 text-[11px] whitespace-nowrap">{currentTime || 'LIVE CLOCK'}</span>
             </div>
 
           </div>
 
-          {/* Right section: Action buttons, Alerts, User Pill */}
+          {/* Right section: Primary Actions, Alerts, User Pill */}
           <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0">
             
-            {/* Simulate Telemetry Button */}
-            {onOpenSimulator && (
-              <button
-                type="button"
-                onClick={onOpenSimulator}
-                title="Simulate Embedded Client SDK Telemetry"
-                className="hidden md:flex items-center space-x-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-[2px] text-xs font-semibold shadow-2xs transition-colors"
-              >
-                <Cpu className="w-3.5 h-3.5 text-purple-600" />
-                <span>Simulate Telemetry</span>
-              </button>
-            )}
-
             {/* Primary Navy Blue 'New Incident' Button */}
             <button
               type="button"
               onClick={onNewIncidentClick}
-              className="bg-[#0b1b36] hover:bg-[#12284c] text-white px-3.5 sm:px-4 py-2 rounded-[2px] text-xs font-semibold flex items-center space-x-1.5 shadow-sm hover:shadow transition-all active:scale-[0.98]"
+              className="bg-[#0b1b36] hover:bg-[#12284c] text-white px-3.5 sm:px-4 py-2 rounded-[2px] text-xs font-semibold flex items-center space-x-1.5 shadow-sm hover:shadow transition-all active:scale-[0.98] whitespace-nowrap flex-shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="font-medium tracking-tight">New Incident</span>
+              <span className="font-medium tracking-tight whitespace-nowrap">New Incident</span>
             </button>
 
             {/* Notification Bell */}
             <button
               type="button"
               title="Alerts and Notifications"
-              className="relative p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[2px] text-slate-600 transition-colors"
+              className="relative p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[2px] text-slate-600 transition-colors flex-shrink-0 cursor-pointer"
             >
               <Bell className="w-4 h-4 text-slate-600" />
               {totalOpenTickets > 0 && (
@@ -271,15 +258,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </button>
 
             {/* Dynamic User Profile Pill */}
-            <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 hover:border-purple-200 pl-1.5 pr-3 py-1 rounded-[2px] cursor-pointer transition-colors shadow-2xs">
-              <div className="w-7 h-7 rounded-[2px] bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 hover:border-purple-200 pl-1.5 pr-3 py-1 rounded-[2px] cursor-pointer transition-colors shadow-2xs flex-shrink-0">
+              <div className="w-7 h-7 rounded-[2px] bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs flex-shrink-0">
                 {user.initials}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-semibold text-slate-800 leading-tight">
+                <span className="text-xs font-semibold text-slate-800 leading-tight whitespace-nowrap truncate max-w-[130px]">
                   {user.name}
                 </span>
-                <span className="text-[10px] text-purple-600 font-medium leading-none">
+                <span className="text-[10px] text-purple-600 font-medium leading-none whitespace-nowrap">
                   {user.role}
                 </span>
               </div>
