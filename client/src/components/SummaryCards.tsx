@@ -37,10 +37,10 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
   ).length;
 
   const urgentCritical = tickets.filter(
-    t => normalizeSeverity(t.severity) === 'Urgent' && (t.category === 'API_FAILURE' || t.category === 'SECURITY' || t.category === 'BUG')
+    t => normalizeSeverity(t.severity) === 'Urgent' && (t.category === 'API_FAILURE' || t.category === 'SECURITY')
   ).length;
   const urgentOther = tickets.filter(
-    t => normalizeSeverity(t.severity) === 'Urgent' && !(t.category === 'API_FAILURE' || t.category === 'SECURITY' || t.category === 'BUG')
+    t => normalizeSeverity(t.severity) === 'Urgent' && t.category !== 'API_FAILURE' && t.category !== 'SECURITY'
   ).length;
 
   const resolvedBug = tickets.filter(
