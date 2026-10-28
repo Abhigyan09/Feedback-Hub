@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix, TeamMember } from '../types';
 import { 
   X, 
   Terminal, 
@@ -21,6 +21,9 @@ import {
 
 export const DEVELOPER_ROSTER = [
   { id: '', name: 'Unassigned' },
+  { id: 'member-1', name: 'Elena Rostova (Squad Lead & Arch)' },
+  { id: 'member-2', name: 'Marcus Chen (Senior Engineer)' },
+  { id: 'member-3', name: 'Sarah Jenkins (Senior Engineer)' },
   { id: 'user-dev-01', name: 'Rahul Sharma (Senior Backend Dev)' },
   { id: 'user-dev-02', name: 'Priya Nair (Frontend Platform Dev)' },
   { id: 'user-dev-03', name: 'Amit Patel (Full-Stack Reliability Dev)' },
@@ -36,6 +39,7 @@ interface TicketDetailModalProps {
   onUpdateTicket?: (ticketId: string, updatedFields: Partial<Ticket>) => Promise<void>;
   onDeleteTicket?: (ticketId: string) => Promise<void>;
   permissionsMatrix?: RolePermissionsMatrix | null;
+  teamMembers?: TeamMember[];
 }
 
 export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
@@ -46,8 +50,19 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   onAddEvent,
   onUpdateTicket,
   onDeleteTicket,
-  permissionsMatrix
+  permissionsMatrix,
+  teamMembers
 }) => {
+  const effectiveRoster = useMemo(() => {
+    if (teamMembers && teamMembers.length > 0) {
+      return [
+        { id: '', name: 'Unassigned' },
+        ...teamMembers.map(m => ({ id: m.id, name: `${m.name} (${m.role})` }))
+      ];
+    }
+    return DEVELOPER_ROSTER;
+  }, [teamMembers]);
+
   const [activeTab, setActiveTab] = useState<'TELEMETRY' | 'TIMELINE'>('TELEMETRY');
   const [events, setEvents] = useState<TicketEvent[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -387,13 +402,13 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   value={editAssignedTo}
                   onChange={(e) => {
                     const selectedId = e.target.value;
-                    const dev = DEVELOPER_ROSTER.find(d => d.id === selectedId);
+                    const dev = effectiveRoster.find(d => d.id === selectedId);
                     setEditAssignedTo(selectedId);
                     setEditAssignedToName(dev && dev.id ? dev.name : '');
                   }}
                   className="w-full bg-white border border-slate-300 p-2 text-indigo-700 font-semibold focus:outline-none focus:border-indigo-500 cursor-pointer shadow-2xs"
                 >
-                  {DEVELOPER_ROSTER.map(dev => (
+                  {effectiveRoster.map(dev => (
                     <option key={dev.id} value={dev.id} className="bg-white text-slate-900">
                       {dev.name}
                     </option>
@@ -474,7 +489,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                         value={ticket.assigned_to || ''}
                         onChange={async (e) => {
                           const selectedId = e.target.value;
-                          const dev = DEVELOPER_ROSTER.find(d => d.id === selectedId);
+                          const dev = effectiveRoster.find(d => d.id === selectedId);
                           if (onUpdateTicket) {
                             await onUpdateTicket(ticket.id, {
                               assigned_to: selectedId || undefined,
@@ -485,7 +500,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                         }}
                         className="bg-transparent text-indigo-700 text-xs font-mono font-semibold focus:outline-none cursor-pointer"
                       >
-                        {DEVELOPER_ROSTER.map(dev => (
+                        {effectiveRoster.map(dev => (
                           <option key={dev.id} value={dev.id} className="bg-white text-slate-900">
                             {dev.name}
                           </option>

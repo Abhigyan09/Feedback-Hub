@@ -57,6 +57,7 @@ ticketRouter.delete('/clear', (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   tenantStore.tickets = tenantStore.tickets.filter(t => t.tenant_id !== tenantId);
   tenantStore.events = tenantStore.events.filter(e => e.tenant_id !== tenantId);
+  tenantStore.saveToDisk();
 
   broadcastTicketEvent(tenantId, 'TICKET_UPDATED', { ticket: null as any, event: null as any });
 
@@ -153,6 +154,7 @@ ticketRouter.post('/seed-demo', (req: Request, res: Response) => {
   ];
 
   sampleData.forEach(t => tenantStore.tickets.unshift(t));
+  tenantStore.saveToDisk();
   sampleData.forEach(t => broadcastTicketEvent(tenantId, 'NEW_TICKET_ALERT', { ticket: t, message: `Dynamic Incident ${t.short_code} seeded.` }));
 
   res.status(201).json({

@@ -956,6 +956,7 @@ export const App: React.FC = () => {
         onUpdateTicket={handleUpdateTicket}
         onDeleteTicket={handleDeleteTicket}
         permissionsMatrix={permissionsMatrix}
+        teamMembers={teamMembers}
       />
 
       {/* Create Live Incident Modal */}

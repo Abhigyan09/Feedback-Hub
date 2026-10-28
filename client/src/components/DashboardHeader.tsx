@@ -193,7 +193,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Test RBAC Role
                   </div>
-                  {(['developer', 'squad_lead', 'client_user', 'tenant_admin'] as UserRole[]).map(role => (
+                  {(['super_admin', 'tenant_admin', 'squad_lead', 'developer', 'support_agent', 'client_user'] as UserRole[]).map(role => (
                     <button
                       key={role}
                       type="button"
