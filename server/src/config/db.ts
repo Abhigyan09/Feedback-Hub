@@ -184,19 +184,19 @@ export class MultiTenantStore {
     // Users
     this.users = [
       {
-        id: 'user-lead-01',
+        id: 'member-1',
         tenant_id: tenantA.id,
-        email: 'lead.dev@acme.com',
-        full_name: 'Vikram Mehta (API Squad Lead)',
+        email: 'elena.rostova@feedbackhub.io',
+        full_name: 'Elena Rostova',
         role: 'squad_lead',
         is_active: true,
         created_at: new Date().toISOString()
       },
       {
-        id: 'user-dev-01',
+        id: 'member-2',
         tenant_id: tenantA.id,
-        email: 'dev.rahul@acme.com',
-        full_name: 'Rahul Sharma (Senior Backend Dev)',
+        email: 'marcus.chen@feedbackhub.io',
+        full_name: 'Marcus Chen',
         role: 'developer',
         is_active: true,
         created_at: new Date().toISOString()
@@ -220,11 +220,11 @@ export class MultiTenantStore {
         created_at: new Date().toISOString()
       },
       {
-        id: 'user-client-01',
+        id: 'member-3',
         tenant_id: tenantA.id,
-        email: 'operations@partner-client.com',
-        full_name: 'Sarah Jenkins (Client Ops Director)',
-        role: 'client_user',
+        email: 'sarah.jenkins@feedbackhub.io',
+        full_name: 'Sarah Jenkins',
+        role: 'developer',
         is_active: true,
         created_at: new Date().toISOString()
       }

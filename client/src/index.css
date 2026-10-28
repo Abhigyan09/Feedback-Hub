@@ -20,13 +20,14 @@ html, body, #root {
 }
 
 body {
+  margin: 0;
   background-color: #f4f6fb;
   color: #0f172a;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbars in Stripe Squarish Style */
+/* Custom Scrollbars in clean style */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

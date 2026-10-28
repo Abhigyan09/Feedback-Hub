@@ -6,7 +6,7 @@ export type UserRole =
   | 'support_agent' 
   | 'client_user';
 
-export type TicketCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE';
+export type TicketCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE' | 'SECURITY';
 export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL' | 'BLOCKER';
 export type TicketStatus = 'OPEN' | 'TRIAGED' | 'IN_DEV' | 'IN_QA' | 'RESOLVED' | 'CLOSED';
 
@@ -98,6 +98,7 @@ export interface Ticket {
   sla_due_at: string;
   created_at: string;
   updated_at: string;
+  waiting_for_client?: boolean;
 }
 
 export type PermissionModule = 'tickets' | 'products' | 'tenant' | 'permissions' | 'audit';

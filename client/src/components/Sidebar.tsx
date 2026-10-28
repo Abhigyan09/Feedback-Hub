@@ -13,24 +13,31 @@ import {
 export type SidebarView = 'dashboard' | 'total-tickets' | 'resolved-tickets' | 'settings';
 
 interface SidebarProps {
-  currentView: SidebarView;
-  onSelectView: (view: SidebarView) => void;
-  totalTicketsCount: number;
-  resolvedTicketsCount: number;
-  onLogout: () => void;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
+  currentView?: SidebarView;
+  onSelectView?: (view: SidebarView) => void;
+  totalTicketsCount?: number;
+  resolvedTicketsCount?: number;
+  onLogout?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  activeTab?: string;
+  openCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  currentView,
-  onSelectView,
-  totalTicketsCount,
-  resolvedTicketsCount,
-  onLogout,
-  isCollapsed,
-  onToggleCollapse
+  currentView = 'dashboard',
+  onSelectView = () => {},
+  totalTicketsCount = 0,
+  resolvedTicketsCount = 0,
+  onLogout = () => {},
+  isCollapsed = false,
+  onToggleCollapse = () => {},
+  activeTab,
+  openCount
 }) => {
+  const effectiveView = (activeTab as SidebarView) || currentView;
+  const effectiveTicketsCount = openCount !== undefined ? openCount : totalTicketsCount;
+
   const menuItems = [
     {
       id: 'dashboard' as SidebarView,
@@ -44,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       index: '02',
       label: 'Total Tickets',
       icon: Layers,
-      badge: totalTicketsCount
+      badge: effectiveTicketsCount
     },
     {
       id: 'resolved-tickets' as SidebarView,
@@ -105,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <nav className="p-3 space-y-1.5 mt-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentView === item.id;
+            const isActive = effectiveView === item.id;
 
             return (
               <button

@@ -6,7 +6,7 @@ export type UserRole =
   | 'support_agent' 
   | 'client_user';
 
-export type TicketCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE';
+export type TicketCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE' | 'SECURITY';
 export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL' | 'BLOCKER';
 export type TicketStatus = 'OPEN' | 'TRIAGED' | 'IN_DEV' | 'IN_QA' | 'RESOLVED' | 'CLOSED';
 
@@ -56,6 +56,7 @@ export interface Ticket {
   sla_due_at: string;
   created_at: string;
   updated_at: string;
+  waiting_for_client?: boolean;
 }
 
 export interface Tenant {
@@ -131,3 +132,12 @@ export interface PermissionDefinition {
 
 export type RolePermissionsMatrix = Record<UserRole, Record<PermissionKey, boolean>>;
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  avatarInitials: string;
+  status: 'ONLINE' | 'AWAY' | 'ON_CALL';
+  color: string;
+}
