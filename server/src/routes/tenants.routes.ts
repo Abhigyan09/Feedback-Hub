@@ -139,7 +139,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
   if (fullMatrix && typeof fullMatrix === 'object') {
     for (const r of ALL_ROLES) {
       if (fullMatrix[r] && typeof fullMatrix[r] === 'object') {
-        if (r === 'super_admin' && fullMatrix[r]['permissions:edit'] === false) {
+        if ((r === 'super_admin' || r === 'tenant_admin') && fullMatrix[r]['permissions:edit'] === false) {
           fullMatrix[r]['permissions:edit'] = true; // prevent lockout
         }
         tenantStore.updateRolePermissions(tenantId, r as UserRole, fullMatrix[r]);
@@ -168,8 +168,8 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
       return res.status(400).json({ error: `Invalid role: ${role}` });
     }
 
-    // Safety constraint: Prevent removing permissions:edit from super_admin to prevent irreversible lockout
-    if (role === 'super_admin' && permissions['permissions:edit'] === false) {
+    // Safety constraint: Prevent removing permissions:edit from super_admin or tenant_admin to prevent irreversible lockout
+    if ((role === 'super_admin' || role === 'tenant_admin') && permissions['permissions:edit'] === false) {
       permissions['permissions:edit'] = true;
     }
 

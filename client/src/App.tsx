@@ -641,6 +641,7 @@ export const App: React.FC = () => {
                 onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
                 onUpdateStatus={handleUpdateStatus}
                 onDeleteTicket={handleDeleteTicket}
+                permissionsMatrix={permissionsMatrix}
               />
             </div>
           )}
@@ -720,6 +721,7 @@ export const App: React.FC = () => {
                 onUpdateStatus={handleUpdateStatus}
                 onDeleteTicket={handleDeleteTicket}
                 isResolvedOnly={true}
+                permissionsMatrix={permissionsMatrix}
               />
             </div>
           )}

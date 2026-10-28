@@ -37,6 +37,10 @@ import {
   Users
 } from 'lucide-react';
 import { Product, Tenant, UserRole, PermissionDefinition, PermissionKey, RolePermissionsMatrix, PermissionModule } from '../types';
+import { 
+  PERMISSION_DEFINITIONS as DEFAULT_PERMISSION_DEFINITIONS, 
+  createDefaultPermissionsMatrix 
+} from '../constants/permissions';
 
 export const ALL_SYSTEM_ROLES: UserRole[] = [
   'super_admin',
@@ -177,8 +181,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   }>({ tested: false, loading: false, online: false });
 
   // Permissions State
-  const [permissionsMatrix, setPermissionsMatrix] = useState<RolePermissionsMatrix | null>(initialPermissionsMatrix || null);
-  const [permissionDefinitions, setPermissionDefinitions] = useState<PermissionDefinition[]>([]);
+  const [permissionsMatrix, setPermissionsMatrix] = useState<RolePermissionsMatrix>(() => {
+    return initialPermissionsMatrix || createDefaultPermissionsMatrix();
+  });
+  const [permissionDefinitions, setPermissionDefinitions] = useState<PermissionDefinition[]>(DEFAULT_PERMISSION_DEFINITIONS);
   const [selectedRoleForPerms, setSelectedRoleForPerms] = useState<UserRole>(currentRole);
   const [permMatrixView, setPermMatrixView] = useState<'cards' | 'grid'>('cards');
   const [permSearchQuery, setPermSearchQuery] = useState('');
@@ -593,6 +599,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           'x-user-role': currentRole
         },
         body: JSON.stringify({
+          matrix: permissionsMatrix,
           role: selectedRoleForPerms,
           permissions: permissionsMatrix[selectedRoleForPerms]
         })
@@ -1496,80 +1503,82 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {activeTab === 'permissions' && (
       <div className="bg-white border border-slate-200 p-5 space-y-4 shadow-2xs">
 
-        {/* Clean Header & Action Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-              <ShieldCheck className="w-4 h-4" />
+        {/* Header & Action Bar matching screenshot */}
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="flex items-start space-x-3">
+            <div className="w-9 h-9 bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 mt-0.5">
+              <Shield className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
-                  Role-Based Access Control
+              <div className="flex items-center flex-wrap gap-2.5">
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight uppercase">
+                  ROLE-BASED ACCESS CONTROL (DYNAMIC RBAC MATRIX)
                 </h3>
-                <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-100 font-semibold px-2 py-0.5">
-                  5 Modules • 23 Permissions
+                <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 font-semibold px-2 py-0.5 uppercase">
+                  5 MODULES • 23 PERMISSIONS
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Configure granular capabilities and boundaries dynamically enforced across your organization.
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                Configure granular module capabilities per role. Dynamically bound to tenant context and enforced by PostgreSQL RLS.
               </p>
             </div>
           </div>
 
-          {/* Action Buttons: View Toggle, Reset Defaults, Save Permissions */}
-          <div className="flex items-center flex-wrap gap-2 text-xs">
-            {/* View Mode Switcher */}
-            <div className="inline-flex bg-slate-100 border border-slate-200 p-0.5">
+          {/* Action Buttons Right Side */}
+          <div className="flex flex-col sm:items-end gap-2.5 shrink-0">
+            <div className="flex items-center space-x-2">
+              {/* View Switcher: Role Drilldown vs Full 2D Matrix */}
+              <div className="inline-flex bg-slate-100 border border-slate-200 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setPermMatrixView('cards')}
+                  className={`px-3 py-1.5 text-xs uppercase font-mono font-bold transition-colors cursor-pointer ${
+                    permMatrixView === 'cards' 
+                      ? 'bg-white text-indigo-600 shadow-2xs border border-slate-200' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ROLE DRILLDOWN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPermMatrixView('grid')}
+                  className={`px-3 py-1.5 text-xs uppercase font-mono font-medium transition-colors cursor-pointer ${
+                    permMatrixView === 'grid' 
+                      ? 'bg-white text-indigo-600 shadow-2xs border border-slate-200' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  FULL 2D MATRIX
+                </button>
+              </div>
+
+              {/* Reset to Presets Button */}
               <button
                 type="button"
-                onClick={() => setPermMatrixView('cards')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                  permMatrixView === 'cards' 
-                    ? 'bg-white text-slate-900 shadow-2xs font-semibold' 
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                onClick={() => handleResetPermissions()}
+                disabled={isSavingPerms}
+                className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 flex items-center space-x-1.5 text-xs font-mono transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+                title="Restore baseline security presets"
               >
-                Role Drilldown
-              </button>
-              <button
-                type="button"
-                onClick={() => setPermMatrixView('grid')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                  permMatrixView === 'grid' 
-                    ? 'bg-white text-slate-900 shadow-2xs font-semibold' 
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Full 2D Matrix
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                <span>Reset Defaults</span>
               </button>
             </div>
-
-            {/* Reset to Presets Button */}
-            <button
-              type="button"
-              onClick={() => handleResetPermissions()}
-              disabled={isSavingPerms}
-              className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
-              title="Restore baseline security presets"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-              <span>Reset Defaults</span>
-            </button>
 
             {/* Save Permissions Matrix Button */}
             <button
               type="button"
               onClick={handleSavePermissions}
               disabled={isSavingPerms}
-              className={`px-4 py-1.5 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-xs ${
+              className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 shadow-xs ${
                 hasUnsavedPerms
                   ? 'bg-[#0066FF] hover:bg-blue-600 text-white'
-                  : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  : 'bg-[#5046e5] hover:bg-indigo-700 text-white'
               }`}
             >
               {isSavingPerms ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              <span>{isSavingPerms ? 'Saving...' : hasUnsavedPerms ? 'Save Changes (Unsaved)' : 'Save Permissions'}</span>
+              <span>{isSavingPerms ? 'SAVING...' : hasUnsavedPerms ? 'SAVE PERMISSIONS (UNSAVED)' : 'SAVE PERMISSIONS'}</span>
             </button>
           </div>
         </div>
@@ -1580,7 +1589,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
               <span>
-                You have modified permissions for <strong>{ROLE_METADATA[selectedRoleForPerms].label}</strong>. Click 'Save Permissions' to persist your changes.
+                You have modified permissions for <strong>{ROLE_METADATA[selectedRoleForPerms].label}</strong>. Click 'SAVE PERMISSIONS' to persist your changes.
               </span>
             </div>
             <button
@@ -1594,99 +1603,73 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         )}
 
-        {/* VIEW 1: ROLE DRILLDOWN CLEAN LIST VIEW */}
+        {/* VIEW 1: ROLE DRILLDOWN CARDS VIEW */}
         {permMatrixView === 'cards' && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             
-            {/* Sleek Role Tabs Navigation Bar */}
-            <div className="flex items-center border-b border-slate-200 bg-slate-50/80 p-1 gap-1 overflow-x-auto">
+            {/* 6 Role Selection Cards Grid matching screenshot */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {ALL_SYSTEM_ROLES.map((roleKey) => {
                 const meta = ROLE_METADATA[roleKey];
                 const isSelected = selectedRoleForPerms === roleKey;
                 const rolePermCount = permissionsMatrix 
                   ? Object.values(permissionsMatrix[roleKey] || {}).filter(Boolean).length 
                   : 0;
-                const isUserRole = roleKey === currentRole;
 
                 return (
-                  <button
+                  <div
                     key={roleKey}
-                    type="button"
                     onClick={() => setSelectedRoleForPerms(roleKey)}
-                    className={`flex items-center space-x-2 px-3 py-2 text-xs transition-all cursor-pointer whitespace-nowrap border ${
+                    className={`p-3 bg-white transition-all cursor-pointer select-none relative ${
                       isSelected
-                        ? 'bg-white border-slate-300 text-slate-900 font-semibold shadow-2xs border-b-2 border-b-indigo-600'
-                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        ? 'border-2 border-indigo-600 shadow-2xs'
+                        : 'border border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <span>{meta.label}</span>
-                    {isUserRole && (
-                      <span className="text-[9px] uppercase font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 border border-blue-200">
-                        You
-                      </span>
+                    {isSelected && (
+                      <div className="w-2.5 h-2.5 bg-indigo-600 absolute top-3 right-3" />
                     )}
-                    <span className={`text-[10px] font-mono px-1.5 py-0.2 ${
-                      isSelected 
-                        ? 'bg-indigo-50 text-indigo-700 font-bold' 
-                        : 'bg-slate-200/60 text-slate-600'
-                    }`}>
-                      {rolePermCount}/{permissionDefinitions.length}
-                    </span>
-                  </button>
+                    <div className="text-[10px] font-mono text-slate-500 font-semibold tracking-wider uppercase mb-1">
+                      {meta.badge}
+                    </div>
+                    <div className="text-sm font-bold text-slate-900 mb-2 truncate">
+                      {meta.label}
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
+                      <span>Granted:</span>
+                      <span className="font-bold text-slate-800 font-mono">
+                        {rolePermCount} / {permissionDefinitions.length || 23}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
 
-            {/* Active Selected Role Summary & Fast Controls */}
-            <div className="p-3.5 bg-slate-50/60 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs font-semibold text-slate-900">
+            {/* Active Selected Role Summary & Fast Controls Banner matching screenshot */}
+            <div className="bg-white border border-slate-200 p-4 space-y-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center flex-wrap gap-2">
+                  <h3 className="text-base font-bold text-slate-900">
                     {ROLE_METADATA[selectedRoleForPerms].label}
-                  </span>
-                  <span className="px-1.5 py-0.2 text-[9px] font-mono uppercase text-slate-500 bg-white border border-slate-200">
+                  </h3>
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-indigo-700 bg-indigo-50 border border-indigo-200">
                     {ROLE_METADATA[selectedRoleForPerms].badge}
                   </span>
+                  {selectedRoleForPerms === currentRole && (
+                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-blue-700 bg-blue-100/70 border border-blue-300">
+                      YOUR ACTIVE ROLE
+                    </span>
+                  )}
                 </div>
-                <p className="text-xs text-slate-500 max-w-2xl">
-                  {ROLE_METADATA[selectedRoleForPerms].desc}
-                </p>
-                {/* Clean Capability Breakdown */}
-                <div className="flex items-center flex-wrap gap-2 pt-0.5 text-[11px] text-slate-600 font-mono">
-                  <span className="font-semibold text-slate-800">
-                    {roleStats.granted} of {roleStats.total} granted
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-rose-600 flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 bg-rose-500 inline-block" />
-                    <span>{roleStats.critical} Critical</span>
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-amber-600 flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 bg-amber-500 inline-block" />
-                    <span>{roleStats.high} High</span>
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-blue-600 flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 bg-blue-500 inline-block" />
-                    <span>{roleStats.medium} Medium</span>
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-slate-500 flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 bg-slate-400 inline-block" />
-                    <span>{roleStats.low} Low</span>
-                  </span>
-                </div>
-              </div>
 
-              {/* Quick Actions (Clone / Reset) */}
-              <div className="flex items-center space-x-2 shrink-0 self-start md:self-center">
-                <div className="flex items-center bg-white border border-slate-200 p-0.5">
-                  <span className="text-[11px] text-slate-400 px-2">Clone:</span>
+                {/* Right: Clone from and Reset Role */}
+                <div className="flex items-center space-x-2 shrink-0">
+                  <span className="text-xs text-slate-500 font-medium">Clone from:</span>
                   <select
                     value={copySourceRole}
                     onChange={(e) => setCopySourceRole(e.target.value as UserRole)}
-                    className="bg-transparent text-slate-800 py-1 pr-2 text-xs focus:outline-none cursor-pointer"
+                    className="bg-white border border-slate-200 text-slate-800 text-xs px-2.5 py-1 focus:outline-none cursor-pointer"
                   >
                     {ALL_SYSTEM_ROLES.filter(r => r !== selectedRoleForPerms).map(r => (
                       <option key={r} value={r}>{ROLE_METADATA[r].label}</option>
@@ -1695,78 +1678,124 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCopyPermissions(copySourceRole, selectedRoleForPerms)}
-                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                    className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 transition-colors cursor-pointer"
                   >
-                    Apply
+                    Clone
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleResetPermissions(selectedRoleForPerms)}
+                    className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+                    title="Reset this role to baseline defaults"
+                  >
+                    Reset Role
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleResetPermissions(selectedRoleForPerms)}
-                  className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-amber-800 text-xs transition-colors cursor-pointer"
-                  title="Reset this role to baseline defaults"
-                >
-                  Reset
-                </button>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {ROLE_METADATA[selectedRoleForPerms].desc}
+              </p>
+
+              {/* Risk Badges Row */}
+              <div className="flex items-center flex-wrap gap-4 pt-1 text-xs font-mono">
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-slate-600 font-medium">Total Granted:</span>
+                  <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 font-mono font-bold text-slate-800">
+                    {roleStats.granted} / {roleStats.total}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-rose-600 font-medium">Critical Risk:</span>
+                  <span className="px-2 py-0.5 bg-rose-50 border border-rose-300 font-mono font-bold text-rose-600">
+                    {roleStats.critical}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-amber-600 font-medium">High Risk:</span>
+                  <span className="px-2 py-0.5 bg-amber-50 border border-amber-300 font-mono font-bold text-amber-600">
+                    {roleStats.high}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-blue-600 font-medium">Medium Risk:</span>
+                  <span className="px-2 py-0.5 bg-blue-50 border border-blue-300 font-mono font-bold text-blue-600">
+                    {roleStats.medium}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-slate-600 font-medium">Low Risk:</span>
+                  <span className="px-2 py-0.5 bg-slate-50 border border-slate-300 font-mono font-bold text-slate-600">
+                    {roleStats.low}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Search and Filters Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            {/* Filter and Search Bar matching screenshot */}
+            <div className="border border-slate-200 bg-white p-2.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+              {/* Search */}
+              <div className="flex items-center space-x-2 flex-1 max-w-md">
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
                   type="text"
                   value={permSearchQuery}
                   onChange={(e) => setPermSearchQuery(e.target.value)}
-                  placeholder="Filter permissions..."
-                  className="w-full bg-white border border-slate-200 focus:border-indigo-600 pl-8 pr-7 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
+                  placeholder="Filter permissions by name, code key, or des..."
+                  className="w-full bg-transparent text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
                 />
                 {permSearchQuery && (
                   <button
                     onClick={() => setPermSearchQuery('')}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    className="text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
 
-              {/* Module Filter Pills & Risk Selector */}
-              <div className="flex items-center flex-wrap gap-2">
-                <div className="flex items-center bg-slate-100 border border-slate-200 p-0.5">
-                  {(['ALL', 'tickets', 'products', 'tenant', 'permissions', 'audit'] as const).map(modKey => (
+              {/* Module Filter Pills */}
+              <div className="flex items-center flex-wrap gap-1.5">
+                <span className="text-[11px] font-mono text-slate-500 font-semibold mr-1">MODULE:</span>
+                {(['ALL', 'tickets', 'products', 'tenant', 'permissions', 'audit'] as const).map((modKey) => {
+                  const isActive = permFilterModule === modKey;
+                  return (
                     <button
                       key={modKey}
                       type="button"
                       onClick={() => setPermFilterModule(modKey)}
-                      className={`px-2.5 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
-                        permFilterModule === modKey
-                          ? 'bg-white text-slate-900 font-semibold shadow-2xs'
-                          : 'text-slate-600 hover:text-slate-900'
+                      className={`px-2.5 py-1 text-xs uppercase font-mono transition-colors cursor-pointer ${
+                        isActive
+                          ? 'bg-black text-white font-bold'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
-                      {modKey === 'ALL' ? 'All' : modKey}
+                      {modKey}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
 
+              {/* Risk Selector */}
+              <div className="flex items-center space-x-1.5 shrink-0">
+                <span className="text-[11px] font-mono text-slate-500 font-semibold">RISK:</span>
                 <select
                   value={permFilterRisk}
                   onChange={(e) => setPermFilterRisk(e.target.value)}
-                  className="bg-white border border-slate-200 text-slate-700 px-2 py-1.5 text-xs focus:outline-none focus:border-indigo-600 cursor-pointer"
+                  className="border border-slate-200 bg-white text-slate-800 px-2 py-1 text-xs uppercase font-mono focus:outline-none cursor-pointer"
                 >
-                  <option value="ALL">All Risks</option>
-                  <option value="CRITICAL">Critical</option>
-                  <option value="HIGH">High</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
+                  <option value="ALL">ALL RISKS</option>
+                  <option value="CRITICAL">CRITICAL</option>
+                  <option value="HIGH">HIGH</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="LOW">LOW</option>
                 </select>
               </div>
             </div>
 
-            {/* Permissions Grouped by Module (Clean, Non-Bulky Rows) */}
-            <div className="space-y-3">
+            {/* Module Cards with 2-Column Grid of Permission Cards matching screenshot */}
+            <div className="space-y-4">
               {(['tickets', 'products', 'tenant', 'permissions', 'audit'] as PermissionModule[]).map((modKey) => {
                 const defs = groupedPermissions[modKey];
                 if (!defs || defs.length === 0) return null;
@@ -1774,51 +1803,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 const modMeta = MODULE_METADATA[modKey];
                 const ModIcon = modMeta.icon;
                 const grantedInMod = defs.filter(d => Boolean(permissionsMatrix?.[selectedRoleForPerms]?.[d.key])).length;
-                const allGranted = grantedInMod === defs.length;
 
                 return (
                   <div key={modKey} className="border border-slate-200 bg-white">
                     
                     {/* Module Header Bar */}
-                    <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between gap-3">
-                      <div className="flex items-center space-x-2.5">
-                        <ModIcon className="w-4 h-4 text-indigo-600 shrink-0" />
-                        <span className="font-semibold text-slate-900 text-xs">
-                          {modMeta.label}
-                        </span>
-                        <span className={`text-[10px] font-mono px-2 py-0.5 border ${
-                          allGranted
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium'
-                            : grantedInMod > 0
-                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200 font-medium'
-                            : 'bg-slate-100 text-slate-500 border-slate-200'
-                        }`}>
-                          {grantedInMod} of {defs.length} enabled
-                        </span>
+                    <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2.5">
+                          <ModIcon className="w-4 h-4 text-indigo-600 shrink-0" />
+                          <h4 className="font-bold text-slate-900 text-sm">
+                            {modMeta.label}
+                          </h4>
+                          <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                            {grantedInMod} / {defs.length} Granted
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {modMeta.desc}
+                        </p>
                       </div>
 
-                      {/* Bulk Module Actions */}
+                      {/* Module Action Buttons: Grant All / Revoke All */}
                       <div className="flex items-center space-x-2 shrink-0 text-xs">
                         <button
                           type="button"
                           onClick={() => handleGrantAllInModule(selectedRoleForPerms, modKey)}
-                          className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
+                          className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
                         >
-                          Enable All
+                          Grant All
                         </button>
-                        <span className="text-slate-300">|</span>
                         <button
                           type="button"
                           onClick={() => handleRevokeAllInModule(selectedRoleForPerms, modKey)}
-                          className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-rose-600 hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
+                          className="px-3 py-1 bg-white hover:bg-rose-50 border border-slate-200 text-rose-600 font-medium text-xs transition-colors cursor-pointer"
                         >
-                          Disable All
+                          Revoke All
                         </button>
                       </div>
                     </div>
 
-                    {/* Clean Permission Rows List */}
-                    <div className="divide-y divide-slate-100">
+                    {/* 2-Column Grid of Permission Cards */}
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                       {defs.map((def) => {
                         const isGranted = Boolean(permissionsMatrix?.[selectedRoleForPerms]?.[def.key]);
                         const isSuperAdminEditLock = selectedRoleForPerms === 'super_admin' && def.key === 'permissions:edit';
@@ -1831,61 +1857,50 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 handleTogglePermission(selectedRoleForPerms, def.key);
                               }
                             }}
-                            className={`px-4 py-2.5 flex items-center justify-between gap-3 transition-colors select-none ${
-                              isGranted ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/30 hover:bg-slate-50/80'
+                            className={`p-3.5 border transition-all select-none flex items-start space-x-3 ${
+                              isGranted
+                                ? 'bg-blue-50/20 border-blue-200'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
                             } ${!isSuperAdminEditLock ? 'cursor-pointer' : 'cursor-default'}`}
                           >
-                            {/* Left: Checkbox + Name + Code Key + Description */}
-                            <div className="flex items-start space-x-3 min-w-0 flex-1">
-                              <div className="pt-0.5 shrink-0">
-                                <div
-                                  className={`w-4 h-4 flex items-center justify-center transition-colors border ${
-                                    isGranted
-                                      ? 'bg-[#0066FF] border-[#0066FF] text-white'
-                                      : 'bg-white border-slate-300 text-transparent'
-                                  }`}
-                                >
-                                  {isSuperAdminEditLock ? (
-                                    <Lock className="w-3 h-3 text-white" />
-                                  ) : (
-                                    <Check className={`w-3 h-3 ${isGranted ? 'opacity-100' : 'opacity-0'}`} />
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className={`text-xs ${isGranted ? 'text-slate-900 font-semibold' : 'text-slate-600 font-medium'}`}>
-                                    {def.name}
-                                  </span>
-                                  <code className="text-[10px] font-mono text-slate-400 bg-slate-50 px-1 py-0.2 border border-slate-200">
-                                    {def.key}
-                                  </code>
-                                  {isSuperAdminEditLock && (
-                                    <span className="text-[10px] text-purple-700 font-medium">
-                                      (Protected Root)
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                                  {def.description}
-                                </p>
+                            {/* Blue Checkbox */}
+                            <div className="shrink-0 mt-0.5">
+                              <div
+                                className={`w-4 h-4 flex items-center justify-center transition-colors border ${
+                                  isGranted
+                                    ? 'bg-[#0066FF] border-[#0066FF] text-white'
+                                    : 'bg-white border-slate-300 text-transparent'
+                                }`}
+                              >
+                                {isSuperAdminEditLock ? (
+                                  <Lock className="w-3 h-3 text-white" />
+                                ) : (
+                                  <Check className={`w-3 h-3 stroke-[3] ${isGranted ? 'opacity-100' : 'opacity-0'}`} />
+                                )}
                               </div>
                             </div>
 
-                            {/* Right: Risk Badge */}
-                            <div className="shrink-0">
-                              <span className={`px-2 py-0.5 text-[10px] font-mono font-medium border ${
-                                def.riskLevel === 'CRITICAL'
-                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                  : def.riskLevel === 'HIGH'
-                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                  : def.riskLevel === 'MEDIUM'
-                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                  : 'bg-slate-50 text-slate-600 border-slate-200'
-                              }`}>
-                                {def.riskLevel}
-                              </span>
+                            {/* Card Content: Title, Risk Badge, Description */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-slate-900 leading-tight">
+                                  {def.name}
+                                </span>
+                                <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 border ${
+                                  def.riskLevel === 'CRITICAL'
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                    : def.riskLevel === 'HIGH'
+                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                    : def.riskLevel === 'MEDIUM'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                                }`}>
+                                  {def.riskLevel}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                {def.description}
+                              </p>
                             </div>
                           </div>
                         );

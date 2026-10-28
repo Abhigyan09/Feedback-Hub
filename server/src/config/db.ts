@@ -516,6 +516,10 @@ export class MultiTenantStore {
     if (role === 'super_admin') {
       return true;
     }
+    // Prevent tenant_admin from being locked out of permissions governance
+    if (role === 'tenant_admin' && (permissionKey === 'permissions:edit' || permissionKey === 'permissions:reset' || permissionKey === 'permissions:view')) {
+      return true;
+    }
     const matrix = this.getPermissionsMatrix(tenantId);
     const rolePerms = matrix[role];
     if (!rolePerms) {
