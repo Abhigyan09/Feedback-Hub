@@ -493,7 +493,7 @@
         "tickets:view": true,
         "tickets:create": true,
         "tickets:edit": true,
-        "tickets:delete": true,
+        "tickets:delete": false,
         "tickets:change_status": true,
         "tickets:assign": true,
         "tickets:view_telemetry_internal": true,
@@ -718,5 +718,5 @@
       }
     }
   },
-  "last_updated": "2026-10-27T17:47:49.155Z"
+  "last_updated": "2026-10-27T17:59:54.084Z"
 }

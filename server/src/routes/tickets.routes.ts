@@ -112,6 +112,13 @@ ticketRouter.patch('/:id/status', requirePermission('tickets:change_status'), (r
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
 
+  // Support Agent safety guard
+  if (userRole === 'support_agent' && status !== 'TRIAGED' && status !== 'OPEN') {
+    return res.status(403).json({
+      error: 'Permission Denied',
+      message: 'Support agents are authorized for triage (TRIAGED or OPEN). Advancing to IN_DEV or RESOLVED requires an engineering or lead role.'
+    });
+  }
 
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {

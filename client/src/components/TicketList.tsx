@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ticket, TicketSeverity, TicketStatus, UserRole, RolePermissionsMatrix } from '../types';
+import { Ticket, TicketSeverity, TicketStatus, UserRole } from '../types';
 import { 
   Bug, 
   Lightbulb, 
@@ -31,7 +31,6 @@ interface TicketListProps {
   onUpdateStatus?: (ticketId: string, status: string) => Promise<void>;
   onDeleteTicket?: (ticketId: string) => Promise<void>;
   isResolvedOnly?: boolean;
-  permissionsMatrix?: RolePermissionsMatrix | null;
 }
 
 export const TicketList: React.FC<TicketListProps> = ({
@@ -42,23 +41,13 @@ export const TicketList: React.FC<TicketListProps> = ({
   onOpenWidgetSimulator,
   onUpdateStatus,
   onDeleteTicket,
-  isResolvedOnly = false,
-  permissionsMatrix
+  isResolvedOnly = false
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterAssignee, setFilterAssignee] = useState<string>('ALL');
   const [filterPriority, setFilterPriority] = useState<string>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
-
-  // Dynamic RBAC permissions
-  const canChangeStatus = permissionsMatrix
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:change_status']))
-    : currentRole !== 'client_user';
-
-  const canDeleteTicket = permissionsMatrix
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:delete']))
-    : ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
 
   const filteredTickets = tickets.filter(t => {
     // Search filter
@@ -418,7 +407,7 @@ export const TicketList: React.FC<TicketListProps> = ({
                   </div>
 
                   {/* Status Dropdown / Badge */}
-                  {onUpdateStatus && canChangeStatus ? (
+                  {onUpdateStatus && currentRole !== 'client_user' ? (
                     <select
                       value={ticket.status}
                       onChange={(e) => onUpdateStatus(ticket.id, e.target.value)}
@@ -436,8 +425,8 @@ export const TicketList: React.FC<TicketListProps> = ({
                     </span>
                   )}
 
-                  {/* Delete Button (dynamic permission) */}
-                  {canDeleteTicket && onDeleteTicket && (
+                  {/* Delete Button (Lead & Admins) */}
+                  {['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole) && onDeleteTicket && (
                     <button
                       type="button"
                       onClick={() => {

@@ -131,24 +131,38 @@ tenantRouter.get('/permissions', (req: Request, res: Response) => {
 });
 
 // 4. UPDATE DYNAMIC ROLE PERMISSIONS (Granular Role Customization)
-tenantRouter.put('/permissions', async (req: Request, res: Response) => {
+tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
-  const userRole = req.auth!.role;
-  const { role, permissions, updates } = req.body;
+  const { role, permissions, updates, matrix: fullMatrix } = req.body;
 
-  // Authorization check: platform admins or roles granted permissions:edit
-  const canEdit = userRole === 'super_admin' || 
-                  userRole === 'tenant_admin' || 
-                  tenantStore.hasPermission(tenantId, userRole, 'permissions:edit');
+  // Mode A: Full Matrix update mode (all roles)
+  if (fullMatrix && typeof fullMatrix === 'object') {
+    for (const r of ALL_ROLES) {
+      if (fullMatrix[r] && typeof fullMatrix[r] === 'object') {
+        if (r === 'super_admin' && fullMatrix[r]['permissions:edit'] === false) {
+          fullMatrix[r]['permissions:edit'] = true; // prevent lockout
+        }
+        tenantStore.updateRolePermissions(tenantId, r as UserRole, fullMatrix[r]);
+        await persistRolePermissionsToDb(tenantId, r as UserRole, fullMatrix[r]);
+      }
+    }
+    tenantStore.saveToDisk();
 
-  if (!canEdit) {
-    return res.status(403).json({
-      error: 'Permission Denied',
-      message: `Your current role '${userRole}' is not granted 'permissions:edit' to customize the RBAC matrix.`
+    const updated = tenantStore.getPermissionsMatrix(tenantId);
+    broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
+      tenantId,
+      matrix: updated,
+      message: 'All role permissions matrix updated.'
+    });
+
+    return res.json({
+      success: true,
+      message: 'Role permissions matrix successfully persisted.',
+      matrix: updated
     });
   }
 
-  // Single Role update mode
+  // Mode B: Single Role update mode
   if (role && permissions && typeof permissions === 'object') {
     if (!ALL_ROLES.includes(role)) {
       return res.status(400).json({ error: `Invalid role: ${role}` });
@@ -178,7 +192,7 @@ tenantRouter.put('/permissions', async (req: Request, res: Response) => {
     });
   }
 
-  // Batch updates mode
+  // Mode C: Batch updates mode
   if (Array.isArray(updates)) {
     for (const item of updates) {
       const { role: itemRole, permissionKey, isGranted } = item;
@@ -211,25 +225,13 @@ tenantRouter.put('/permissions', async (req: Request, res: Response) => {
     });
   }
 
-  res.status(400).json({ error: 'Invalid payload: provide { role, permissions } or { updates }.' });
+  res.status(400).json({ error: 'Invalid payload: provide { matrix }, { role, permissions }, or { updates }.' });
 });
 
 // 5. RESET ROLE PERMISSIONS TO PRESETS
-tenantRouter.post('/permissions/reset', async (req: Request, res: Response) => {
+tenantRouter.post('/permissions/reset', requirePermission('permissions:reset'), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
-  const userRole = req.auth!.role;
   const { role } = req.body;
-
-  const canReset = userRole === 'super_admin' || 
-                   userRole === 'tenant_admin' || 
-                   tenantStore.hasPermission(tenantId, userRole, 'permissions:reset');
-
-  if (!canReset) {
-    return res.status(403).json({
-      error: 'Permission Denied',
-      message: `Your current role '${userRole}' is not granted 'permissions:reset' to restore RBAC presets.`
-    });
-  }
 
   const targetRole = role && ALL_ROLES.includes(role) ? (role as UserRole) : undefined;
   const resetMatrix = tenantStore.resetRolePermissions(tenantId, targetRole);
