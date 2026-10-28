@@ -413,32 +413,24 @@ export const App: React.FC = () => {
       });
       if (res.ok) {
         fetchTickets();
+      } else {
+        const err = await res.json();
+        setAlertBanner(err.message || err.error || 'Failed to update ticket status');
+        setTimeout(() => setAlertBanner(null), 5000);
+        fetchTickets();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update status:', err);
+      setAlertBanner(err.message || 'Network error updating status');
+      setTimeout(() => setAlertBanner(null), 5000);
       fetchTickets();
     }
   };
 
   // Live assignee update via PATCH /api/v1/tickets/:id/assignee
   const handleUpdateTicketAssignee = async (ticketId: string, newAssigneeId: string | null, newAssigneeName: string | null) => {
-    setTickets(prev =>
-      prev.map(t => t.id === ticketId ? {
-        ...t,
-        assigned_to: newAssigneeId || undefined,
-        assigned_to_name: newAssigneeName || undefined
-      } : t)
-    );
-    if (selectedTicket && selectedTicket.id === ticketId) {
-      setSelectedTicket(prev => prev ? {
-        ...prev,
-        assigned_to: newAssigneeId || undefined,
-        assigned_to_name: newAssigneeName || undefined
-      } : null);
-    }
-
     try {
-      await fetch(`/api/v1/tickets/${ticketId}/assignee`, {
+      const res = await fetch(`/api/v1/tickets/${ticketId}/assignee`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -450,9 +442,18 @@ export const App: React.FC = () => {
           assigneeName: newAssigneeName
         })
       });
-      fetchTickets();
-    } catch (err) {
+      if (res.ok) {
+        fetchTickets();
+      } else {
+        const err = await res.json();
+        setAlertBanner(err.message || err.error || 'Failed to update assignee');
+        setTimeout(() => setAlertBanner(null), 5000);
+        fetchTickets();
+      }
+    } catch (err: any) {
       console.error('Failed to update assignee on server:', err);
+      setAlertBanner(err.message || 'Network error updating assignee');
+      setTimeout(() => setAlertBanner(null), 5000);
       fetchTickets();
     }
   };
@@ -537,23 +538,33 @@ export const App: React.FC = () => {
     assigned_to_name?: string;
     reporter_email?: string;
   }) => {
-    const res = await fetch('/api/v1/tickets', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tenant-id': currentTenantId,
-        'x-user-role': currentRole
-      },
-      body: JSON.stringify(ticketData)
-    });
+    try {
+      const res = await fetch('/api/v1/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': currentTenantId,
+          'x-user-role': currentRole
+        },
+        body: JSON.stringify(ticketData)
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.ticket) {
-        setTickets(prev => [data.ticket, ...prev]);
-        setAlertBanner(`Incident ${data.ticket.short_code} logged dynamically.`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ticket) {
+          setTickets(prev => [data.ticket, ...prev]);
+          setAlertBanner(`Incident ${data.ticket.short_code} logged dynamically.`);
+          setTimeout(() => setAlertBanner(null), 5000);
+        }
+      } else {
+        const err = await res.json();
+        setAlertBanner(err.message || err.error || 'Failed to create incident');
         setTimeout(() => setAlertBanner(null), 5000);
       }
+    } catch (err: any) {
+      console.error('Failed to create ticket:', err);
+      setAlertBanner(err.message || 'Network error creating ticket');
+      setTimeout(() => setAlertBanner(null), 5000);
     }
   };
 
@@ -641,6 +652,7 @@ export const App: React.FC = () => {
           totalTickets={tickets.length}
           urgentTickets={urgentCount}
           tickets={tickets}
+          permissionsMatrix={permissionsMatrix}
           onNewIncidentClick={() => setIsCreateModalOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
           onSeedDemo={handleSeedDemo}
@@ -696,17 +708,19 @@ export const App: React.FC = () => {
                   <span>Simulate Ingest</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleSeedDemo}
-                  title="Seed 3 dynamic test incidents"
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-slate-700 rounded-[2px] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Quick Seed</span>
-                </button>
+                {(currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:create'])) && (
+                  <button
+                    type="button"
+                    onClick={handleSeedDemo}
+                    title="Seed 3 dynamic test incidents"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-slate-700 rounded-[2px] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Quick Seed</span>
+                  </button>
+                )}
 
-                {tickets.length > 0 && (
+                {tickets.length > 0 && (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:delete'])) && (
                   <button
                     type="button"
                     onClick={handleClearTickets}
@@ -776,6 +790,8 @@ export const App: React.FC = () => {
               <TicketsTable
                 tickets={tickets}
                 teamMembers={teamMembers}
+                currentRole={currentRole}
+                permissionsMatrix={permissionsMatrix}
                 searchQuery={searchQuery}
                 onSearchChange={(q) => {
                   setSearchQuery(q);

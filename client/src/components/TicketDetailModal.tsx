@@ -261,22 +261,26 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
           <div className="flex items-center space-x-2 shrink-0">
             {!isEditing && !isConfirmingDelete && (
               <>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  title="Edit Ticket Details"
-                  className="px-2.5 py-1 text-xs font-mono border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 bg-white flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
-                >
-                  <Pencil className="w-3 h-3 text-purple-600" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={() => setIsConfirmingDelete(true)}
-                  title="Delete Ticket"
-                  className="px-2.5 py-1 text-xs font-mono border border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 bg-red-50 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Delete</span>
-                </button>
+                {canEditTicket && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    title="Edit Ticket Details"
+                    className="px-2.5 py-1 text-xs font-mono border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 bg-white flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <Pencil className="w-3 h-3 text-purple-600" />
+                    <span>Edit</span>
+                  </button>
+                )}
+                {canDeleteTicket && (
+                  <button
+                    onClick={() => setIsConfirmingDelete(true)}
+                    title="Delete Ticket"
+                    className="px-2.5 py-1 text-xs font-mono border border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 bg-red-50 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Delete</span>
+                  </button>
+                )}
               </>
             )}
 

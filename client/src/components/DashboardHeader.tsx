@@ -14,7 +14,7 @@ import {
   Trash2,
   RefreshCw
 } from 'lucide-react';
-import { UserRole, Ticket } from '../types';
+import { UserRole, Ticket, RolePermissionsMatrix } from '../types';
 import { normalizeStatus } from '../utils/formatters';
 
 export interface HeaderUser {
@@ -42,6 +42,7 @@ interface DashboardHeaderProps {
   totalTickets: number;
   urgentTickets: number;
   tickets?: Ticket[];
+  permissionsMatrix?: RolePermissionsMatrix | null;
   onNewIncidentClick?: () => void;
   onOpenSimulator?: () => void;
   onSeedDemo?: () => void;
@@ -59,6 +60,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   totalTickets,
   urgentTickets,
   tickets = [],
+  permissionsMatrix,
   onNewIncidentClick,
   onOpenSimulator,
   onSeedDemo,
@@ -117,6 +119,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const slaScore = numericSla.toFixed(2);
   const slaStatusLabel = numericSla >= 99 ? 'HEALTHY' : numericSla >= 90 ? 'WARNING' : 'BREACHED';
   const slaStatusColor = numericSla >= 99 ? 'text-emerald-600' : numericSla >= 90 ? 'text-amber-600' : 'text-red-600 font-bold';
+  // Dynamic RBAC Permission Checks
+  const canCreateTicket = currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:create']);
 
   return (
     <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
@@ -193,7 +197,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Test RBAC Role
                   </div>
-                  {(['developer', 'squad_lead', 'client_user', 'tenant_admin'] as UserRole[]).map(role => (
+                  {[
+                    { role: 'super_admin' as UserRole, label: 'Super Admin' },
+                    { role: 'tenant_admin' as UserRole, label: 'Tenant Admin' },
+                    { role: 'squad_lead' as UserRole, label: 'Squad Lead' },
+                    { role: 'developer' as UserRole, label: 'Developer' },
+                    { role: 'support_agent' as UserRole, label: 'Support Agent' },
+                    { role: 'client_user' as UserRole, label: 'Client User' }
+                  ].map(({ role, label }) => (
                     <button
                       key={role}
                       type="button"
@@ -201,11 +212,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         onSelectRole(role);
                         setIsRoleMenuOpen(false);
                       }}
-                      className={`w-full text-left px-3.5 py-2 text-xs capitalize flex items-center justify-between hover:bg-indigo-50 transition-colors ${
+                      className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-indigo-50 transition-colors ${
                         role === currentRole ? 'bg-indigo-50/70 font-bold text-indigo-700' : 'text-slate-700 font-medium'
                       }`}
                     >
-                      <span>{role.replace('_', ' ')}</span>
+                      <span>{label}</span>
                       {role === currentRole && (
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
                       )}
@@ -234,14 +245,26 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0">
             
             {/* Primary Navy Blue 'New Incident' Button */}
-            <button
-              type="button"
-              onClick={onNewIncidentClick}
-              className="bg-[#0b1b36] hover:bg-[#12284c] text-white px-3.5 sm:px-4 py-2 rounded-[2px] text-xs font-semibold flex items-center space-x-1.5 shadow-sm hover:shadow transition-all active:scale-[0.98] whitespace-nowrap flex-shrink-0 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="font-medium tracking-tight whitespace-nowrap">New Incident</span>
-            </button>
+            {canCreateTicket ? (
+              <button
+                type="button"
+                onClick={onNewIncidentClick}
+                className="bg-[#0b1b36] hover:bg-[#12284c] text-white px-3.5 sm:px-4 py-2 rounded-[2px] text-xs font-semibold flex items-center space-x-1.5 shadow-sm hover:shadow transition-all active:scale-[0.98] whitespace-nowrap flex-shrink-0 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="font-medium tracking-tight whitespace-nowrap">New Incident</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                title="Your active role lacks 'tickets:create' authority"
+                className="bg-slate-200 text-slate-400 px-3.5 sm:px-4 py-2 rounded-[2px] text-xs font-semibold flex items-center space-x-1.5 shadow-none cursor-not-allowed whitespace-nowrap flex-shrink-0 opacity-60"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="font-medium tracking-tight whitespace-nowrap">New Incident</span>
+              </button>
+            )}
 
             {/* Notification Bell */}
             <button

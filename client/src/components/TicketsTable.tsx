@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Ticket, TeamMember } from '../types';
+import { Ticket, TeamMember, UserRole, RolePermissionsMatrix } from '../types';
 import { normalizeSeverity, normalizeStatus, formatTimeAgo } from '../utils/formatters';
 import { 
   Search, 
@@ -23,7 +23,8 @@ import {
   Globe,
   Terminal,
   Activity,
-  Layers
+  Layers,
+  Lock
 } from 'lucide-react';
 
 export type SortField = 'title' | 'priority' | 'status' | 'assignee' | 'reported';
@@ -32,6 +33,8 @@ export type SortDirection = 'asc' | 'desc';
 interface TicketsTableProps {
   tickets: Ticket[];
   teamMembers: TeamMember[];
+  currentRole?: UserRole;
+  permissionsMatrix?: RolePermissionsMatrix | null;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   statusFilter: string;
@@ -57,6 +60,8 @@ interface TicketsTableProps {
 export const TicketsTable: React.FC<TicketsTableProps> = ({
   tickets,
   teamMembers,
+  currentRole,
+  permissionsMatrix,
   searchQuery,
   onSearchChange,
   statusFilter,
@@ -78,6 +83,23 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   lastUpdated,
   isLoading = false
 }) => {
+  // Dynamic RBAC Permission Checks
+  const canChangeStatus = currentRole
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:change_status']))
+    : true;
+
+  const canAssign = currentRole
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:assign']))
+    : true;
+
+  const canViewTelemetry = currentRole
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:view_telemetry_internal']))
+    : true;
+
+  const canCreateTicket = currentRole
+    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:create']))
+    : true;
+
   // Format last updated time
   const [freshnessLabel, setFreshnessLabel] = useState<string>('Just now');
 
@@ -511,11 +533,11 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                   <span>Simulate SDK Telemetry</span>
                 </button>
               )}
-              {onOpenCreateModal && (
+              {onOpenCreateModal && canCreateTicket && (
                 <button
                   type="button"
                   onClick={onOpenCreateModal}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[2px] shadow-xs transition-colors"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[2px] shadow-xs transition-colors cursor-pointer"
                 >
                   <span>Log New Incident</span>
                 </button>
@@ -656,7 +678,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                           </span>
 
                           {/* Telemetry Attached Indicators */}
-                          {renderTelemetryIndicator(ticket)}
+                          {canViewTelemetry && renderTelemetryIndicator(ticket)}
                         </div>
 
                         {/* Title */}
@@ -676,38 +698,57 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       {renderPriorityBadge(ticket.severity)}
                     </td>
 
-                    {/* Status Cell with Direct Inline Change Dropdown */}
+                    {/* Status Cell with Direct Inline Change Dropdown or Read-Only Badge */}
                     <td className="py-3.5 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="relative inline-block">
-                        <select
-                          value={ticket.status}
-                          onChange={(e) => {
-                            if (onUpdateStatus) {
-                              onUpdateStatus(ticket.id, e.target.value);
-                            }
-                          }}
-                          aria-label={`Change status for incident ${ticket.short_code}`}
-                          className={`text-xs font-semibold px-2.5 py-1 rounded-[2px] border cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-6 shadow-2xs transition-colors ${
+                      {canChangeStatus ? (
+                        <div className="relative inline-block">
+                          <select
+                            value={ticket.status}
+                            onChange={(e) => {
+                              if (onUpdateStatus) {
+                                onUpdateStatus(ticket.id, e.target.value);
+                              }
+                            }}
+                            aria-label={`Change status for incident ${ticket.short_code}`}
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-[2px] border cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-6 shadow-2xs transition-colors ${
+                              normStatus === 'In Dev'
+                                ? 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-300'
+                                : normStatus === 'In QA'
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-300'
+                                : normStatus === 'Resolved'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-300'
+                                : ticket.status === 'TRIAGED'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-300'
+                                : 'bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300'
+                            }`}
+                          >
+                            <option value="OPEN">Open</option>
+                            <option value="TRIAGED">Triaged</option>
+                            <option value="IN_DEV">In Dev</option>
+                            <option value="IN_QA">In QA</option>
+                            <option value="RESOLVED">Resolved</option>
+                            <option value="CLOSED">Closed</option>
+                          </select>
+                          <ChevronDown className="w-3 h-3 text-slate-500 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      ) : (
+                        <span
+                          title="Status change restricted by role permissions"
+                          className={`inline-flex items-center space-x-1 text-xs font-semibold px-2.5 py-1 rounded-[2px] border ${
                             normStatus === 'In Dev'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-300'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
                               : normStatus === 'In QA'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-300'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                               : normStatus === 'Resolved'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-300'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : ticket.status === 'TRIAGED'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-300'
-                              : 'bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
                           }`}
                         >
-                          <option value="OPEN">Open</option>
-                          <option value="TRIAGED">Triaged</option>
-                          <option value="IN_DEV">In Dev</option>
-                          <option value="IN_QA">In QA</option>
-                          <option value="RESOLVED">Resolved</option>
-                          <option value="CLOSED">Closed</option>
-                        </select>
-                        <ChevronDown className="w-3 h-3 text-slate-500 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
+                          <span>{normStatus}</span>
+                        </span>
+                      )}
                     </td>
 
                     {/* Assignee Cell with Direct Inline Change Dropdown */}
@@ -728,31 +769,40 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                           </div>
                         )}
 
-                        {/* Inline Assignee Selector */}
-                        <div className="relative inline-block flex-1 max-w-[150px]">
-                          <select
-                            value={ticket.assigned_to || 'UNASSIGNED'}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === 'UNASSIGNED') {
-                                onUpdateAssignee?.(ticket.id, null, null);
-                              } else {
-                                const m = teamMembers.find(mem => mem.id === val);
-                                onUpdateAssignee?.(ticket.id, val, m ? m.name : null);
-                              }
-                            }}
-                            aria-label={`Change assignee for incident ${ticket.short_code}`}
-                            className="w-full text-xs font-medium text-slate-700 bg-slate-50 hover:bg-white border border-slate-200 hover:border-purple-300 px-2 py-1 rounded-[2px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-5 truncate shadow-2xs transition-colors"
+                        {canAssign ? (
+                          /* Inline Assignee Selector */
+                          <div className="relative inline-block flex-1 max-w-[150px]">
+                            <select
+                              value={ticket.assigned_to || 'UNASSIGNED'}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'UNASSIGNED') {
+                                  onUpdateAssignee?.(ticket.id, null, null);
+                                } else {
+                                  const m = teamMembers.find(mem => mem.id === val);
+                                  onUpdateAssignee?.(ticket.id, val, m ? m.name : null);
+                                }
+                              }}
+                              aria-label={`Change assignee for incident ${ticket.short_code}`}
+                              className="w-full text-xs font-medium text-slate-700 bg-slate-50 hover:bg-white border border-slate-200 hover:border-purple-300 px-2 py-1 rounded-[2px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-5 truncate shadow-2xs transition-colors"
+                            >
+                              <option value="UNASSIGNED">Unassigned</option>
+                              {teamMembers.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  {m.name}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="w-3 h-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
+                        ) : (
+                          <span
+                            title="Assignee reallocation restricted by role permissions"
+                            className="text-xs font-medium text-slate-700 truncate max-w-[150px]"
                           >
-                            <option value="UNASSIGNED">Unassigned</option>
-                            {teamMembers.map((m) => (
-                              <option key={m.id} value={m.id}>
-                                {m.name}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="w-3 h-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
+                            {assignedMember ? assignedMember.name : ticket.assigned_to_name || 'Unassigned'}
+                          </span>
+                        )}
                       </div>
                     </td>
 

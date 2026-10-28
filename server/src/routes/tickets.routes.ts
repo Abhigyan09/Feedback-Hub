@@ -53,7 +53,7 @@ ticketRouter.get('/', requirePermission('tickets:view'), (req: Request, res: Res
 });
 
 // CLEAR ALL TICKETS FOR CURRENT TENANT
-ticketRouter.delete('/clear', async (req: Request, res: Response) => {
+ticketRouter.delete('/clear', requirePermission('tickets:delete'), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   tenantStore.tickets = tenantStore.tickets.filter(t => t.tenant_id !== tenantId);
   tenantStore.events = tenantStore.events.filter(e => e.tenant_id !== tenantId);
@@ -76,7 +76,7 @@ ticketRouter.delete('/clear', async (req: Request, res: Response) => {
 });
 
 // QUICK-SEED 3 DYNAMIC LIVE INCIDENTS
-ticketRouter.post('/seed-demo', async (req: Request, res: Response) => {
+ticketRouter.post('/seed-demo', requirePermission('tickets:create'), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const now = Date.now();
   
@@ -428,7 +428,7 @@ ticketRouter.put('/:id', requirePermission('tickets:edit'), async (req: Request,
 });
 
 // 6. UPDATE TICKET ASSIGNEE
-ticketRouter.patch('/:id/assignee', (req: Request, res: Response) => {
+ticketRouter.patch('/:id/assignee', requirePermission('tickets:assign'), (req: Request, res: Response) => {
   const { id } = req.params;
   const { assigneeId, assigneeName } = req.body;
   const tenantId = req.auth!.tenantId;
@@ -467,7 +467,7 @@ ticketRouter.patch('/:id/assignee', (req: Request, res: Response) => {
 });
 
 // 7. CREATE NEW INCIDENT TICKET DYNAMICALLY
-ticketRouter.post('/', (req: Request, res: Response) => {
+ticketRouter.post('/', requirePermission('tickets:create'), (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const { title, description, category, severity, priority, assigned_to, assigned_to_name, reporter_email, telemetry } = req.body;
 

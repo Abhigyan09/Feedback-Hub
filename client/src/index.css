@@ -11,6 +11,36 @@
   border-radius: 0px !important;
 }
 
+/* UNIVERSAL DE-BOLDING: Remove harsh, heavy boldness across the entire website */
+html, body {
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+}
+
+strong, b, th {
+  font-weight: 500;
+}
+
+/* Override utility classes so any font-bold or font-semibold renders crisp, light and modern */
+.font-bold,
+.font-extrabold,
+.font-black {
+  font-weight: 500 !important;
+}
+
+.font-semibold {
+  font-weight: 500 !important;
+}
+
+.font-medium {
+  font-weight: 450 !important;
+}
+
 html, body, #root {
   width: 100%;
   height: 100%;

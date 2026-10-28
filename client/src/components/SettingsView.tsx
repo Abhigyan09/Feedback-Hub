@@ -213,7 +213,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [selectedProductForSnippet, setSelectedProductForSnippet] = useState<string>('');
 
   // Dynamic Granular Permissions derived from active tenant matrix and role
-  const isPlatformAdmin = ['super_admin', 'tenant_admin'].includes(currentRole);
+  const isPlatformAdmin = currentRole === 'super_admin';
 
   const canViewTenantProfile = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['tenant:view_profile']);
   const canEditTenantProfile = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['tenant:edit_profile']);
@@ -226,15 +226,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const canDeleteProduct = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:delete']);
   const canRotateProductKeys = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:rotate_keys']);
 
-  const canViewPermissions = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['permissions:view']);
-  const canEditPermissions = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['permissions:edit']);
-  const canResetPermissions = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['permissions:reset']);
+  // Governance access: Super Admin and Tenant Admin retain governance authority to avoid lockout
+  const canViewPermissions = isPlatformAdmin || currentRole === 'tenant_admin' || Boolean(permissionsMatrix?.[currentRole]?.['permissions:view']);
+  const canEditPermissions = isPlatformAdmin || currentRole === 'tenant_admin' || Boolean(permissionsMatrix?.[currentRole]?.['permissions:edit']);
+  const canResetPermissions = isPlatformAdmin || currentRole === 'tenant_admin' || Boolean(permissionsMatrix?.[currentRole]?.['permissions:reset']);
 
   const canTestBridge = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['audit:test_bridge']);
   const canViewAudit = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['audit:view']);
 
-  // Can view Settings general screen if has any relevant view permissions or is developer/squad_lead
-  const canViewSettings = isPlatformAdmin || canViewTenantProfile || canViewProducts || canViewPermissions || 
+  // Can view Settings general screen if has any relevant view permissions or is developer/squad_lead/admin
+  const canViewSettings = isPlatformAdmin || currentRole === 'tenant_admin' || canViewTenantProfile || canViewProducts || canViewPermissions || 
     ['squad_lead', 'developer'].includes(currentRole);
 
   // Can save any tenant setting if has edit profile, domains, or policies
@@ -316,6 +317,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // 2. Handle Master Save Changes & Update Settings
   const handleSaveChanges = async (customMessage?: string) => {
+    if (!canSaveAnyTenantSettings && !hasUnsavedPerms) {
+      setErrorMessage(`Your active role '${ROLE_METADATA[currentRole]?.label || currentRole}' is not authorized to modify tenant settings.`);
+      setTimeout(() => setErrorMessage(null), 4000);
+      return;
+    }
     if (!orgName.trim()) {
       setErrorMessage('Organization name cannot be empty.');
       return;
@@ -326,38 +332,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/v1/tenants/current', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        },
-        body: JSON.stringify({
-          name: orgName,
-          plan,
-          allowed_domains: allowedDomains,
-          webhook_url: webhookUrl,
-          notification_email: notificationEmail,
-          default_squad: defaultSquad,
-          auto_capture_telemetry: autoCaptureTelemetry,
-          auto_capture_network: autoCaptureNetwork,
-          require_email: requireEmail
-        })
-      });
+      if (canSaveAnyTenantSettings) {
+        const res = await fetch('/api/v1/tenants/current', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tenant-id': currentTenantId,
+            'x-user-role': currentRole
+          },
+          body: JSON.stringify({
+            name: orgName,
+            plan,
+            allowed_domains: allowedDomains,
+            webhook_url: webhookUrl,
+            notification_email: notificationEmail,
+            default_squad: defaultSquad,
+            auto_capture_telemetry: autoCaptureTelemetry,
+            auto_capture_network: autoCaptureNetwork,
+            require_email: requireEmail
+          })
+        });
 
-      if (res.ok) {
-        const data = await res.json();
-        setTenant(data.tenant);
+        if (res.ok) {
+          const data = await res.json();
+          setTenant(data.tenant);
+        } else {
+          const err = await res.json();
+          throw new Error(err.message || err.error || 'Server error saving settings');
+        }
+      }
+
+      // Persist any modified role permissions if present
+      if (hasUnsavedPerms && permissionsMatrix && canEditPermissions) {
+        await persistMatrix(permissionsMatrix, 'Settings and role permissions saved.');
+      } else {
         setSaveSuccessMessage(customMessage || 'Settings updated and persisted to database successfully!');
         setTimeout(() => setSaveSuccessMessage(null), 5000);
-        if (onTenantUpdated) onTenantUpdated();
-      } else {
-        const err = await res.json();
-        setErrorMessage('Failed to save settings: ' + (err.error || 'Server error'));
       }
+
+      if (onTenantUpdated) onTenantUpdated();
     } catch (err: any) {
-      setErrorMessage('Network error: ' + err.message);
+      setErrorMessage('Failed to save settings: ' + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -583,13 +598,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // 10. RBAC: Save Permissions Matrix
-  const handleSavePermissions = async () => {
-    if (!permissionsMatrix) return;
+  // Helper: Persist permissions matrix atomically to live backend, disk file & database
+  const persistMatrix = async (updatedMatrix: RolePermissionsMatrix, successMsg: string) => {
     setIsSavingPerms(true);
-    setPermsSuccessMessage(null);
     setErrorMessage(null);
-
     try {
       const res = await fetch('/api/v1/tenants/permissions', {
         method: 'PUT',
@@ -599,9 +611,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           'x-user-role': currentRole
         },
         body: JSON.stringify({
-          matrix: permissionsMatrix,
+          matrix: updatedMatrix,
           role: selectedRoleForPerms,
-          permissions: permissionsMatrix[selectedRoleForPerms]
+          permissions: updatedMatrix[selectedRoleForPerms]
         })
       });
 
@@ -609,8 +621,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         const data = await res.json();
         if (data.matrix) setPermissionsMatrix(data.matrix);
         setHasUnsavedPerms(false);
-        setPermsSuccessMessage(`Permissions for role '${ROLE_METADATA[selectedRoleForPerms].label}' saved to database!`);
-        setTimeout(() => setPermsSuccessMessage(null), 5000);
+        setPermsSuccessMessage(successMsg);
+        setTimeout(() => setPermsSuccessMessage(null), 4000);
         if (onTenantUpdated) onTenantUpdated();
       } else {
         const err = await res.json();
@@ -621,6 +633,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     } finally {
       setIsSavingPerms(false);
     }
+  };
+
+  // 10. RBAC: Save Permissions Matrix (Manual Save Trigger)
+  const handleSavePermissions = async () => {
+    if (!permissionsMatrix) return;
+    await persistMatrix(
+      permissionsMatrix, 
+      `Permissions for role '${ROLE_METADATA[selectedRoleForPerms].label}' saved to database!`
+    );
   };
 
   // 11. RBAC: Reset Permissions to Bank-Grade Baseline
@@ -661,50 +682,62 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // 12. RBAC: Toggle Single Permission
-  const handleTogglePermission = (role: UserRole, key: PermissionKey) => {
+  // 12. RBAC: Toggle Single Permission (Auto-persisted to Database)
+  const handleTogglePermission = async (role: UserRole, key: PermissionKey) => {
     // Super Admin protection against losing governance permission
     if (role === 'super_admin' && key === 'permissions:edit') {
       return;
     }
 
-    setPermissionsMatrix(prev => {
-      if (!prev) return prev;
-      const currentVal = Boolean(prev[role]?.[key]);
-      return {
-        ...prev,
-        [role]: {
-          ...prev[role],
-          [key]: !currentVal
-        }
-      };
-    });
-    setHasUnsavedPerms(true);
+    if (!canEditPermissions) {
+      setErrorMessage(`Your active role '${ROLE_METADATA[currentRole]?.label || currentRole}' does not possess 'permissions:edit' authority.`);
+      setTimeout(() => setErrorMessage(null), 4000);
+      return;
+    }
+
+    const currentVal = Boolean(permissionsMatrix?.[role]?.[key]);
+    const newVal = !currentVal;
+
+    const updatedMatrix: RolePermissionsMatrix = {
+      ...permissionsMatrix,
+      [role]: {
+        ...permissionsMatrix[role],
+        [key]: newVal
+      }
+    };
+
+    setPermissionsMatrix(updatedMatrix);
+    await persistMatrix(
+      updatedMatrix,
+      `Permission '${key}' for ${ROLE_METADATA[role].label} set to ${newVal ? 'GRANTED' : 'REVOKED'} (Saved)`
+    );
   };
 
-  // 13. RBAC: Grant All In Module
-  const handleGrantAllInModule = (role: UserRole, module: PermissionModule) => {
-    if (!permissionsMatrix) return;
+  // 13. RBAC: Grant All In Module (Auto-persisted)
+  const handleGrantAllInModule = async (role: UserRole, module: PermissionModule) => {
+    if (!permissionsMatrix || !canEditPermissions) return;
     const modPerms = permissionDefinitions.filter(p => p.module === module);
     const updates: Record<string, boolean> = {};
     modPerms.forEach(p => { updates[p.key] = true; });
 
-    setPermissionsMatrix(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [role]: {
-          ...prev[role],
-          ...updates
-        }
-      };
-    });
-    setHasUnsavedPerms(true);
+    const updatedMatrix: RolePermissionsMatrix = {
+      ...permissionsMatrix,
+      [role]: {
+        ...permissionsMatrix[role],
+        ...updates
+      }
+    };
+
+    setPermissionsMatrix(updatedMatrix);
+    await persistMatrix(
+      updatedMatrix,
+      `All ${module} permissions granted to ${ROLE_METADATA[role].label} (Saved)`
+    );
   };
 
-  // 14. RBAC: Revoke All In Module
-  const handleRevokeAllInModule = (role: UserRole, module: PermissionModule) => {
-    if (!permissionsMatrix) return;
+  // 14. RBAC: Revoke All In Module (Auto-persisted)
+  const handleRevokeAllInModule = async (role: UserRole, module: PermissionModule) => {
+    if (!permissionsMatrix || !canEditPermissions) return;
     const modPerms = permissionDefinitions.filter(p => p.module === module);
     const updates: Record<string, boolean> = {};
     modPerms.forEach(p => {
@@ -715,38 +748,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       }
     });
 
-    setPermissionsMatrix(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [role]: {
-          ...prev[role],
-          ...updates
-        }
-      };
-    });
-    setHasUnsavedPerms(true);
+    const updatedMatrix: RolePermissionsMatrix = {
+      ...permissionsMatrix,
+      [role]: {
+        ...permissionsMatrix[role],
+        ...updates
+      }
+    };
+
+    setPermissionsMatrix(updatedMatrix);
+    await persistMatrix(
+      updatedMatrix,
+      `All ${module} permissions revoked from ${ROLE_METADATA[role].label} (Saved)`
+    );
   };
 
-  // 15. RBAC: Clone / Copy Permissions from another Role
-  const handleCopyPermissions = (fromRole: UserRole, toRole: UserRole) => {
-    if (!permissionsMatrix) return;
+  // 15. RBAC: Clone / Copy Permissions from another Role (Auto-persisted)
+  const handleCopyPermissions = async (fromRole: UserRole, toRole: UserRole) => {
+    if (!permissionsMatrix || !canEditPermissions) return;
     if (!confirm(`Clone all permissions from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}'?`)) {
       return;
     }
 
-    setPermissionsMatrix(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [toRole]: {
-          ...prev[fromRole]
-        }
-      };
-    });
-    setHasUnsavedPerms(true);
-    setPermsSuccessMessage(`Permissions cloned from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}'. Click 'SAVE PERMISSIONS' to persist.`);
-    setTimeout(() => setPermsSuccessMessage(null), 5000);
+    const updatedMatrix: RolePermissionsMatrix = {
+      ...permissionsMatrix,
+      [toRole]: {
+        ...permissionsMatrix[fromRole]
+      }
+    };
+
+    setPermissionsMatrix(updatedMatrix);
+    await persistMatrix(
+      updatedMatrix,
+      `Permissions cloned from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}' (Saved)`
+    );
   };
 
   // Filtered permission definitions based on search and filters
@@ -889,8 +924,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={() => handleSaveChanges()}
-            disabled={isSaving}
-            className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-mono font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            disabled={isSaving || (!canSaveAnyTenantSettings && !hasUnsavedPerms)}
+            className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-mono font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'SAVING...' : 'SAVE ALL CHANGES'}</span>
@@ -1097,7 +1132,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </h3>
           </div>
 
-          {!isAddingProduct && (
+          {!isAddingProduct && canCreateProduct && (
             <button
               type="button"
               onClick={() => setIsAddingProduct(true)}
@@ -1286,35 +1321,41 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <span>{copiedKey === prod.id ? 'COPIED' : 'COPY KEY'}</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleStartEditProduct(prod)}
-                          title="Edit product details"
-                          className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-semibold"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Edit</span>
-                        </button>
+                        {canEditProduct && (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditProduct(prod)}
+                            title="Edit product details"
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-semibold"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Edit</span>
+                          </button>
+                        )}
 
-                        <button
-                          type="button"
-                          onClick={() => handleRotateKey(prod.id, prod.name)}
-                          title="Rotate API Key"
-                          className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-amber-300 text-slate-600 hover:text-amber-800 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-semibold"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Rotate</span>
-                        </button>
+                        {canRotateProductKeys && (
+                          <button
+                            type="button"
+                            onClick={() => handleRotateKey(prod.id, prod.name)}
+                            title="Rotate API Key"
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-amber-300 text-slate-600 hover:text-amber-800 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-semibold"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Rotate</span>
+                          </button>
+                        )}
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                          title={products.length <= 1 ? "A tenant must retain at least one product" : "Delete Product"}
-                          disabled={products.length <= 1}
-                          className="p-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 transition-colors cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {canDeleteProduct && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                            title={products.length <= 1 ? "A tenant must retain at least one product" : "Delete Product"}
+                            disabled={products.length <= 1}
+                            className="p-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 transition-colors cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1358,36 +1399,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 >
                   <Globe className="w-3 h-3 text-indigo-600" />
                   <span className="font-semibold">{d}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDomain(d)}
-                    className="text-slate-400 hover:text-red-600 p-0.5 rounded-none transition-colors cursor-pointer"
-                    title="Remove domain"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  {canManageDomains && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDomain(d)}
+                      className="text-slate-400 hover:text-red-600 p-0.5 rounded-none transition-colors cursor-pointer"
+                      title="Remove domain"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </span>
               ))
             )}
           </div>
 
           {/* Add Domain Input Form */}
-          <form onSubmit={handleAddDomain} className="flex items-center space-x-2 pt-2">
-            <input
-              type="text"
-              value={newDomain}
-              onChange={(e) => setNewDomain(e.target.value)}
-              placeholder="e.g. payments.acme.com or localhost:3000"
-              className="flex-1 bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 transition-colors"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Domain</span>
-            </button>
-          </form>
+          {canManageDomains && (
+            <form onSubmit={handleAddDomain} className="flex items-center space-x-2 pt-2">
+              <input
+                type="text"
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
+                placeholder="e.g. payments.acme.com or localhost:3000"
+                className="flex-1 bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 transition-colors"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Domain</span>
+              </button>
+            </form>
+          )}
 
           {/* Dedicated Whitelist Update Button */}
           <div className="flex justify-end pt-2 border-t border-slate-100">
@@ -1557,8 +1602,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleResetPermissions()}
-                disabled={isSavingPerms}
-                className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 flex items-center space-x-1.5 text-xs font-mono transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+                disabled={isSavingPerms || !canResetPermissions}
+                className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 flex items-center space-x-1.5 text-xs font-mono transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Restore baseline security presets"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
@@ -1570,8 +1615,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={handleSavePermissions}
-              disabled={isSavingPerms}
-              className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 shadow-xs ${
+              disabled={isSavingPerms || !canEditPermissions}
+              className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs ${
                 hasUnsavedPerms
                   ? 'bg-[#0066FF] hover:bg-blue-600 text-white'
                   : 'bg-[#5046e5] hover:bg-indigo-700 text-white'
@@ -1582,6 +1627,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Read-Only Mode Banner if user role lacks permissions:edit */}
+        {!canEditPermissions && (
+          <div className="p-3.5 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center justify-between shadow-2xs">
+            <div className="flex items-center space-x-2.5">
+              <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>READ-ONLY RBAC VIEW:</strong> Your active test role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> does not possess <code>permissions:edit</code> authority. Switch to <strong>Tenant Administrator</strong> or <strong>Super Admin</strong> in the top header to modify security policies.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Unsaved Changes Notification Banner */}
         {hasUnsavedPerms && (
@@ -1678,14 +1735,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCopyPermissions(copySourceRole, selectedRoleForPerms)}
-                    className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+                    disabled={!canEditPermissions || isSavingPerms}
+                    className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Clone
                   </button>
                   <button
                     type="button"
                     onClick={() => handleResetPermissions(selectedRoleForPerms)}
-                    className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+                    disabled={!canResetPermissions || isSavingPerms}
+                    className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Reset this role to baseline defaults"
                   >
                     Reset Role
@@ -1828,15 +1887,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <div className="flex items-center space-x-2 shrink-0 text-xs">
                         <button
                           type="button"
+                          disabled={!canEditPermissions || isSavingPerms}
                           onClick={() => handleGrantAllInModule(selectedRoleForPerms, modKey)}
-                          className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+                          className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Grant All
                         </button>
                         <button
                           type="button"
+                          disabled={!canEditPermissions || isSavingPerms}
                           onClick={() => handleRevokeAllInModule(selectedRoleForPerms, modKey)}
-                          className="px-3 py-1 bg-white hover:bg-rose-50 border border-slate-200 text-rose-600 font-medium text-xs transition-colors cursor-pointer"
+                          className="px-3 py-1 bg-white hover:bg-rose-50 border border-slate-200 text-rose-600 font-medium text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Revoke All
                         </button>
@@ -1853,7 +1914,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <div
                             key={def.key}
                             onClick={() => {
-                              if (!isSuperAdminEditLock) {
+                              if (!isSuperAdminEditLock && canEditPermissions) {
                                 handleTogglePermission(selectedRoleForPerms, def.key);
                               }
                             }}
@@ -1861,7 +1922,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               isGranted
                                 ? 'bg-blue-50/20 border-blue-200'
                                 : 'bg-white border-slate-200 hover:border-slate-300'
-                            } ${!isSuperAdminEditLock ? 'cursor-pointer' : 'cursor-default'}`}
+                            } ${!isSuperAdminEditLock && canEditPermissions ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
                           >
                             {/* Blue Checkbox */}
                             <div className="shrink-0 mt-0.5">
@@ -1975,16 +2036,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (!isSuperAdminLock) {
+                                    if (!isSuperAdminLock && canEditPermissions) {
                                       handleTogglePermission(role, def.key);
                                     }
                                   }}
-                                  disabled={isSuperAdminLock}
+                                  disabled={isSuperAdminLock || !canEditPermissions || isSavingPerms}
                                   className={`w-7 h-7 mx-auto flex items-center justify-center transition-colors border ${
                                     isGranted
                                       ? 'bg-emerald-600 border-emerald-700 text-white shadow-2xs'
                                       : 'bg-slate-100 border-slate-200 text-slate-400 hover:border-slate-300'
-                                  } ${!isSuperAdminLock ? 'cursor-pointer hover:scale-105' : 'cursor-default opacity-80'}`}
+                                  } ${!isSuperAdminLock && canEditPermissions ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
                                   title={`${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
                                 >
                                   {isSuperAdminLock ? (
