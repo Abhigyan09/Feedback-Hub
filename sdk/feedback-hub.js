@@ -68,17 +68,27 @@
     getTelemetry: function () {
       return {
         page_url: window.location.href,
+        domain_origin: window.location.hostname,
         user_agent: navigator.userAgent,
         viewport_dimensions: window.innerWidth + 'x' + window.innerHeight,
         console_logs: collectedConsoleLogs.slice(),
         network_errors: collectedNetworkErrors.slice()
       };
     },
-    submitIncident: async function (title, description, category, severity, sensitiveData) {
+    submitIncident: async function (payload) {
       if (!productKey) {
         console.error('[FeedbackHub] Missing data-product-key on script tag.');
         return;
       }
+      // Support either an object payload or legacy parameter arguments
+      const data = typeof payload === 'object' ? payload : {
+        title: arguments[0],
+        description: arguments[1],
+        category: arguments[2] || 'BUG',
+        severity: arguments[3] || 'MEDIUM',
+        sensitive_data: arguments[4]
+      };
+
       return fetch(endpoint + '/api/v1/ingest/ticket', {
         method: 'POST',
         headers: {
@@ -86,12 +96,18 @@
           'X-Product-Key': productKey
         },
         body: JSON.stringify({
-          title: title,
-          description: description,
-          category: category || 'BUG',
-          severity: severity || 'MEDIUM',
-          telemetry: window.FeedbackHub.getTelemetry(),
-          sensitive_data: sensitiveData
+          title: data.title,
+          description: data.description,
+          category: data.category || 'BUG',
+          severity: data.severity || 'MEDIUM',
+          rating: data.rating,
+          screenshot: data.screenshot,
+          reporter_email: data.reporter_email,
+          telemetry: {
+            ...window.FeedbackHub.getTelemetry(),
+            ...(data.telemetry || {})
+          },
+          sensitive_data: data.sensitive_data
         })
       });
     }

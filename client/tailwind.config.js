@@ -7,27 +7,41 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
-      borderRadius: {
-        'none': '0px',
-        'xs': '2px',
-        'sm': '2px',
-        'DEFAULT': '2px',
-        'md': '3px',
-        'lg': '4px',
-      },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
       },
+      fontWeight: {
+        thin: '100',
+        extralight: '200',
+        light: '300',
+        normal: '400',
+        medium: '400',
+        semibold: '500',
+        bold: '500',
+        extrabold: '500',
+        black: '500',
+      },
       colors: {
-        stripe: {
-          bg: '#09090b',
-          surface: '#121215',
-          border: '#27272a',
-          hover: '#1c1c21',
-          accent: '#6366f1',
-          text: '#fafafa',
-          muted: '#a1a1aa'
+        navy: {
+          950: '#070e1c',
+          900: '#0b162c',
+          800: '#0f2347',
+          700: '#143163',
+          600: '#1a4185',
+          DEFAULT: '#0f2347'
+        },
+        purple: {
+          50: '#faf5ff',
+          100: '#f3e8ff',
+          200: '#e9d5ff',
+          300: '#d8b4fe',
+          400: '#c084fc',
+          500: '#a855f7',
+          600: '#9333ea',
+          700: '#7e22ce',
+          800: '#6b21a8',
+          900: '#581c87',
         }
       }
     },

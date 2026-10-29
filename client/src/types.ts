@@ -6,17 +6,19 @@ export type UserRole =
   | 'support_agent' 
   | 'client_user';
 
-export type TicketCategory = 'BUG' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE';
-export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'BLOCKER';
+export type TicketCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING' | 'API_FAILURE' | 'UI_GLITCH' | 'FEATURE_REQUEST' | 'PERFORMANCE' | 'SECURITY';
+export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL' | 'BLOCKER';
 export type TicketStatus = 'OPEN' | 'TRIAGED' | 'IN_DEV' | 'IN_QA' | 'RESOLVED' | 'CLOSED';
 
 export interface TicketTelemetry {
   page_url?: string;
+  domain_origin?: string;
   app_version?: string;
   user_agent?: string;
   viewport_dimensions?: string;
   console_logs?: Array<{ type: string; message: string; timestamp: string }>;
   network_errors?: Array<{ url: string; status: number; method?: string; timestamp: string }>;
+  screenshot_url?: string;
   encrypted_sensitive_data?: string;
 }
 
@@ -37,19 +39,24 @@ export interface Ticket {
   tenant_id: string;
   product_id: string;
   product_name?: string;
+  domain_origin?: string;
   short_code: string;
   title: string;
   description: string;
   category: TicketCategory;
   severity: TicketSeverity;
+  rating?: number;
+  screenshot_url?: string;
   status: TicketStatus;
   reporter_email: string;
   assigned_squad: string;
+  assigned_to?: string;
   assigned_to_name?: string;
   telemetry?: TicketTelemetry;
   sla_due_at: string;
   created_at: string;
   updated_at: string;
+  waiting_for_client?: boolean;
 }
 
 export interface Tenant {
@@ -57,7 +64,82 @@ export interface Tenant {
   name: string;
   slug: string;
   plan: string;
+  isolation_standard?: string;
   allowed_domains: string[];
+  webhook_url?: string;
+  notification_email?: string;
+  auto_capture_telemetry?: boolean;
+  auto_capture_network?: boolean;
+  require_email?: boolean;
+  default_squad?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Product {
+  id: string;
+  tenant_id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  api_key_hash: string;
+  raw_api_key?: string;
+  environment: 'production' | 'staging' | 'development';
+  created_at: string;
+  updated_at?: string;
+}
+
+export type PermissionModule = 'tickets' | 'products' | 'tenant' | 'permissions' | 'audit';
+
+export type PermissionKey =
+  // Tickets Module
+  | 'tickets:view'
+  | 'tickets:create'
+  | 'tickets:edit'
+  | 'tickets:delete'
+  | 'tickets:change_status'
+  | 'tickets:assign'
+  | 'tickets:view_telemetry_internal'
+  | 'tickets:view_internal_notes'
+  | 'tickets:create_internal_notes'
+  // Products Module
+  | 'products:view'
+  | 'products:create'
+  | 'products:edit'
+  | 'products:delete'
+  | 'products:rotate_keys'
+  // Tenant & Security Module
+  | 'tenant:view_profile'
+  | 'tenant:edit_profile'
+  | 'tenant:manage_domains'
+  | 'tenant:manage_policies'
+  // Permissions Management Module
+  | 'permissions:view'
+  | 'permissions:edit'
+  | 'permissions:reset'
+  // Audit & Telemetry Module
+  | 'audit:view'
+  | 'audit:test_bridge';
+
+export interface PermissionDefinition {
+  key: PermissionKey;
+  module: PermissionModule;
+  action: string;
+  name: string;
+  description: string;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+export type RolePermissionsMatrix = Record<UserRole, Record<PermissionKey, boolean>>;
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  avatarInitials: string;
+  status: 'ONLINE' | 'AWAY' | 'ON_CALL';
+  color: string;
 }
 
 export interface AuthenticatedUser {

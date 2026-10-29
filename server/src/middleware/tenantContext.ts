@@ -44,13 +44,24 @@ export const tenantContextMiddleware = async (req: Request, res: Response, next:
     });
   }
 
-  // 3. Preserve typed context strictly from verified auth
+  // 3. User metadata mapping for fallback display
+  const roleToUserMap: Record<UserRole, { fullName: string; defaultEmail: string }> = {
+    super_admin: { fullName: 'Alex Turner (Super Admin)', defaultEmail: 'alex.admin@feedbackhub.cloud' },
+    tenant_admin: { fullName: 'Elena Rostova (Tenant Admin)', defaultEmail: 'elena.rostova@acme.com' },
+    squad_lead: { fullName: 'Vikram Mehta (API Squad Lead)', defaultEmail: 'vikram.mehta@acme.com' },
+    developer: { fullName: 'Rahul Sharma (Senior Backend Dev)', defaultEmail: 'rahul.sharma@acme.com' },
+    support_agent: { fullName: 'Marcus Chen (Support Specialist)', defaultEmail: 'marcus.chen@acme.com' },
+    client_user: { fullName: 'Sarah Jenkins (Client Reporter)', defaultEmail: 'sarah.jenkins@clientops.com' }
+  };
+
+  const roleMeta = roleToUserMap[role] || roleToUserMap.developer;
+
   req.auth = {
     tenantId: tenant.id,
     userId,
     role,
-    email,
-    fullName: req.auth.fullName || (role === 'squad_lead' ? 'Vikram Mehta (Lead)' : role === 'developer' ? 'Rahul Sharma (Dev)' : 'Sarah Jenkins (Client)')
+    email: email || roleMeta.defaultEmail,
+    fullName: req.auth.fullName || roleMeta.fullName
   };
 
   // 4. If connected to live Postgres, set session variable for RLS using SQL-injection safe parameterization
