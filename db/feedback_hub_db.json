@@ -19,7 +19,7 @@
       "require_email": true,
       "default_squad": "Checkout & Billing Squad",
       "created_at": "2026-09-27T16:48:10.141Z",
-      "updated_at": "2026-10-28T17:52:44.823Z"
+      "updated_at": "2026-10-29T13:49:03.409Z"
     },
     {
       "id": "tenant-medsync-002",
@@ -125,6 +125,52 @@
   ],
   "tickets": [
     {
+      "id": "ticket-1793279039229",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1041",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "bug",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "IN_DEV",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-10-29T15:03:59.231Z",
+      "created_at": "2026-10-29T13:03:59.236Z",
+      "updated_at": "2026-10-29T13:19:39.681Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:33:51"
+          },
+          {
+            "type": "error",
+            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
+            "timestamp": "18:33:51"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
+            "status": 500,
+            "method": "POST",
+            "timestamp": "18:33:51"
+          }
+        ]
+      },
+      "assigned_to": "user-dev-01",
+      "assigned_to_name": "Rahul Sharma (Senior Backend Dev) (Senior Engineer)"
+    },
+    {
       "id": "ticket-2001",
       "tenant_id": "tenant-medsync-002",
       "product_id": "prod-telehealth-portal",
@@ -142,7 +188,41 @@
       "updated_at": "2026-10-27T14:48:10.154Z"
     }
   ],
-  "events": [],
+  "events": [
+    {
+      "id": "ev-1793279039245",
+      "ticket_id": "ticket-1793279039229",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T13:03:59.246Z"
+    },
+    {
+      "id": "ev-1793279959429",
+      "ticket_id": "ticket-1793279039229",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Elena Rostova (Tenant Admin)",
+      "author_role": "tenant_admin",
+      "event_type": "ASSIGNED",
+      "content": "Ticket assigned to developer Priya Nair (Frontend Platform Dev) (Senior Engineer) by Elena Rostova (Tenant Admin).",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T13:19:19.429Z"
+    },
+    {
+      "id": "ev-1793279979684",
+      "ticket_id": "ticket-1793279039229",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "ASSIGNED",
+      "content": "Ticket assigned to developer Rahul Sharma (Senior Backend Dev) (Senior Engineer) by Rahul Sharma (Senior Backend Dev).",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T13:19:39.684Z"
+    }
+  ],
   "permissionsMatrix": {
     "tenant-acme-corp-001": {
       "super_admin": {
@@ -224,26 +304,26 @@
         "tickets:view": true,
         "tickets:create": true,
         "tickets:edit": true,
-        "tickets:delete": true,
+        "tickets:delete": false,
         "tickets:change_status": true,
-        "tickets:assign": true,
+        "tickets:assign": false,
         "tickets:view_telemetry_internal": true,
         "tickets:view_internal_notes": true,
         "tickets:create_internal_notes": true,
         "products:view": true,
-        "products:create": true,
-        "products:edit": true,
-        "products:delete": true,
-        "products:rotate_keys": true,
+        "products:create": false,
+        "products:edit": false,
+        "products:delete": false,
+        "products:rotate_keys": false,
         "tenant:view_profile": true,
-        "tenant:edit_profile": true,
-        "tenant:manage_domains": true,
-        "tenant:manage_policies": true,
+        "tenant:edit_profile": false,
+        "tenant:manage_domains": false,
+        "tenant:manage_policies": false,
         "permissions:view": true,
-        "permissions:edit": true,
-        "permissions:reset": true,
+        "permissions:edit": false,
+        "permissions:reset": false,
         "audit:view": true,
-        "audit:test_bridge": true
+        "audit:test_bridge": false
       },
       "support_agent": {
         "tickets:view": true,
@@ -376,26 +456,26 @@
         "tickets:view": true,
         "tickets:create": true,
         "tickets:edit": true,
-        "tickets:delete": true,
+        "tickets:delete": false,
         "tickets:change_status": true,
         "tickets:assign": true,
         "tickets:view_telemetry_internal": true,
         "tickets:view_internal_notes": true,
         "tickets:create_internal_notes": true,
         "products:view": true,
-        "products:create": true,
-        "products:edit": true,
-        "products:delete": true,
-        "products:rotate_keys": true,
+        "products:create": false,
+        "products:edit": false,
+        "products:delete": false,
+        "products:rotate_keys": false,
         "tenant:view_profile": true,
-        "tenant:edit_profile": true,
-        "tenant:manage_domains": true,
-        "tenant:manage_policies": true,
+        "tenant:edit_profile": false,
+        "tenant:manage_domains": false,
+        "tenant:manage_policies": false,
         "permissions:view": true,
-        "permissions:edit": true,
-        "permissions:reset": true,
+        "permissions:edit": false,
+        "permissions:reset": false,
         "audit:view": true,
-        "audit:test_bridge": true
+        "audit:test_bridge": false
       },
       "support_agent": {
         "tickets:view": true,
@@ -449,5 +529,5 @@
       }
     }
   },
-  "last_updated": "2026-10-28T17:53:26.463Z"
+  "last_updated": "2026-10-29T13:49:03.409Z"
 }

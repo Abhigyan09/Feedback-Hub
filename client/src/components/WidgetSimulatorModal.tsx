@@ -198,13 +198,13 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white text-slate-800 w-full max-w-[540px] rounded-none shadow-2xl border border-slate-300 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white text-slate-800 w-full max-w-[540px] max-h-[90vh] flex flex-col rounded-none shadow-2xl border border-slate-300 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Modal Header */}
-        <div className="px-6 pt-6 pb-4 flex items-start justify-between border-b border-slate-100 bg-slate-50">
+        {/* Modal Header - Fixed at top */}
+        <div className="px-6 py-4 flex items-start justify-between border-b border-slate-100 bg-slate-50 shrink-0">
           <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-none bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shadow-2xs">
+            <div className="w-10 h-10 rounded-none bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shadow-2xs shrink-0">
               <MessageSquarePlus className="w-5 h-5" />
             </div>
             <div>
@@ -219,13 +219,18 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
           <button 
             type="button" 
             onClick={onClose} 
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-none hover:bg-slate-200 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-none hover:bg-slate-200 transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Modal Form - non-scrollable shell */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+
+          {/* Scrollable Form Content - ONLY this content scrolls */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
 
           {/* 1. Feedback Category (4 Cards) */}
           <div className="space-y-1.5">
@@ -477,19 +482,21 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
             )}
           </div>
 
-          {/* Modal Footer */}
-          <div className="pt-2 flex items-center justify-end space-x-2.5 border-t border-slate-100">
+          </div>
+
+          {/* Modal Footer - Fixed at bottom */}
+          <div className="px-6 py-3.5 flex items-center justify-end space-x-2.5 border-t border-slate-100 bg-slate-50 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-none hover:bg-slate-50 transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-none hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-medium rounded-none shadow-xs flex items-center space-x-2 disabled:opacity-50 transition-all cursor-pointer"
+              className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-semibold rounded-none shadow-xs flex items-center space-x-2 disabled:opacity-50 transition-all cursor-pointer active:scale-[0.98]"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Sending...' : 'Send Feedback'}</span>

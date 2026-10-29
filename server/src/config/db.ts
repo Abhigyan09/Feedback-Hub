@@ -516,10 +516,29 @@ export class MultiTenantStore {
     if (role === 'super_admin') {
       return true;
     }
-    // Prevent tenant_admin from being locked out of permissions governance
-    if (role === 'tenant_admin' && (permissionKey === 'permissions:edit' || permissionKey === 'permissions:reset' || permissionKey === 'permissions:view')) {
+    // Prevent tenant_admin and squad_lead (Lead Manager) from being locked out of permissions governance
+    if ((role === 'tenant_admin' || role === 'squad_lead') && (permissionKey === 'permissions:edit' || permissionKey === 'permissions:reset' || permissionKey === 'permissions:view')) {
       return true;
     }
+
+    // Strict constraint: Developer and non-admin/lead roles cannot perform any settings changes
+    const SETTINGS_CHANGE_PERMISSIONS: PermissionKey[] = [
+      'tenant:edit_profile',
+      'tenant:manage_domains',
+      'tenant:manage_policies',
+      'products:create',
+      'products:edit',
+      'products:rotate_keys',
+      'products:delete',
+      'permissions:edit',
+      'permissions:reset',
+      'audit:test_bridge'
+    ];
+    const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(role);
+    if (!isAdminOrLead && SETTINGS_CHANGE_PERMISSIONS.includes(permissionKey)) {
+      return false;
+    }
+
     const matrix = this.getPermissionsMatrix(tenantId);
     const rolePerms = matrix[role];
     if (!rolePerms) {

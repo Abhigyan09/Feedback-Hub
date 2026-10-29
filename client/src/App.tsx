@@ -36,7 +36,7 @@ export const App: React.FC = () => {
 
   // Authenticated User Context (Dynamically loaded from backend)
   const [currentUser, setCurrentUser] = useState<HeaderUser>({
-    name: 'Elena Rostova (Admin)',
+    name: 'Elena Rostova',
     role: 'Tenant Administrator',
     initials: 'ER',
     email: 'admin@acme.com'
@@ -160,7 +160,8 @@ export const App: React.FC = () => {
         // Dynamic Authenticated User Context from API
         if (data.active_auth) {
           const auth = data.active_auth;
-          const initials = (auth.fullName || 'User')
+          const cleanName = (auth.fullName || 'Active Engineer').replace(/\s*\([^)]*\)$/, '');
+          const initials = (cleanName || 'User')
             .split(' ')
             .map((n: string) => n[0])
             .join('')
@@ -168,8 +169,8 @@ export const App: React.FC = () => {
             .toUpperCase();
 
           setCurrentUser({
-            name: auth.fullName || 'Active Engineer',
-            role: auth.role === 'squad_lead' ? 'Squad Lead & Arch' : auth.role === 'developer' ? 'Senior Backend Dev' : auth.role === 'tenant_admin' ? 'Tenant Administrator' : 'Client Representative',
+            name: cleanName,
+            role: auth.role === 'squad_lead' ? 'Squad Lead & Arch' : auth.role === 'developer' ? 'Senior Backend Dev' : auth.role === 'tenant_admin' ? 'Tenant Administrator' : auth.role === 'super_admin' ? 'Super Administrator' : auth.role === 'support_agent' ? 'Support Agent' : 'Client Representative',
             initials: initials || 'EU',
             email: auth.email || 'engineer@feedbackhub.io'
           });
@@ -653,7 +654,7 @@ export const App: React.FC = () => {
           urgentTickets={urgentCount}
           tickets={tickets}
           permissionsMatrix={permissionsMatrix}
-          onNewIncidentClick={() => setIsCreateModalOpen(true)}
+          onNewIncidentClick={() => setIsSimulatorOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
           onSeedDemo={handleSeedDemo}
           onClearTickets={handleClearTickets}
@@ -817,7 +818,7 @@ export const App: React.FC = () => {
                 onSortChange={handleSortChange}
                 onResetFilters={handleResetFilters}
                 onSelectTicket={setSelectedTicket}
-                onOpenCreateModal={() => setIsCreateModalOpen(true)}
+                onOpenCreateModal={() => setIsSimulatorOpen(true)}
                 onOpenSimulatorModal={() => setIsSimulatorOpen(true)}
                 onSeedDemo={handleSeedDemo}
                 onUpdateStatus={handleUpdateStatus}
@@ -852,7 +853,7 @@ export const App: React.FC = () => {
 
               <div className="flex items-center space-x-2.5 shrink-0">
                 <button
-                  onClick={() => setIsCreateModalOpen(true)}
+                  onClick={() => setIsSimulatorOpen(true)}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
