@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { ENV } from './env.js';
-import { Tenant, User, Product, Ticket, TicketEvent, RefreshTokenRecord } from '../types/index.js';
+import { Tenant, User, Product, Ticket, TicketEvent, RefreshTokenRecord, PasswordResetTokenRecord } from '../types/index.js';
 import { encryptSensitiveData } from '../services/crypto.js';
 
 const { Pool } = pg;
@@ -23,6 +23,7 @@ export class MultiTenantStore {
   public tickets: Ticket[] = [];
   public events: TicketEvent[] = [];
   public refreshTokens: RefreshTokenRecord[] = [];
+  public passwordResetTokens: PasswordResetTokenRecord[] = [];
 
   constructor() {
     this.seedInitialData();
@@ -342,11 +343,13 @@ export async function withTransaction<T>(
   // Development/Test fallback with transactional snapshot rollback support
   const snapshotTokens = tenantStore.refreshTokens.map(t => ({ ...t }));
   const snapshotUsers = tenantStore.users.map(u => ({ ...u }));
+  const snapshotResetTokens = tenantStore.passwordResetTokens.map(t => ({ ...t }));
   try {
     return await callback(null);
   } catch (error) {
     tenantStore.refreshTokens = snapshotTokens;
     tenantStore.users = snapshotUsers;
+    tenantStore.passwordResetTokens = snapshotResetTokens;
     throw error;
   }
 }

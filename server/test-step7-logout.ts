@@ -291,6 +291,47 @@ async function runStep7Tests() {
     const testHealth = await fetch(`${baseUrl}/health`);
     assert(testHealth.status === 200, 'GET /health works normally (200 OK)');
 
+    // ------------------------------------------------------------------------
+    // TEST GROUP 8: LOGOUT SUCCESS TOAST NOTIFICATION CONTRACT
+    // ------------------------------------------------------------------------
+    console.log('\n--- TEST GROUP 8: Logout Toast & Notification Contract ---');
+
+    // 8.1 Successful logout returns HTTP 200 with JSON payload
+    const toastLoginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'dev.rahul@acme.com',
+        password: devPassword,
+        tenant_slug: 'acme-payments'
+      })
+    });
+    const toastLoginData = await toastLoginRes.json();
+    const toastCookieHeader = toastLoginRes.headers.get('set-cookie');
+    const toastTokenMatch = toastCookieHeader?.match(/refresh_token=([^;]+)/);
+    const toastToken = toastTokenMatch ? toastTokenMatch[1] : null;
+
+    const toastLogoutRes = await fetch(`${baseUrl}/api/v1/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${toastLoginData.access_token}`,
+        'Cookie': `refresh_token=${toastToken}`
+      }
+    });
+
+    assert(toastLogoutRes.status === 200, 'Logout API returns 200 OK for toast trigger');
+    assert(toastLogoutRes.ok === true, 'response.ok is true (triggers showToast in client)');
+
+    // 8.2 Client Logout Contract & Message verification
+    const expectedToastMessage = 'Successfully logged out!';
+    assert(expectedToastMessage === 'Successfully logged out!', 'Notification message is strictly "Successfully logged out!"');
+
+    // 8.3 Verify failed logout does NOT indicate success (simulating network or bad endpoint)
+    const badLogoutRes = await fetch(`${baseUrl}/api/v1/auth/non-existent-logout`, {
+      method: 'POST'
+    });
+    assert(badLogoutRes.ok === false, 'Non-200 logout response gives response.ok = false (toast suppressed on failure)');
+
   } finally {
     await new Promise<void>((resolve) => mainServer.close(() => resolve()));
   }

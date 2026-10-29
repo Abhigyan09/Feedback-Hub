@@ -167,3 +167,31 @@ export interface RefreshResponseDTO {
   user: AuthenticatedUserResponse;
 }
 
+export interface PasswordResetTokenRecord {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  token_hash: string;
+  is_used: boolean;
+  expires_at: Date;
+  created_at: Date;
+  used_at?: Date | null;
+}
+
+export interface CreatePasswordResetTokenDTO {
+  user_id: string;
+  tenant_id: string;
+  token_hash: string;
+  expires_at: Date;
+}
+
+export interface ForgotPasswordRequestDTO {
+  email: string;
+  tenant_slug?: string;
+}
+
+export interface ResetPasswordRequestDTO {
+  token: string;
+  new_password: string;
+}
+

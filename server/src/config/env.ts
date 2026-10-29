@@ -21,7 +21,13 @@ const rawEnvSchema = z.object({
   JWT_ACCESS_EXPIRY: z.string().default('15m'),
   JWT_REFRESH_EXPIRY: z.string().default('7d'),
   ENCRYPTION_KEY_AES256: z.string().optional(),
-  CORS_ALLOWED_ORIGINS: z.string().optional()
+  CORS_ALLOWED_ORIGINS: z.string().optional(),
+  FRONTEND_APP_URL: z.string().default('http://localhost:3000'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  EMAIL_FROM: z.string().default('noreply@feedbackhub.io')
 });
 
 const parsed = rawEnvSchema.safeParse(process.env);
@@ -91,5 +97,11 @@ export const ENV = {
   JWT_ACCESS_EXPIRY: rawEnv.JWT_ACCESS_EXPIRY,
   JWT_REFRESH_EXPIRY: rawEnv.JWT_REFRESH_EXPIRY,
   ENCRYPTION_KEY: encryptionKey,
-  CORS_ORIGIN: corsOrigins
+  CORS_ORIGIN: corsOrigins,
+  FRONTEND_APP_URL: rawEnv.FRONTEND_APP_URL,
+  SMTP_HOST: rawEnv.SMTP_HOST,
+  SMTP_PORT: rawEnv.SMTP_PORT,
+  SMTP_USER: rawEnv.SMTP_USER,
+  SMTP_PASS: rawEnv.SMTP_PASS,
+  EMAIL_FROM: rawEnv.EMAIL_FROM
 };

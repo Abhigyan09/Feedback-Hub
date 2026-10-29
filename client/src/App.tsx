@@ -2,10 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './components/LoginPage';
+import { ForgotPasswordPage } from './components/ForgotPasswordPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { Header } from './components/Header';
 import { TicketList } from './components/TicketList';
 import { TicketDetailModal } from './components/TicketDetailModal';
 import { WidgetSimulatorModal } from './components/WidgetSimulatorModal';
+import { LogoutConfirmModal } from './components/LogoutConfirmModal';
+import { Toast } from './components/Toast';
 import { Ticket } from './types';
 import { Activity, ShieldAlert, Cpu, Bell, CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -17,6 +21,8 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isWidgetSimulatorOpen, setIsWidgetSimulatorOpen] = useState<boolean>(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
 
   // Fetch tickets using authenticated JWT claims (tenant & role are authoritatively resolved by backend)
@@ -138,6 +144,17 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Handle confirmed logout
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutModalOpen(false);
+    }
+  };
+
   if (!user) return null;
 
   // Metrics calculations
@@ -153,7 +170,7 @@ const Dashboard: React.FC = () => {
         user={user}
         isConnected={isConnected}
         onOpenWidgetSimulator={() => setIsWidgetSimulatorOpen(true)}
-        onLogout={logout}
+        onLogout={() => setIsLogoutModalOpen(true)}
       />
 
       {/* Real-time Incident Alert Banner */}
@@ -271,6 +288,14 @@ const Dashboard: React.FC = () => {
         onTicketCreated={loadTickets}
       />
 
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setIsLogoutModalOpen(false)}
+        isLoggingOut={isLoggingOut}
+      />
+
       {/* Footer */}
       <footer className="border-t border-[#27272a] py-6 text-center text-xs font-mono text-neutral-500">
         FEEDBACK-HUB ENTERPRISE v1.0 • MULTI-TENANT POSTGRESQL RLS • BANK-GRADE AES-256 TELEMETRY
@@ -281,7 +306,45 @@ const Dashboard: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, toast, clearToast } = useAuth();
+
+  const [authView, setAuthView] = useState<'login' | 'forgot-password' | 'reset-password'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const path = window.location.pathname;
+    if (params.has('token') || path === '/reset-password') {
+      return 'reset-password';
+    }
+    if (path === '/forgot-password') {
+      return 'forgot-password';
+    }
+    return 'login';
+  });
+
+  // Listen for browser popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const path = window.location.pathname;
+      if (params.has('token') || path === '/reset-password') {
+        setAuthView('reset-password');
+      } else if (path === '/forgot-password') {
+        setAuthView('forgot-password');
+      } else {
+        setAuthView('login');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (view: 'login' | 'forgot-password' | 'reset-password') => {
+    setAuthView(view);
+    if (view === 'login') {
+      window.history.pushState({}, '', '/');
+    } else if (view === 'forgot-password') {
+      window.history.pushState({}, '', '/forgot-password');
+    }
+  };
 
   // Screen-flash prevention while silent session restoration runs
   if (isLoading) {
@@ -298,13 +361,46 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Unauthenticated users see the premium login screen
+  // Unauthenticated users see Login, Forgot Password, or Reset Password
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={clearToast}
+          />
+        )}
+        {authView === 'forgot-password' && (
+          <ForgotPasswordPage onBackToLogin={() => navigateTo('login')} />
+        )}
+        {authView === 'reset-password' && (
+          <ResetPasswordPage
+            onNavigateToLogin={() => navigateTo('login')}
+            onRequestNewLink={() => navigateTo('forgot-password')}
+          />
+        )}
+        {authView === 'login' && (
+          <LoginPage onNavigateToForgotPassword={() => navigateTo('forgot-password')} />
+        )}
+      </>
+    );
   }
 
   // Authenticated users enter the protected incident management dashboard
-  return <Dashboard />;
+  return (
+    <>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={clearToast}
+        />
+      )}
+      <Dashboard />
+    </>
+  );
 };
 
 export const App: React.FC = () => {

@@ -206,3 +206,45 @@ export function isValidRefreshTokenFormat(token: string): boolean {
   if (typeof token !== 'string') return false;
   return /^[0-9a-f]{128}$/i.test(token);
 }
+
+// ==============================================================================
+// 4. PASSWORD RESET TOKEN UTILITIES
+// Standard: Cryptographically Secure 256-bit Random Hex + SHA-256 Storage Hash
+// ==============================================================================
+
+export interface GeneratedPasswordResetToken {
+  token: string;
+  tokenHash: string;
+}
+
+/**
+ * Generates a high-entropy, cryptographically random password reset token.
+ * Returns raw token (64 hex characters / 256 bits of entropy) and its SHA-256 hash.
+ */
+export function generatePasswordResetToken(): GeneratedPasswordResetToken {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = hashResetToken(rawToken);
+  return {
+    token: rawToken,
+    tokenHash
+  };
+}
+
+/**
+ * Computes SHA-256 hash of a password reset token.
+ */
+export function hashResetToken(rawToken: string): string {
+  if (typeof rawToken !== 'string' || !rawToken.trim()) {
+    throw new Error('Raw reset token must be a non-empty string');
+  }
+  return crypto.createHash('sha256').update(rawToken.trim()).digest('hex');
+}
+
+/**
+ * Validates whether candidate string has valid reset token format (64 hex chars).
+ */
+export function isValidResetTokenFormat(token: string): boolean {
+  if (typeof token !== 'string') return false;
+  return /^[0-9a-f]{64}$/i.test(token.trim());
+}
+

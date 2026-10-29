@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Building2, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ShieldCheck, Zap, Layers } from 'lucide-react';
 
-export const LoginPage: React.FC = () => {
+export interface LoginPageProps {
+  onNavigateToForgotPassword?: () => void;
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword }) => {
   const { login } = useAuth();
 
   const [tenantSlug, setTenantSlug] = useState<string>('acme-payments');
@@ -11,6 +15,32 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Smooth professional typewriter effect for "Better Feedback. Better Decisions."
+  const fullPart1 = 'Better Feedback.';
+  const fullPart2 = 'Better Decisions.';
+  const [displayedPart1, setDisplayedPart1] = useState<string>('');
+  const [displayedPart2, setDisplayedPart2] = useState<string>('');
+  const [isTypingComplete, setIsTypingComplete] = useState<boolean>(false);
+
+  useEffect(() => {
+    let index = 0;
+    const speed = 50;
+
+    const interval = setInterval(() => {
+      index++;
+      if (index <= fullPart1.length) {
+        setDisplayedPart1(fullPart1.slice(0, index));
+      } else if (index <= fullPart1.length + fullPart2.length) {
+        setDisplayedPart2(fullPart2.slice(0, index - fullPart1.length));
+      } else {
+        setIsTypingComplete(true);
+        clearInterval(interval);
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,12 +99,10 @@ export const LoginPage: React.FC = () => {
         {/* ============================================================== */}
         {/* LEFT COLUMN: BRANDING & PLATFORM INTRO                         */}
         {/* ============================================================== */}
-        <div className="lg:col-span-6 xl:col-span-7 space-y-6">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-8 lg:pr-6">
           
-          {/* Floating Frosted Glass Card: Square with subtle rounding */}
-          <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-lg p-8 sm:p-10 shadow-2xl space-y-6">
-            
-            {/* Brand Header */}
+          {/* Brand Header & Live Stream Status */}
+          <div className="space-y-4">
             <div className="flex items-center space-x-3.5">
               <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-md flex items-center justify-center text-white font-mono font-medium text-base shadow-lg shadow-blue-500/30 border border-blue-400/30">
                 FH
@@ -90,46 +118,47 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Status Indicator */}
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-mono">
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
               <span>Multi-Tenant RLS & Live Incident Stream</span>
             </div>
+          </div>
 
-            {/* Primary Hero Heading: Lighter, refined weight */}
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-[1.18]">
-                Better Feedback.{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-200">
-                  Better Decisions.
-                </span>
-              </h1>
-            </div>
+          {/* Primary Hero Heading & Narrative */}
+          <div className="space-y-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-[1.18] min-h-[2.4em]">
+              {displayedPart1}
+              {displayedPart1 === fullPart1 && ' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-200">
+                {displayedPart2}
+              </span>
+              {!isTypingComplete && (
+                <span className="inline-block w-[3px] h-[0.85em] ml-1 bg-blue-400 animate-pulse align-baseline" />
+              )}
+            </h1>
 
-            {/* Description with Vertical Accent Bar */}
             <div className="flex space-x-3.5">
               <div className="w-0.5 bg-gradient-to-b from-blue-500 via-indigo-500 to-transparent rounded-full flex-shrink-0" />
-              <p className="text-neutral-300/90 text-sm sm:text-base font-normal leading-relaxed">
+              <p className="text-neutral-300/90 text-sm sm:text-base font-normal leading-relaxed max-w-xl">
                 Collect feedback, track issues, collaborate with your team, and turn insights into meaningful improvements.
               </p>
             </div>
+          </div>
 
-            {/* Feature Badges */}
-            <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-white/10">
-              <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Bank-Grade AES</span>
-              </div>
-              <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
-                <Layers className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                <span>Tenant Isolation</span>
-              </div>
-              <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
-                <Zap className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                <span>Real-Time Sync</span>
-              </div>
+          {/* Feature Badges Footer */}
+          <div className="pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span>Bank-Grade AES</span>
             </div>
-
+            <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
+              <Layers className="w-4 h-4 text-blue-400 flex-shrink-0" />
+              <span>Tenant Isolation</span>
+            </div>
+            <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
+              <Zap className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+              <span>Real-Time Sync</span>
+            </div>
           </div>
 
         </div>
@@ -269,6 +298,15 @@ export const LoginPage: React.FC = () => {
                   <label htmlFor="password" className="block text-xs font-medium text-neutral-600">
                     Password
                   </label>
+                  {onNavigateToForgotPassword && (
+                    <button
+                      type="button"
+                      onClick={onNavigateToForgotPassword}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-500 hover:underline transition-colors focus:outline-none"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">

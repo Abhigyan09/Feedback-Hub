@@ -93,6 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Logout Button */}
           <button
+            id="header-logout-btn"
             onClick={onLogout}
             title="Sign out of your session"
             className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 text-red-300 text-xs font-mono transition-all active:scale-[0.98]"

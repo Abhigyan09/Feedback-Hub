@@ -1,4 +1,11 @@
-import { LoginRequestDTO, LoginResponseDTO, RefreshResponseDTO, AuthenticatedUser } from '../types';
+import {
+  LoginRequestDTO,
+  LoginResponseDTO,
+  RefreshResponseDTO,
+  AuthenticatedUser,
+  ForgotPasswordRequestDTO,
+  ResetPasswordRequestDTO
+} from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -68,8 +75,9 @@ export async function refreshSessionApi(): Promise<RefreshResponseDTO> {
 
 /**
  * Logs out the current user session by revoking refresh tokens and clearing the cookie.
+ * Returns true if logout API succeeded (HTTP 200), false otherwise.
  */
-export async function logoutApi(accessToken?: string | null): Promise<void> {
+export async function logoutApi(accessToken?: string | null): Promise<boolean> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   };
@@ -79,13 +87,15 @@ export async function logoutApi(accessToken?: string | null): Promise<void> {
   }
 
   try {
-    await fetch(`${API_BASE}/api/v1/auth/logout`, {
+    const response = await fetch(`${API_BASE}/api/v1/auth/logout`, {
       method: 'POST',
       headers,
       credentials: 'include'
     });
+    return response.ok;
   } catch (err) {
     console.warn('[Auth API] Logout request encountered network error:', err);
+    return false;
   }
 }
 
@@ -157,3 +167,56 @@ export async function authenticatedFetch(
 
   return response;
 }
+
+/**
+ * Requests a password reset link for the given email (and optional tenant slug).
+ */
+export async function forgotPasswordApi(payload: ForgotPasswordRequestDTO): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new AuthError(
+      data.message || data.error || 'Failed to submit password reset request.',
+      response.status,
+      data.code
+    );
+  }
+
+  return data as { message: string };
+}
+
+/**
+ * Resets password using the received token and new password.
+ */
+export async function resetPasswordApi(payload: ResetPasswordRequestDTO): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE}/api/v1/auth/reset-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new AuthError(
+      data.message || data.error || 'Failed to reset password.',
+      response.status,
+      data.code
+    );
+  }
+
+  return data as { message: string };
+}
+

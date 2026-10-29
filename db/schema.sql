@@ -156,6 +156,21 @@ CREATE INDEX idx_refresh_tokens_family ON refresh_tokens(family_id);
 CREATE INDEX idx_refresh_tokens_user_tenant ON refresh_tokens(user_id, tenant_id);
 CREATE INDEX idx_refresh_tokens_active_expiry ON refresh_tokens(expires_at) WHERE is_revoked = FALSE;
 
+-- 10. PASSWORD RESET TOKENS (Single-use expiration & tenant-bound reset)
+CREATE TABLE password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    is_used BOOLEAN NOT NULL DEFAULT FALSE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    used_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
+CREATE INDEX idx_password_reset_tokens_user_tenant ON password_reset_tokens(user_id, tenant_id);
+CREATE INDEX idx_password_reset_tokens_active_expiry ON password_reset_tokens(expires_at) WHERE is_used = FALSE;
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -165,6 +180,7 @@ ALTER TABLE ticket_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE refresh_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE password_reset_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Dynamic Tenant Context Check
 CREATE POLICY rls_tickets_tenant ON tickets
@@ -196,3 +212,8 @@ CREATE POLICY rls_audit_tenant ON audit_logs
 CREATE POLICY rls_refresh_tokens_tenant ON refresh_tokens
     FOR ALL
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
+
+CREATE POLICY rls_password_reset_tokens_tenant ON password_reset_tokens
+    FOR ALL
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
+

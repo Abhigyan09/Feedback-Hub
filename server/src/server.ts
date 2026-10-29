@@ -42,8 +42,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Authentication Routes
+// Authentication Routes (Supports /api/auth and versioned /api/v1/auth)
 app.use('/api/v1/auth', authRouter);
+app.use('/api/auth', authRouter);
 
 // Public Telemetry Ingest Route (No tenant auth required, uses X-Product-Key)
 app.use('/api/v1/ingest', ingestRouter);

@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx test-auth-foundation.ts && tsx test-step2-persistence.ts && tsx test-step3-login.ts && tsx test-step4-middleware.ts && tsx test-step5-rbac.ts && tsx test-step6-refresh.ts && tsx test-step7-logout.ts && tsx test-step8-websocket.ts && tsx test-step9-security.ts",
+    "test": "tsx test-auth-foundation.ts && tsx test-step2-persistence.ts && tsx test-step3-login.ts && tsx test-step4-middleware.ts && tsx test-step5-rbac.ts && tsx test-step6-refresh.ts && tsx test-step7-logout.ts && tsx test-step8-websocket.ts && tsx test-step9-security.ts && tsx test-step10-password-reset.ts",
     "test:auth": "tsx test-auth-foundation.ts",
     "test:db": "tsx test-step2-persistence.ts",
     "test:login": "tsx test-step3-login.ts",
@@ -16,7 +16,8 @@
     "test:refresh": "tsx test-step6-refresh.ts",
     "test:logout": "tsx test-step7-logout.ts",
     "test:ws": "tsx test-step8-websocket.ts",
-    "test:security": "tsx test-step9-security.ts"
+    "test:security": "tsx test-step9-security.ts",
+    "test:reset": "tsx test-step10-password-reset.ts"
   },
   "dependencies": {
     "argon2": "^0.41.1",

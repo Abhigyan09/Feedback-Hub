@@ -5,22 +5,33 @@ import { ENV } from '../config/env.js';
 import { withTransaction } from '../config/db.js';
 import {
   verifyPassword,
+  hashPassword,
   signAccessToken,
   verifyAccessToken,
   generateRefreshToken,
   hashRefreshToken,
-  isValidRefreshTokenFormat
+  isValidRefreshTokenFormat,
+  generatePasswordResetToken,
+  hashResetToken,
+  isValidResetTokenFormat
 } from '../services/auth.service.js';
 import {
   findTenantBySlug,
   findTenantById,
   findUserByTenantAndEmail,
   findUserById,
+  findUserByEmail,
   createRefreshToken,
   findRefreshTokenForUpdate,
   revokeRefreshToken,
-  revokeTokenFamily
+  revokeTokenFamily,
+  createPasswordResetToken,
+  findPasswordResetTokenByHash,
+  markPasswordResetTokenUsed,
+  updateUserPassword,
+  revokeAllUserRefreshTokens
 } from '../services/auth.repository.js';
+import { sendPasswordResetEmail } from '../services/email.service.js';
 import { LoginResponseDTO, RefreshResponseDTO, AuthenticatedUserResponse } from '../types/index.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { disconnectUserSockets } from '../services/socket.js';
@@ -468,5 +479,206 @@ authRouter.get('/me', authenticate, (req: Request, res: Response) => {
     }
   });
 });
+
+// ==============================================================================
+// VALIDATION SCHEMAS FOR PASSWORD RESET
+// ==============================================================================
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string({ required_error: 'Email is required' })
+    .trim()
+    .email({ message: 'A valid email address is required' })
+    .max(255, { message: 'Email cannot exceed 255 characters' }),
+  tenant_slug: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+});
+
+export const resetPasswordSchema = z.object({
+  token: z
+    .string({ required_error: 'Reset token is required' })
+    .trim()
+    .min(1, { message: 'Reset token is required' }),
+  new_password: z
+    .string({ required_error: 'New password is required' })
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    .max(256, { message: 'Password cannot exceed 256 characters' })
+});
+
+// ==============================================================================
+// POST /forgot-password
+// Generates single-use reset token and dispatches email (anti-enumeration safe)
+// ==============================================================================
+authRouter.post('/forgot-password', async (req: Request, res: Response) => {
+  const parseResult = forgotPasswordSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({
+      error: 'Validation Error',
+      message: 'Invalid request payload',
+      details: parseResult.error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message
+      }))
+    });
+  }
+
+  const { email, tenant_slug } = parseResult.data;
+  const genericSuccessMessage = 'If an account matches that email, a password reset link has been dispatched.';
+
+  try {
+    const lookup = await findUserByEmail(email, tenant_slug);
+    if (!lookup || !lookup.user || !lookup.user.is_active) {
+      // Anti-enumeration: return standard 200 OK without disclosing user absence
+      return res.status(200).json({ message: genericSuccessMessage });
+    }
+
+    const { user, tenant } = lookup;
+    const { token: rawResetToken, tokenHash } = generatePasswordResetToken();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiration
+
+    await withTransaction(async (client) => {
+      await createPasswordResetToken(
+        {
+          user_id: user.id,
+          tenant_id: tenant.id,
+          token_hash: tokenHash,
+          expires_at: expiresAt
+        },
+        client
+      );
+    });
+
+    await sendPasswordResetEmail({
+      toEmail: user.email,
+      recipientName: user.full_name,
+      resetToken: rawResetToken
+    });
+
+    return res.status(200).json({ message: genericSuccessMessage });
+  } catch (err: any) {
+    console.error('[Auth Error: Forgot Password]', err);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'An unexpected error occurred while processing your request.'
+    });
+  }
+});
+
+// ==============================================================================
+// POST /reset-password
+// Verifies single-use token, enforces expiration, updates password with Argon2id,
+// and revokes all active sessions for that user.
+// ==============================================================================
+authRouter.post('/reset-password', async (req: Request, res: Response) => {
+  const parseResult = resetPasswordSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({
+      error: 'Validation Error',
+      message: 'Invalid request payload',
+      details: parseResult.error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message
+      }))
+    });
+  }
+
+  const { token, new_password } = parseResult.data;
+
+  if (!isValidResetTokenFormat(token)) {
+    return res.status(400).json({
+      error: 'Invalid Token',
+      code: 'INVALID_TOKEN',
+      message: 'The password reset token is invalid or malformed.'
+    });
+  }
+
+  const tokenHash = hashResetToken(token);
+
+  try {
+    let affectedUserId: string | null = null;
+    let failureResponse: { status: number; error: string; code: string; message: string } | null = null;
+
+    await withTransaction(async (client) => {
+      const storedToken = await findPasswordResetTokenByHash(tokenHash, client);
+
+      if (!storedToken) {
+        failureResponse = {
+          status: 400,
+          error: 'Invalid Token',
+          code: 'INVALID_TOKEN',
+          message: 'The password reset token was not found or is invalid.'
+        };
+        return;
+      }
+
+      if (storedToken.is_used) {
+        failureResponse = {
+          status: 400,
+          error: 'Token Already Used',
+          code: 'TOKEN_ALREADY_USED',
+          message: 'This password reset link has already been used. Please request a new one.'
+        };
+        return;
+      }
+
+      if (new Date(storedToken.expires_at).getTime() < Date.now()) {
+        failureResponse = {
+          status: 400,
+          error: 'Token Expired',
+          code: 'TOKEN_EXPIRED',
+          message: 'This password reset link has expired. Please request a new one.'
+        };
+        return;
+      }
+
+      const user = await findUserById(storedToken.tenant_id, storedToken.user_id, client);
+      if (!user) {
+        failureResponse = {
+          status: 400,
+          error: 'User Not Found',
+          code: 'USER_NOT_FOUND',
+          message: 'The user account associated with this token no longer exists.'
+        };
+        return;
+      }
+
+      // Hash new password using existing Argon2id configuration
+      const newPasswordHash = await hashPassword(new_password);
+
+      // Update password in database / store
+      await updateUserPassword(user.id, newPasswordHash, client);
+
+      // Enforce single-use: mark token as used
+      await markPasswordResetTokenUsed(tokenHash, client);
+
+      // Invalidate all active sessions / refresh tokens for this user
+      await revokeAllUserRefreshTokens(user.id, client);
+
+      affectedUserId = user.id;
+    });
+
+    if (failureResponse) {
+      return res.status((failureResponse as any).status).json(failureResponse);
+    }
+
+    // Forcibly terminate any live WebSocket connections for this user across all tabs/devices
+    if (affectedUserId) {
+      disconnectUserSockets(affectedUserId);
+    }
+
+    return res.status(200).json({
+      message: 'Password has been successfully reset. Please sign in with your new password.'
+    });
+  } catch (err: any) {
+    console.error('[Auth Error: Reset Password]', err);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'An unexpected error occurred while resetting your password.'
+    });
+  }
+});
+
 
 

@@ -92,3 +92,14 @@ export interface RefreshResponseDTO {
   user: AuthenticatedUser;
 }
 
+export interface ForgotPasswordRequestDTO {
+  email: string;
+  tenant_slug?: string;
+}
+
+export interface ResetPasswordRequestDTO {
+  token: string;
+  new_password: string;
+}
+
+

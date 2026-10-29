@@ -2,14 +2,22 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { AuthenticatedUser, LoginRequestDTO } from '../types';
 import { loginApi, refreshSessionApi, logoutApi } from '../api/auth.api';
 
+export interface ToastNotification {
+  message: string;
+  type: 'success' | 'error';
+}
+
 interface AuthContextType {
   user: AuthenticatedUser | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequestDTO) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   refreshSession: () => Promise<string | null>;
+  toast: ToastNotification | null;
+  showToast: (message: string, type?: 'success' | 'error') => void;
+  clearToast: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [toast, setToast] = useState<ToastNotification | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // In-memory token ref for synchronized access inside callbacks
@@ -102,20 +111,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     scheduleTokenRefresh(data.expires_in || 900);
   };
 
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+  }, []);
+
+  const clearToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
   // Logout handler
-  const logout = async () => {
+  const logout = async (): Promise<boolean> => {
     const currentToken = tokenRef.current;
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = null;
     }
 
+    let isSuccess = false;
     try {
-      await logoutApi(currentToken);
+      isSuccess = await logoutApi(currentToken);
+      if (isSuccess) {
+        showToast('Successfully logged out!', 'success');
+      }
     } finally {
       setAccessToken(null);
       setUser(null);
     }
+    return isSuccess;
   };
 
   return (
@@ -127,7 +149,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         logout,
-        refreshSession
+        refreshSession,
+        toast,
+        showToast,
+        clearToast
       }}
     >
       {children}
