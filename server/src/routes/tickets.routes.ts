@@ -235,13 +235,25 @@ ticketRouter.patch('/:id/status', requirePermission('tickets:change_status'), (r
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
 
+  // Support Agent safety guard
+  if (userRole === 'support_agent' && status !== 'TRIAGED' && status !== 'OPEN') {
+    return res.status(403).json({
+      error: 'Permission Denied',
+      code: 'FORBIDDEN',
+      message: 'Support agents are authorized for triage (TRIAGED or OPEN). Advancing to IN_DEV or RESOLVED requires an engineering or lead role.'
+    });
+  }
+
+  if (!status || typeof status !== 'string') {
+    return res.status(400).json({ error: 'Valid ticket status is required.' });
+  }
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
   const oldStatus = ticket.status;
-  ticket.status = status;
+  ticket.status = status as any;
   ticket.updated_at = new Date().toISOString();
 
   // Create timeline event
@@ -275,6 +287,10 @@ ticketRouter.post('/:id/events', requirePermission('tickets:view'), (req: Reques
   const { content, is_internal_only } = req.body;
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
+
+  if (!content || typeof content !== 'string' || !content.trim()) {
+    return res.status(400).json({ error: 'Event content is required.' });
+  }
 
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {

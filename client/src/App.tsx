@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginPage } from './components/LoginPage';
+import { ForgotPasswordPage } from './components/ForgotPasswordPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { Toast } from './components/Toast';
+import { LogoutConfirmModal } from './components/LogoutConfirmModal';
 import { Ticket, Tenant, UserRole, RolePermissionsMatrix, TeamMember, TicketCategory, TicketSeverity } from './types';
 import { normalizeSeverity, normalizeStatus } from './utils/formatters';
 import { Sidebar, SidebarView } from './components/Sidebar';
@@ -23,26 +29,34 @@ import {
   Cpu, 
   Layers, 
   CheckCircle2,
-  Plus 
+  Plus,
+  Loader2
 } from 'lucide-react';
 
-export const App: React.FC = () => {
-  // Tenant & Role State (Multi-tenant dynamic isolation with localStorage persistence)
+const Dashboard: React.FC = () => {
+  const { user, accessToken, logout } = useAuth();
+
+  // Tenant & Role State (Multi-tenant dynamic isolation with localStorage persistence or verified user)
   const [currentTenantId, setCurrentTenantId] = useState<string>(() => {
-    return localStorage.getItem('fb_current_tenant_id') || 'tenant-acme-corp-001';
+    return localStorage.getItem('fb_current_tenant_id') || user?.tenant_id || 'tenant-acme-corp-001';
   });
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
-    return (localStorage.getItem('fb_current_role') as UserRole) || 'tenant_admin';
+    return (localStorage.getItem('fb_current_role') as UserRole) || user?.role || 'tenant_admin';
   });
   const [tenants, setTenants] = useState<Tenant[]>([]);
 
-  // Authenticated User Context (Dynamically loaded from backend)
-  const [currentUser, setCurrentUser] = useState<HeaderUser>({
-    name: 'Elena Rostova',
-    role: 'Tenant Administrator',
-    initials: 'ER',
-    email: 'admin@acme.com'
-  });
+  // Authenticated User Context (Dynamically bound to real authenticated user or API response)
+  const [currentUser, setCurrentUser] = useState<HeaderUser>(() => ({
+    name: user?.full_name || user?.email || 'Elena Rostova',
+    role: user?.role === 'squad_lead' ? 'Squad Lead & Arch' : user?.role === 'developer' ? 'Senior Backend Dev' : user?.role === 'tenant_admin' ? 'Tenant Administrator' : user?.role === 'super_admin' ? 'Global Super Admin' : 'Tenant Administrator',
+    initials: (user?.full_name || user?.email || 'ER')
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+    email: user?.email || 'admin@acme.com'
+  }));
 
   // Dynamic Data State (Loaded 100% from live backend API)
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -51,6 +65,8 @@ export const App: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [apiLatencyMs, setApiLatencyMs] = useState<number | null>(null);
@@ -58,7 +74,6 @@ export const App: React.FC = () => {
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState<boolean>(false);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
 
   // Sidebar navigation state with localStorage persistence
   const [currentView, setCurrentView] = useState<SidebarView>(() => {
@@ -103,14 +118,19 @@ export const App: React.FC = () => {
     setIsLoading(true);
     const start = performance.now();
     try {
+      const headers: Record<string, string> = {
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole,
+        'pragma': 'no-cache',
+        'cache-control': 'no-cache'
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tickets?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole,
-          'pragma': 'no-cache',
-          'cache-control': 'no-cache'
-        }
+        headers,
+        credentials: 'include'
       });
       const elapsed = Math.round(performance.now() - start);
       setApiLatencyMs(elapsed);
@@ -124,17 +144,22 @@ export const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentTenantId, currentRole]);
+  }, [accessToken, currentTenantId, currentRole]);
 
   // 2. Fetch Available Tenants List
   const fetchAllTenants = useCallback(async () => {
     try {
+      const headers: Record<string, string> = {
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tenants/all?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        }
+        headers,
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -145,16 +170,21 @@ export const App: React.FC = () => {
     } catch (err) {
       console.warn('Failed to fetch tenants list:', err);
     }
-  }, [currentTenantId, currentRole]);
+  }, [accessToken, currentTenantId, currentRole]);
 
   // 3. Fetch Dynamic Tenant & Team Members from Backend
   const fetchTenantMetadata = useCallback(async () => {
     try {
+      const headers: Record<string, string> = {
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tenants/current?_t=${Date.now()}`, {
-        headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        }
+        headers,
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -218,19 +248,24 @@ export const App: React.FC = () => {
     } catch (err) {
       console.warn('Tenant metadata fetch error:', err);
     }
-  }, [currentTenantId, currentRole]);
+  }, [accessToken, currentTenantId, currentRole]);
 
   // 4. Fetch Role Permissions Matrix
   const loadTenantPermissions = useCallback(async () => {
     try {
+      const headers: Record<string, string> = {
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole,
+        'pragma': 'no-cache',
+        'cache-control': 'no-cache'
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tenants/permissions?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole,
-          'pragma': 'no-cache',
-          'cache-control': 'no-cache'
-        }
+        headers,
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -241,7 +276,7 @@ export const App: React.FC = () => {
     } catch (err) {
       console.error('Failed to load permissions matrix:', err);
     }
-  }, [currentTenantId, currentRole]);
+  }, [accessToken, currentTenantId, currentRole]);
 
   useEffect(() => {
     fetchTickets();
@@ -253,10 +288,7 @@ export const App: React.FC = () => {
   // 5. Real-Time WebSockets connection to live backend
   useEffect(() => {
     const socket: Socket = io({
-      query: {
-        tenantId: currentTenantId,
-        role: currentRole
-      }
+      auth: accessToken ? { token: accessToken } : undefined
     });
 
     socket.on('connect', () => {
@@ -264,6 +296,11 @@ export const App: React.FC = () => {
     });
 
     socket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('[WebSocket] Connection error:', err.message);
       setIsConnected(false);
     });
 
@@ -313,7 +350,7 @@ export const App: React.FC = () => {
     return () => {
       socket.disconnect();
     };
-  }, [currentTenantId, currentRole, fetchTickets, fetchTenantMetadata, fetchAllTenants]);
+  }, [accessToken, currentTenantId, currentRole, fetchTickets, fetchTenantMetadata, fetchAllTenants]);
 
   // Compute dynamic counts from live backend data
   const totalCount = tickets.length;
@@ -421,15 +458,21 @@ export const App: React.FC = () => {
   // Live status update via PATCH /api/v1/tickets/:id/status
   const handleUpdateStatus = async (ticketId: string, newStatus: string, note?: string) => {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tickets/${ticketId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus, note })
       });
+
       if (res.ok) {
         fetchTickets();
       } else {
@@ -449,13 +492,18 @@ export const App: React.FC = () => {
   // Live assignee update via PATCH /api/v1/tickets/:id/assignee
   const handleUpdateTicketAssignee = async (ticketId: string, newAssigneeId: string | null, newAssigneeName: string | null) => {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tickets/${ticketId}/assignee`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({
           assigneeId: newAssigneeId,
           assigneeName: newAssigneeName
@@ -480,13 +528,18 @@ export const App: React.FC = () => {
   // Handle full ticket update (Edit)
   const handleUpdateTicket = async (ticketId: string, updatedFields: Partial<Ticket>) => {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tickets/${ticketId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(updatedFields)
       });
       if (!res.ok) {
@@ -506,12 +559,17 @@ export const App: React.FC = () => {
   // Handle delete ticket
   const handleDeleteTicket = async (ticketId: string) => {
     try {
+      const headers: Record<string, string> = {
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tickets/${ticketId}`, {
         method: 'DELETE',
-        headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        }
+        headers,
+        credentials: 'include'
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -530,13 +588,18 @@ export const App: React.FC = () => {
   // Handle add event / dev note
   const handleAddEvent = async (ticketId: string, content: string, isInternalOnly: boolean) => {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch(`/api/v1/tickets/${ticketId}/events`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({ content, is_internal_only: isInternalOnly })
       });
       if (res.ok) {
@@ -558,13 +621,18 @@ export const App: React.FC = () => {
     reporter_email?: string;
   }) => {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch('/api/v1/tickets', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(ticketData)
       });
 
@@ -591,12 +659,17 @@ export const App: React.FC = () => {
   const handleSeedDemo = async () => {
     setIsLoading(true);
     try {
+      const headers: Record<string, string> = {
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch('/api/v1/tickets/seed-demo', {
         method: 'POST',
-        headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        }
+        headers,
+        credentials: 'include'
       });
       if (res.ok) {
         fetchTickets();
@@ -617,12 +690,17 @@ export const App: React.FC = () => {
     }
     setIsLoading(true);
     try {
+      const headers: Record<string, string> = {
+        'x-tenant-id': currentTenantId,
+        'x-user-role': currentRole
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       const res = await fetch('/api/v1/tickets/clear', {
         method: 'DELETE',
-        headers: {
-          'x-tenant-id': currentTenantId,
-          'x-user-role': currentRole
-        }
+        headers,
+        credentials: 'include'
       });
       if (res.ok) {
         setTickets([]);
@@ -634,6 +712,17 @@ export const App: React.FC = () => {
       console.error('Failed to clear tickets:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle confirmed logout
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutModalOpen(false);
     }
   };
 
@@ -1020,6 +1109,7 @@ export const App: React.FC = () => {
         ticket={selectedTicket}
         onClose={() => setSelectedTicket(null)}
         currentRole={currentRole}
+        accessToken={accessToken}
         onUpdateStatus={handleUpdateStatus}
         onAddEvent={handleAddEvent}
         onUpdateTicket={handleUpdateTicket}
@@ -1048,38 +1138,120 @@ export const App: React.FC = () => {
         }}
       />
 
-      {/* Logout Confirmation Modal */}
-      {isLogoutModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 w-full max-w-sm p-6 space-y-4 shadow-xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-900">Sign Out</h3>
-              <p className="text-xs text-slate-500">
-                Are you sure you want to end your current tenant session?
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2">
-              <button
-                onClick={() => setIsLogoutModalOpen(false)}
-                className="px-3.5 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-medium cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setIsLogoutModalOpen(false);
-                  setCurrentRole('client_user');
-                }}
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer"
-              >
-                Log Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setIsLogoutModalOpen(false)}
+        isLoggingOut={isLoggingOut}
+      />
 
     </div>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const { isAuthenticated, isLoading, toast, clearToast } = useAuth();
+
+  const [authView, setAuthView] = useState<'login' | 'forgot-password' | 'reset-password'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const path = window.location.pathname;
+    if (params.has('token') || path === '/reset-password') {
+      return 'reset-password';
+    }
+    if (path === '/forgot-password') {
+      return 'forgot-password';
+    }
+    return 'login';
+  });
+
+  // Listen for browser popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const path = window.location.pathname;
+      if (params.has('token') || path === '/reset-password') {
+        setAuthView('reset-password');
+      } else if (path === '/forgot-password') {
+        setAuthView('forgot-password');
+      } else {
+        setAuthView('login');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (view: 'login' | 'forgot-password' | 'reset-password') => {
+    setAuthView(view);
+    if (view === 'login') {
+      window.history.pushState({}, '', '/');
+    } else if (view === 'forgot-password') {
+      window.history.pushState({}, '', '/forgot-password');
+    }
+  };
+
+  // Screen-flash prevention while silent session restoration runs
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0c10] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-white font-mono font-bold text-xl shadow-lg shadow-blue-500/30 border border-blue-400/30 animate-pulse">
+          FH
+        </div>
+        <div className="mt-4 flex items-center space-x-2 text-neutral-400 font-mono text-xs">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+          <span>Restoring Feedback-Hub session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Unauthenticated users see Login, Forgot Password, or Reset Password
+  if (!isAuthenticated) {
+    return (
+      <>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={clearToast}
+          />
+        )}
+        {authView === 'forgot-password' && (
+          <ForgotPasswordPage onBackToLogin={() => navigateTo('login')} />
+        )}
+        {authView === 'reset-password' && (
+          <ResetPasswordPage
+            onNavigateToLogin={() => navigateTo('login')}
+            onRequestNewLink={() => navigateTo('forgot-password')}
+          />
+        )}
+        {authView === 'login' && (
+          <LoginPage onNavigateToForgotPassword={() => navigateTo('forgot-password')} />
+        )}
+      </>
+    );
+  }
+
+  // Authenticated users enter the rich incident management dashboard
+  return (
+    <>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={clearToast}
+        />
+      )}
+      <Dashboard />
+    </>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };

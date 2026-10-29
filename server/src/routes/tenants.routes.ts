@@ -13,11 +13,14 @@ tenantRouter.get('/current', (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const tenant = tenantStore.tenants.find(t => t.id === tenantId);
   if (!tenant) {
-    return res.status(404).json({ error: 'Tenant not found.' });
+    return res.status(404).json({ error: `Tenant not found for ID: ${tenantId}` });
   }
 
   const products = tenantStore.products.filter(p => p.tenant_id === tenantId);
-  const users = tenantStore.users.filter(u => u.tenant_id === tenantId);
+  // Sanitize password_hash from team members
+  const users = tenantStore.users
+    .filter(u => u.tenant_id === tenantId)
+    .map(({ password_hash, ...safeUser }) => safeUser);
   const permissionsMatrix = tenantStore.getPermissionsMatrix(tenantId);
 
   res.json({
@@ -29,7 +32,7 @@ tenantRouter.get('/current', (req: Request, res: Response) => {
   });
 });
 
-// 2. UPDATE ACTIVE TENANT SETTINGS
+// 2. UPDATE ACTIVE TENANT SETTINGS (Full Update)
 tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenant:manage_policies', 'tenant:manage_domains']), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
   const { 
@@ -112,6 +115,27 @@ tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenan
   res.json({
     success: true,
     message: 'Tenant settings updated and saved successfully.',
+    tenant
+  });
+});
+
+// 2b. PATCH TENANT SETTINGS (Partial update backward compatibility)
+tenantRouter.patch('/current', requireRole(['super_admin', 'tenant_admin']), (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const tenant = tenantStore.tenants.find(t => t.id === tenantId);
+  if (!tenant) {
+    return res.status(404).json({ error: `Tenant not found for ID: ${tenantId}` });
+  }
+
+  const { name, plan, allowed_domains } = req.body;
+  if (name && typeof name === 'string') tenant.name = name;
+  if (plan && typeof plan === 'string') tenant.plan = plan;
+  if (allowed_domains && Array.isArray(allowed_domains)) tenant.allowed_domains = allowed_domains;
+
+  tenantStore.saveToDisk();
+
+  res.json({
+    message: 'Tenant settings updated successfully',
     tenant
   });
 });
@@ -409,8 +433,8 @@ tenantRouter.delete('/products/:id', requirePermission('products:delete'), async
   });
 });
 
-// 10. LIST ALL TENANTS (FOR SWITCHER)
-tenantRouter.get('/all', (req: Request, res: Response) => {
+// 10. LIST ALL TENANTS (FOR SWITCHER - SUPER_ADMIN ONLY)
+tenantRouter.get('/all', requireRole(['super_admin']), (req: Request, res: Response) => {
   res.json({
     tenants: tenantStore.tenants.map(t => ({
       id: t.id,
@@ -688,4 +712,3 @@ tenantRouter.post('/staff/rebalance', (req: Request, res: Response) => {
     rebalanced_count: rebalancedCount
   });
 });
-

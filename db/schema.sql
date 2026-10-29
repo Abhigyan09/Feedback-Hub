@@ -152,6 +152,38 @@ CREATE TABLE audit_logs (
 );
 CREATE INDEX idx_audit_tenant_time ON audit_logs(tenant_id, timestamp DESC);
 
+-- 9. REFRESH TOKENS (Multi-session tracking, rotation lineage & compromise detection)
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    family_id UUID NOT NULL,
+    is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    replaced_by_token_hash VARCHAR(64)
+);
+CREATE UNIQUE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);
+CREATE INDEX idx_refresh_tokens_family ON refresh_tokens(family_id);
+CREATE INDEX idx_refresh_tokens_user_tenant ON refresh_tokens(user_id, tenant_id);
+CREATE INDEX idx_refresh_tokens_active_expiry ON refresh_tokens(expires_at) WHERE is_revoked = FALSE;
+
+-- 10. PASSWORD RESET TOKENS (Single-use expiration & tenant-bound reset)
+CREATE TABLE password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    is_used BOOLEAN NOT NULL DEFAULT FALSE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    used_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
+CREATE INDEX idx_password_reset_tokens_user_tenant ON password_reset_tokens(user_id, tenant_id);
+CREATE INDEX idx_password_reset_tokens_active_expiry ON password_reset_tokens(expires_at) WHERE is_used = FALSE;
+
 -- 9. ROLE PERMISSIONS (Dynamic Granular RBAC Mapping per Tenant & Role)
 CREATE TABLE role_permissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -177,6 +209,8 @@ ALTER TABLE ticket_telemetry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ticket_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE refresh_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE password_reset_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
 
 -- Dynamic Tenant Context Check
@@ -204,6 +238,14 @@ CREATE POLICY rls_products_tenant ON products
 
 CREATE POLICY rls_audit_tenant ON audit_logs
     FOR SELECT
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
+
+CREATE POLICY rls_refresh_tokens_tenant ON refresh_tokens
+    FOR ALL
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
+
+CREATE POLICY rls_password_reset_tokens_tenant ON password_reset_tokens
+    FOR ALL
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::UUID);
 
 CREATE POLICY rls_role_permissions_tenant ON role_permissions

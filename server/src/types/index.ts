@@ -36,6 +36,8 @@ export interface User {
   is_active: boolean;
   status?: 'ONLINE' | 'AWAY' | 'ON_CALL';
   squad?: string;
+  password_hash?: string;
+  refresh_token_family_id?: string;
   created_at: string;
 }
 
@@ -101,6 +103,114 @@ export interface Ticket {
   created_at: string;
   updated_at: string;
   waiting_for_client?: boolean;
+}
+
+export interface AccessTokenClaims {
+  sub: string;
+  tenant_id: string;
+  role: UserRole;
+  email: string;
+  full_name: string;
+  type: 'access';
+  iat?: number;
+  exp?: number;
+  iss?: string;
+  aud?: string;
+}
+
+export interface GeneratedRefreshToken {
+  token: string;
+  tokenHash: string;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  expiresIn: number;
+  tokenType: 'Bearer';
+}
+
+export interface RefreshTokenRecord {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  token_hash: string;
+  family_id: string;
+  is_revoked: boolean;
+  expires_at: Date;
+  created_at: Date;
+  replaced_by_token_hash?: string | null;
+}
+
+export interface CreateRefreshTokenDTO {
+  user_id: string;
+  tenant_id: string;
+  token_hash: string;
+  family_id: string;
+  expires_at: Date;
+}
+
+export interface UserWithCredentials extends User {
+  password_hash: string;
+}
+
+export interface LoginRequestDTO {
+  email: string;
+  password: string;
+  tenant_slug: string;
+}
+
+export interface AuthenticatedUserResponse {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  tenant_id: string;
+  tenant_name: string;
+  tenant_slug: string;
+}
+
+export interface LoginResponseDTO {
+  message: string;
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  user: AuthenticatedUserResponse;
+}
+
+export interface RefreshResponseDTO {
+  message: string;
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  user: AuthenticatedUserResponse;
+}
+
+export interface PasswordResetTokenRecord {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  token_hash: string;
+  is_used: boolean;
+  expires_at: Date;
+  created_at: Date;
+  used_at?: Date | null;
+}
+
+export interface CreatePasswordResetTokenDTO {
+  user_id: string;
+  tenant_id: string;
+  token_hash: string;
+  expires_at: Date;
+}
+
+export interface ForgotPasswordRequestDTO {
+  email: string;
+  tenant_slug?: string;
+}
+
+export interface ResetPasswordRequestDTO {
+  token: string;
+  new_password: string;
 }
 
 export type PermissionModule = 'tickets' | 'products' | 'tenant' | 'permissions' | 'audit';

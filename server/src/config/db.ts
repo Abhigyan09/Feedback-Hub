@@ -2,7 +2,7 @@ import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { ENV } from './env.js';
-import { Tenant, User, Product, Ticket, TicketEvent, UserRole, PermissionKey, RolePermissionsMatrix } from '../types/index.js';
+import { Tenant, User, Product, Ticket, TicketEvent, UserRole, PermissionKey, RolePermissionsMatrix, RefreshTokenRecord, PasswordResetTokenRecord } from '../types/index.js';
 import { encryptSensitiveData } from '../services/crypto.js';
 import { createDefaultPermissionsMatrix, DEFAULT_ROLE_PERMISSIONS, ALL_ROLES, PERMISSION_DEFINITIONS } from './permissions.js';
 
@@ -38,6 +38,8 @@ export class MultiTenantStore {
   public products: Product[] = [];
   public tickets: Ticket[] = [];
   public events: TicketEvent[] = [];
+  public refreshTokens: RefreshTokenRecord[] = [];
+  public passwordResetTokens: PasswordResetTokenRecord[] = [];
   public permissionsMatrix: Record<string, RolePermissionsMatrix> = {};
 
   constructor() {
@@ -46,9 +48,19 @@ export class MultiTenantStore {
       this.seedInitialData();
       this.seedRichLiveTickets();
       this.saveToDisk();
-    } else if (this.tickets.length === 0) {
-      this.seedRichLiveTickets();
-      this.saveToDisk();
+    } else {
+      let changed = false;
+      if (!this.tickets.some(t => t.id === 'ticket-fb-1042') || !this.tickets.some(t => t.id === 'ticket-1041')) {
+        this.seedRichLiveTickets();
+        changed = true;
+      }
+      if (!this.users.some(u => u.email === 'admin.priya@acme.com') || !this.users.some(u => u.id === 'member-1')) {
+        this.seedInitialData();
+        changed = true;
+      }
+      if (changed) {
+        this.saveToDisk();
+      }
     }
   }
 
@@ -140,7 +152,15 @@ export class MultiTenantStore {
       created_at: new Date(Date.now() - 15 * 86400000).toISOString()
     };
 
-    this.tenants = [tenantA, tenantB];
+    if (this.tenants.length === 0) {
+      this.tenants = [tenantA, tenantB];
+    } else {
+      for (const t of [tenantA, tenantB]) {
+        if (!this.tenants.some(existing => existing.id === t.id)) {
+          this.tenants.push(t);
+        }
+      }
+    }
 
     // Products
     const prod1: Product = {
@@ -179,10 +199,73 @@ export class MultiTenantStore {
       created_at: new Date().toISOString()
     };
 
-    this.products = [prod1, prod2, prodMed];
+    if (this.products.length === 0) {
+      this.products = [prod1, prod2, prodMed];
+    } else {
+      for (const p of [prod1, prod2, prodMed]) {
+        if (!this.products.some(existing => existing.id === p.id)) {
+          this.products.push(p);
+        }
+      }
+    }
 
     // Users
-    this.users = [
+    const seedUsers: User[] = [
+      {
+        id: 'user-super-01',
+        tenant_id: tenantA.id,
+        email: 'superadmin@feedbackhub.io',
+        full_name: 'Alex Vance (Global Super Admin)',
+        role: 'super_admin',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'user-admin-01',
+        tenant_id: tenantA.id,
+        email: 'admin.priya@acme.com',
+        full_name: 'Priya Sharma (Acme Admin)',
+        role: 'tenant_admin',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'user-lead-01',
+        tenant_id: tenantA.id,
+        email: 'lead.dev@acme.com',
+        full_name: 'Vikram Mehta (API Squad Lead)',
+        role: 'squad_lead',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'user-dev-01',
+        tenant_id: tenantA.id,
+        email: 'dev.rahul@acme.com',
+        full_name: 'Rahul Sharma (Senior Backend Dev)',
+        role: 'developer',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'user-support-01',
+        tenant_id: tenantA.id,
+        email: 'support.amit@acme.com',
+        full_name: 'Amit Patel (Support Agent)',
+        role: 'support_agent',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'user-client-01',
+        tenant_id: tenantA.id,
+        email: 'client.john@partner.com',
+        full_name: 'John Client (Partner Merchant)',
+        role: 'client_user',
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      // Team members for dashboard & assignment
       {
         id: 'member-1',
         tenant_id: tenantA.id,
@@ -227,8 +310,28 @@ export class MultiTenantStore {
         role: 'developer',
         is_active: true,
         created_at: new Date().toISOString()
+      },
+      // Tenant B (MedSync) user to verify multi-tenant isolation
+      {
+        id: 'user-medsync-dev-01',
+        tenant_id: tenantB.id,
+        email: 'dev.elena@medsync.io',
+        full_name: 'Elena Rostova (MedSync Dev)',
+        role: 'developer',
+        is_active: true,
+        created_at: new Date().toISOString()
       }
     ];
+
+    if (this.users.length === 0) {
+      this.users = seedUsers;
+    } else {
+      for (const u of seedUsers) {
+        if (!this.users.some(existing => existing.id === u.id || existing.email === u.email)) {
+          this.users.push(u);
+        }
+      }
+    }
 
     // Seed default bank-grade role permissions matrix
     this.permissionsMatrix[tenantA.id] = createDefaultPermissionsMatrix();
@@ -241,6 +344,96 @@ export class MultiTenantStore {
     const now = Date.now();
 
     const sampleTickets: Ticket[] = [
+      {
+        id: 'ticket-fb-1042',
+        tenant_id: tenantAId,
+        product_id: 'prod-checkout-gateway',
+        product_name: 'Checkout Gateway API & SDK',
+        short_code: 'FB-1042',
+        title: 'HTTP 504 Gateway Timeout during UPI Webhook settlement',
+        description: 'Production checkout failed for 14 enterprise transactions during peak settlement hour. Merchant receives blank loading state.',
+        category: 'API_FAILURE',
+        severity: 'CRITICAL',
+        status: 'IN_DEV',
+        reporter_email: 'operations@partner-client.com',
+        assigned_squad: 'Core Platform & API Squad',
+        assigned_to: 'user-dev-01',
+        assigned_to_name: 'Rahul Sharma (Senior Backend Dev)',
+        sla_due_at: new Date(now + 45 * 60000).toISOString(),
+        created_at: new Date(now - 35 * 60000).toISOString(),
+        updated_at: new Date(now - 10 * 60000).toISOString(),
+        telemetry: {
+          page_url: 'https://checkout.acme.com/v2/pay/upi/intent?session=sess_982b',
+          app_version: 'v2.14.0-prod',
+          user_agent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
+          viewport_dimensions: '390x844',
+          console_logs: [
+            { type: 'info', message: 'Initialized UPI SDK v2.4.1', timestamp: '18:12:02' },
+            { type: 'error', message: 'Uncaught (in promise) Error: GatewayTimeout at fetchWithRetry (/bundle.js:842)', timestamp: '18:12:45' }
+          ],
+          network_errors: [
+            { url: 'https://api.acme.com/v1/settlements/verify', status: 504, method: 'POST', timestamp: '18:12:45' }
+          ],
+          encrypted_sensitive_data: encryptSensitiveData(JSON.stringify({
+            authHeader: 'Bearer [REDACTED_CLIENT_SECRET]',
+            sessionToken: 'sess_live_e9a8f2c3'
+          }))
+        }
+      },
+      {
+        id: 'ticket-fb-1043',
+        tenant_id: tenantAId,
+        product_id: 'prod-dashboard',
+        product_name: 'Merchant Admin Portal',
+        short_code: 'FB-1043',
+        title: 'Tax invoice PDF download button unresponsive on Chrome iOS',
+        description: 'Clicking Download Invoice on billing portal triggers a spinner but never initiates file download stream.',
+        category: 'UI_GLITCH',
+        severity: 'HIGH',
+        status: 'OPEN',
+        reporter_email: 'finance@partner-client.com',
+        assigned_squad: 'Core Platform & API Squad',
+        sla_due_at: new Date(now + 180 * 60000).toISOString(),
+        created_at: new Date(now - 15 * 60000).toISOString(),
+        updated_at: new Date(now - 15 * 60000).toISOString(),
+        telemetry: {
+          page_url: 'https://merchant.acme.com/billing/invoices/2026-Q1',
+          app_version: 'v4.1.2',
+          user_agent: 'Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15',
+          viewport_dimensions: '820x1180',
+          console_logs: [
+            { type: 'warn', message: 'Blob URL revoked before download triggered', timestamp: '18:20:11' }
+          ],
+          network_errors: []
+        }
+      },
+      {
+        id: 'ticket-medsync-2001',
+        tenant_id: tenantBId,
+        product_id: 'prod-telehealth-portal',
+        product_name: 'MedSync Telehealth Patient Web',
+        short_code: 'MS-2001',
+        title: 'HIPAA Audit Trail Sync Latency in Clinic Node',
+        description: 'Audit logs for patient record lookups are delayed by 180 seconds during batch record ingestion.',
+        category: 'PERFORMANCE',
+        severity: 'HIGH',
+        status: 'OPEN',
+        reporter_email: 'compliance@medsync.io',
+        assigned_squad: 'COMPLIANCE_ENG',
+        assigned_to: 'user-medsync-dev-01',
+        assigned_to_name: 'Elena Rostova',
+        sla_due_at: new Date(now + 120 * 60000).toISOString(),
+        created_at: new Date(now - 60 * 60000).toISOString(),
+        updated_at: new Date(now - 30 * 60000).toISOString(),
+        telemetry: {
+          page_url: 'https://ehr.medsync.io/audit/sync',
+          app_version: 'v1.8.0',
+          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          viewport_dimensions: '1920x1080',
+          console_logs: [],
+          network_errors: []
+        }
+      },
       {
         id: 'ticket-1041',
         tenant_id: tenantAId,
@@ -498,11 +691,61 @@ export class MultiTenantStore {
         content: 'Status advanced from IN_QA to RESOLVED. Verified 100% 3DS conversion rate restored.',
         is_internal_only: false,
         created_at: new Date(now - 30 * 60000).toISOString()
+      },
+      {
+        id: 'ev-01',
+        ticket_id: 'ticket-fb-1042',
+        tenant_id: tenantAId,
+        author_name: 'Rahul Sharma',
+        author_role: 'developer',
+        event_type: 'DEV_NOTE',
+        content: 'Investigated Redis connection pool in Settlement microservice. It timed out due to slow socket read on banking partner node. Rolling out pool sizing hotfix to staging.',
+        is_internal_only: true,
+        created_at: new Date(now - 20 * 60000).toISOString()
+      },
+      {
+        id: 'ev-02',
+        ticket_id: 'ticket-fb-1042',
+        tenant_id: tenantAId,
+        author_name: 'Vikram Mehta',
+        author_role: 'squad_lead',
+        event_type: 'CLIENT_REPLY',
+        content: 'Our core API team is actively applying a backend hotfix to resolve the gateway delay. Next status update in 20 minutes.',
+        is_internal_only: false,
+        created_at: new Date(now - 12 * 60000).toISOString()
+      },
+      {
+        id: 'ev-medsync-01',
+        ticket_id: 'ticket-medsync-2001',
+        tenant_id: tenantBId,
+        author_name: 'Elena Rostova',
+        author_role: 'developer',
+        event_type: 'DEV_NOTE',
+        content: 'Configured secondary Redis replica for HIPAA audit buffering.',
+        is_internal_only: true,
+        created_at: new Date(now - 25 * 60000).toISOString()
       }
     ];
 
-    this.tickets = sampleTickets;
-    this.events = sampleEvents;
+    if (this.tickets.length === 0) {
+      this.tickets = sampleTickets;
+    } else {
+      for (const st of sampleTickets) {
+        if (!this.tickets.some(t => t.id === st.id)) {
+          this.tickets.push(st);
+        }
+      }
+    }
+
+    if (this.events.length === 0) {
+      this.events = sampleEvents;
+    } else {
+      for (const se of sampleEvents) {
+        if (!this.events.some(e => e.id === se.id)) {
+          this.events.push(se);
+        }
+      }
+    }
   }
 
   public getPermissionsMatrix(tenantId: string): RolePermissionsMatrix {
@@ -574,6 +817,19 @@ export class MultiTenantStore {
     }
     return matrix;
   }
+
+  /**
+   * Initializes development-only password hashes for mock users.
+   * Clearly identified for development/testing only; never used in production.
+   */
+  public async ensureDevSeedCredentials(hashFn: (password: string) => Promise<string>, devPassword = 'DevPassword123!') {
+    const devHash = await hashFn(devPassword);
+    for (const user of this.users) {
+      if (!user.password_hash) {
+        user.password_hash = devHash;
+      }
+    }
+  }
 }
 
 export const tenantStore = new MultiTenantStore();
@@ -643,7 +899,54 @@ pool.query('SELECT NOW()')
     await loadRolePermissionsFromDb('tenant-acme-corp-001');
     await loadRolePermissionsFromDb('tenant-medsync-002');
   })
-  .catch(() => {
+  .catch((err: any) => {
     isPostgresConnected = false;
-    console.log('[Database] Operating with Persistent Disk Database (feedback_hub_db.json). Zero data loss on refresh.');
+    if (ENV.NODE_ENV === 'production') {
+      console.error('[CRITICAL DATABASE ERROR] Failed to connect to PostgreSQL in production mode:', err?.message || err);
+    } else {
+      console.log('[Database] Operating with Persistent Disk Database (feedback_hub_db.json). Zero data loss on refresh.');
+    }
   });
+
+/**
+ * Executes a callback within a managed PostgreSQL transaction client if connected.
+ * In development without PostgreSQL, runs safely against the in-memory store.
+ * In production, strictly throws if PostgreSQL is not connected (no silent in-memory fallback).
+ */
+export async function withTransaction<T>(
+  callback: (client: pg.PoolClient | null) => Promise<T>
+): Promise<T> {
+  if (isPostgresConnected) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await callback(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  if (ENV.NODE_ENV === 'production') {
+    throw new Error(
+      '[CRITICAL DATABASE ERROR] PostgreSQL connection required in production mode. In-memory storage fallback is disabled.'
+    );
+  }
+
+  // Development/Test fallback with transactional snapshot rollback support
+  const snapshotTokens = tenantStore.refreshTokens.map(t => ({ ...t }));
+  const snapshotUsers = tenantStore.users.map(u => ({ ...u }));
+  const snapshotResetTokens = tenantStore.passwordResetTokens.map(t => ({ ...t }));
+  try {
+    return await callback(null);
+  } catch (error) {
+    tenantStore.refreshTokens = snapshotTokens;
+    tenantStore.users = snapshotUsers;
+    tenantStore.passwordResetTokens = snapshotResetTokens;
+    throw error;
+  }
+}

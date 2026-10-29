@@ -32,6 +32,7 @@ interface TicketDetailModalProps {
   ticket: Ticket | null;
   onClose: () => void;
   currentRole: UserRole;
+  accessToken: string | null;
   onUpdateStatus: (ticketId: string, newStatus: string, note?: string) => Promise<void>;
   onAddEvent: (ticketId: string, content: string, isInternalOnly: boolean) => Promise<void>;
   onUpdateTicket?: (ticketId: string, updatedFields: Partial<Ticket>) => Promise<void>;
@@ -44,6 +45,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   ticket,
   onClose,
   currentRole,
+  accessToken,
   onUpdateStatus,
   onAddEvent,
   onUpdateTicket,
@@ -86,6 +88,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   useEffect(() => {
     if (!ticket) return;
 
+    const headers: Record<string, string> = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     // Initialize edit fields
     setEditTitle(ticket.title);
     setEditDescription(ticket.description);
@@ -99,10 +106,8 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     setIsConfirmingDelete(false);
 
     fetch(`/api/v1/tickets/${ticket.id}`, {
-      headers: {
-        'x-user-role': currentRole,
-        'x-tenant-id': ticket.tenant_id
-      }
+      headers,
+      credentials: 'include'
     })
       .then(res => res.json())
       .then(data => {
@@ -111,7 +116,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         }
       })
       .catch(err => console.error('Failed to load events:', err));
-  }, [ticket, currentRole]);
+  }, [ticket, currentRole, accessToken]);
 
   if (!ticket) return null;
 
