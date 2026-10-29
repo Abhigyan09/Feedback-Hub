@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { UserRole, Ticket, RolePermissionsMatrix } from '../types';
 import { normalizeStatus } from '../utils/formatters';
+import { hasRolePermission } from '../constants/permissions';
 
 export interface HeaderUser {
   name: string;
@@ -120,7 +121,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const slaStatusLabel = numericSla >= 99 ? 'HEALTHY' : numericSla >= 90 ? 'WARNING' : 'BREACHED';
   const slaStatusColor = numericSla >= 99 ? 'text-emerald-600' : numericSla >= 90 ? 'text-amber-600' : 'text-red-600 font-bold';
   // Dynamic RBAC Permission Checks
-  const canCreateTicket = currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:create']);
+  const canCreateTicket = hasRolePermission(permissionsMatrix, currentRole, 'tickets:create');
 
   return (
     <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs w-full">

@@ -235,14 +235,6 @@ ticketRouter.patch('/:id/status', requirePermission('tickets:change_status'), (r
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
 
-  // Support Agent safety guard
-  if (userRole === 'support_agent' && status !== 'TRIAGED' && status !== 'OPEN') {
-    return res.status(403).json({
-      error: 'Permission Denied',
-      message: 'Support agents are authorized for triage (TRIAGED or OPEN). Advancing to IN_DEV or RESOLVED requires an engineering or lead role.'
-    });
-  }
-
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
@@ -290,9 +282,12 @@ ticketRouter.post('/:id/events', requirePermission('tickets:view'), (req: Reques
   }
 
   // Dynamic Permission: Posting internal notes requires 'tickets:create_internal_notes'
-  let internalFlag = Boolean(is_internal_only);
+  const internalFlag = Boolean(is_internal_only);
   if (internalFlag && !tenantStore.hasPermission(tenantId, userRole, 'tickets:create_internal_notes')) {
-    internalFlag = false; // Fallback to public client reply if not permitted to post internal quarantined notes
+    return res.status(403).json({
+      error: 'Permission Denied',
+      message: `Your current role '${userRole}' is not authorized to create quarantined internal developer notes.`
+    });
   }
 
   const event: TicketEvent = {

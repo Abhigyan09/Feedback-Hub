@@ -19,7 +19,7 @@
       "require_email": true,
       "default_squad": "Checkout & Billing Squad",
       "created_at": "2026-09-27T16:48:10.141Z",
-      "updated_at": "2026-10-29T13:49:03.409Z"
+      "updated_at": "2026-10-29T15:33:33.361Z"
     },
     {
       "id": "tenant-medsync-002",
@@ -49,7 +49,8 @@
       "full_name": "Vikram Mehta (API Squad Lead)",
       "role": "squad_lead",
       "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z"
+      "created_at": "2026-10-27T16:48:10.153Z",
+      "status": "ONLINE"
     },
     {
       "id": "user-dev-01",
@@ -58,16 +59,8 @@
       "full_name": "Rahul Sharma (Senior Backend Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z"
-    },
-    {
-      "id": "user-dev-02",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "priya.nair@acme.com",
-      "full_name": "Priya Nair (Frontend Platform Dev)",
-      "role": "developer",
-      "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z"
+      "created_at": "2026-10-27T16:48:10.153Z",
+      "status": "ONLINE"
     },
     {
       "id": "user-dev-03",
@@ -85,7 +78,19 @@
       "full_name": "Sarah Jenkins (Client Ops Director)",
       "role": "client_user",
       "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z"
+      "created_at": "2026-10-27T16:48:10.153Z",
+      "status": "ONLINE"
+    },
+    {
+      "id": "user-1793291757929-931",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "alex@gmail.com",
+      "full_name": "Alex",
+      "role": "developer",
+      "is_active": true,
+      "status": "ONLINE",
+      "squad": "Core Platform & API Squad",
+      "created_at": "2026-10-29T16:35:57.931Z"
     }
   ],
   "products": [
@@ -125,6 +130,96 @@
   ],
   "tickets": [
     {
+      "id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1043",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "api failure",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "RESOLVED",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-10-29T16:51:44.153Z",
+      "created_at": "2026-10-29T14:51:44.153Z",
+      "updated_at": "2026-10-29T16:51:35.633Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "20:21:44"
+          },
+          {
+            "type": "error",
+            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
+            "timestamp": "20:21:44"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
+            "status": 500,
+            "method": "POST",
+            "timestamp": "20:21:44"
+          }
+        ]
+      },
+      "assigned_to": "user-lead-01",
+      "assigned_to_name": "Vikram Mehta (API Squad Lead)"
+    },
+    {
+      "id": "ticket-1793285163114",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1042",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "api failure",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "RESOLVED",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-10-29T16:46:03.114Z",
+      "created_at": "2026-10-29T14:46:03.115Z",
+      "updated_at": "2026-10-29T17:13:07.164Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "20:16:02"
+          },
+          {
+            "type": "error",
+            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
+            "timestamp": "20:16:02"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
+            "status": 500,
+            "method": "POST",
+            "timestamp": "20:16:02"
+          }
+        ]
+      }
+    },
+    {
       "id": "ticket-1793279039229",
       "tenant_id": "tenant-acme-corp-001",
       "product_id": "prod-checkout-gateway",
@@ -135,12 +230,12 @@
       "description": "bug",
       "category": "BUG",
       "severity": "MEDIUM",
-      "status": "IN_DEV",
+      "status": "RESOLVED",
       "reporter_email": "sarah.jenkins@clientops.com",
       "assigned_squad": "FRONTEND_PORTAL",
       "sla_due_at": "2026-10-29T15:03:59.231Z",
       "created_at": "2026-10-29T13:03:59.236Z",
-      "updated_at": "2026-10-29T13:19:39.681Z",
+      "updated_at": "2026-10-29T14:45:14.590Z",
       "telemetry": {
         "page_url": "https://checkout.acme.com/v2/pay/upi",
         "domain_origin": "checkout.acme.com",
@@ -221,6 +316,146 @@
       "content": "Ticket assigned to developer Rahul Sharma (Senior Backend Dev) (Senior Engineer) by Rahul Sharma (Senior Backend Dev).",
       "is_internal_only": false,
       "created_at": "2026-10-29T13:19:39.684Z"
+    },
+    {
+      "id": "ev-1793285114590",
+      "ticket_id": "ticket-1793279039229",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Incident resolved and verified.",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T14:45:14.590Z"
+    },
+    {
+      "id": "ev-1793285163115",
+      "ticket_id": "ticket-1793285163114",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T14:46:03.116Z"
+    },
+    {
+      "id": "ev-1793285400584",
+      "ticket_id": "ticket-1793285163114",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Elena Rostova (Tenant Admin)",
+      "author_role": "tenant_admin",
+      "event_type": "ASSIGNED",
+      "content": "Ticket assigned to developer Priya Nair (Frontend Platform Dev) (Senior Engineer) by Elena Rostova (Tenant Admin).",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T14:50:00.584Z"
+    },
+    {
+      "id": "ev-1793285419053",
+      "ticket_id": "ticket-1793285163114",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Elena Rostova (Tenant Admin)",
+      "author_role": "tenant_admin",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from IN_DEV to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T14:50:19.053Z"
+    },
+    {
+      "id": "ev-1793285504153",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T14:51:44.153Z"
+    },
+    {
+      "id": "ev-1793288152779",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from OPEN to IN_DEV.",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T15:35:52.779Z"
+    },
+    {
+      "id": "ev-1793290472403",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "DEV_NOTE",
+      "is_internal_only": true,
+      "created_at": "2026-10-29T16:14:32.403Z"
+    },
+    {
+      "id": "ev-1793292695444",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Elena Rostova (Tenant Admin)",
+      "author_role": "tenant_admin",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from IN_DEV to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T16:51:35.444Z"
+    },
+    {
+      "id": "ev-1793292695489",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Elena Rostova (Tenant Admin)",
+      "author_role": "tenant_admin",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T16:51:35.489Z"
+    },
+    {
+      "id": "ev-1793292695550",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Elena Rostova (Tenant Admin)",
+      "author_role": "tenant_admin",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T16:51:35.550Z"
+    },
+    {
+      "id": "ev-1793292695633",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Elena Rostova (Tenant Admin)",
+      "author_role": "tenant_admin",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-10-29T16:51:35.633Z"
+    },
+    {
+      "id": "ev-1793292748370",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "DEV_NOTE",
+      "is_internal_only": true,
+      "created_at": "2026-10-29T16:52:28.370Z"
+    },
+    {
+      "id": "ev-1793293916525",
+      "ticket_id": "ticket-1793285504152",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "DEV_NOTE",
+      "is_internal_only": true,
+      "created_at": "2026-10-29T17:11:56.525Z"
     }
   ],
   "permissionsMatrix": {
@@ -306,7 +541,7 @@
         "tickets:edit": true,
         "tickets:delete": false,
         "tickets:change_status": true,
-        "tickets:assign": false,
+        "tickets:assign": true,
         "tickets:view_telemetry_internal": true,
         "tickets:view_internal_notes": true,
         "tickets:create_internal_notes": true,
@@ -328,7 +563,7 @@
       "support_agent": {
         "tickets:view": true,
         "tickets:create": true,
-        "tickets:edit": true,
+        "tickets:edit": false,
         "tickets:delete": false,
         "tickets:change_status": true,
         "tickets:assign": false,
@@ -529,5 +764,5 @@
       }
     }
   },
-  "last_updated": "2026-10-29T13:49:03.409Z"
+  "last_updated": "2026-10-29T17:13:40.344Z"
 }

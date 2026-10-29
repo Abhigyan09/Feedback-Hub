@@ -34,6 +34,8 @@ export interface User {
   full_name: string;
   role: UserRole;
   is_active: boolean;
+  status?: 'ONLINE' | 'AWAY' | 'ON_CALL';
+  squad?: string;
   created_at: string;
 }
 

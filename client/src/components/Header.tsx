@@ -18,6 +18,7 @@ interface HeaderProps {
   onRoleChange: (role: UserRole) => void;
   isConnected: boolean;
   onOpenWidgetSimulator: () => void;
+  onNewIncidentClick?: () => void;
   tenants?: Tenant[];
 }
 
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRoleChange,
   isConnected,
   onOpenWidgetSimulator,
+  onNewIncidentClick,
   tenants
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -126,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* + New Incident Button */}
           <button
-            onClick={onOpenWidgetSimulator}
+            onClick={onNewIncidentClick || onOpenWidgetSimulator}
             className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />

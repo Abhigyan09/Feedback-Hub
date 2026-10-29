@@ -365,3 +365,42 @@ export const createDefaultPermissionsMatrix = (): RolePermissionsMatrix => {
   }
   return matrix as RolePermissionsMatrix;
 };
+
+export const hasRolePermission = (
+  matrix: RolePermissionsMatrix | null | undefined,
+  role: UserRole | undefined,
+  key: PermissionKey
+): boolean => {
+  if (!role) return false;
+  if (role === 'super_admin') return true;
+
+  // Protect tenant admin and squad lead (lead manager) from permissions governance lockout
+  if ((role === 'tenant_admin' || role === 'squad_lead') && (key === 'permissions:edit' || key === 'permissions:reset' || key === 'permissions:view')) {
+    return true;
+  }
+
+  // Strict constraint: Developer and non-admin/lead roles cannot perform any settings changes
+  const SETTINGS_CHANGE_PERMISSIONS: PermissionKey[] = [
+    'tenant:edit_profile',
+    'tenant:manage_domains',
+    'tenant:manage_policies',
+    'products:create',
+    'products:edit',
+    'products:rotate_keys',
+    'products:delete',
+    'permissions:edit',
+    'permissions:reset',
+    'audit:test_bridge'
+  ];
+  const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(role);
+  if (!isAdminOrLead && SETTINGS_CHANGE_PERMISSIONS.includes(key)) {
+    return false;
+  }
+
+  if (matrix && matrix[role] && matrix[role][key] !== undefined) {
+    return Boolean(matrix[role][key]);
+  }
+  return Boolean(DEFAULT_ROLE_PERMISSIONS[role]?.[key]);
+};
+
+

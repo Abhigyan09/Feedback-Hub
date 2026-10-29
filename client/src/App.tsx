@@ -5,7 +5,6 @@ import { normalizeSeverity, normalizeStatus } from './utils/formatters';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { DashboardHeader, HeaderUser } from './components/DashboardHeader';
 import { SummaryCards } from './components/SummaryCards';
-import { TeamMembersSection } from './components/TeamMembersSection';
 import { TicketsTable, SortField, SortDirection } from './components/TicketsTable';
 import { TicketDetailModal } from './components/TicketDetailModal';
 import { CreateIncidentModal } from './components/CreateIncidentModal';
@@ -14,6 +13,8 @@ import { ObservabilityGraphs } from './components/ObservabilityGraphs';
 import { NeedsAttentionSection } from './components/NeedsAttentionSection';
 import { TicketList } from './components/TicketList';
 import { SettingsView } from './components/SettingsView';
+import { StaffWorkloadView } from './components/StaffWorkloadView';
+import { hasRolePermission } from './constants/permissions';
 import { 
   Bell, 
   RefreshCw, 
@@ -21,7 +22,8 @@ import {
   Trash2, 
   Cpu, 
   Layers, 
-  CheckCircle2 
+  CheckCircle2,
+  Plus 
 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -178,23 +180,37 @@ export const App: React.FC = () => {
 
         // Dynamic Team Members list
         if (data.team_members) {
+          const colorList = [
+            'bg-purple-100 text-purple-700 border-purple-300',
+            'bg-indigo-100 text-indigo-700 border-indigo-300',
+            'bg-violet-100 text-violet-700 border-violet-300',
+            'bg-blue-100 text-blue-700 border-blue-300',
+            'bg-emerald-100 text-emerald-700 border-emerald-300',
+            'bg-amber-100 text-amber-700 border-amber-300',
+          ];
           const mapped: TeamMember[] = data.team_members.map((u: any, idx: number) => ({
             id: u.id,
             name: u.full_name,
-            role: u.role === 'squad_lead' ? 'Squad Lead & Arch' : 'Senior Engineer',
+            role: u.role === 'squad_lead' 
+              ? 'Squad Lead & Arch' 
+              : u.role === 'developer' 
+              ? 'Senior Engineer' 
+              : u.role === 'tenant_admin' 
+              ? 'Tenant Administrator' 
+              : u.role === 'super_admin' 
+              ? 'Super Administrator' 
+              : 'Support Specialist',
             email: u.email,
-            avatarInitials: u.full_name
+            avatarInitials: (u.full_name || 'EM')
+              .replace(/\s*\([^)]*\)$/, '')
               .split(' ')
               .map((n: string) => n[0])
               .join('')
               .slice(0, 2)
-              .toUpperCase(),
-            status: idx === 0 ? 'ON_CALL' : 'ONLINE',
-            color: idx === 0 
-              ? 'bg-purple-100 text-purple-700 border-purple-300' 
-              : idx === 1 
-              ? 'bg-indigo-100 text-indigo-700 border-indigo-300' 
-              : 'bg-violet-100 text-violet-700 border-violet-300'
+              .toUpperCase() || 'EM',
+            status: u.status || (idx === 0 ? 'ON_CALL' : 'ONLINE'),
+            color: colorList[idx % colorList.length],
+            squad: u.squad || 'Core Engineering Squad'
           }));
           setTeamMembers(mapped);
         }
@@ -277,6 +293,7 @@ export const App: React.FC = () => {
     });
 
     socket.on('SETTINGS_UPDATED', () => {
+      fetchTenantMetadata();
       fetchAllTenants();
       fetchTickets();
     });
@@ -290,12 +307,13 @@ export const App: React.FC = () => {
         setTimeout(() => setAlertBanner(null), 5000);
       }
       fetchTickets();
+      fetchTenantMetadata();
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [currentTenantId, currentRole, fetchTickets, fetchAllTenants]);
+  }, [currentTenantId, currentRole, fetchTickets, fetchTenantMetadata, fetchAllTenants]);
 
   // Compute dynamic counts from live backend data
   const totalCount = tickets.length;
@@ -628,6 +646,7 @@ export const App: React.FC = () => {
         onSelectView={setCurrentView}
         totalTicketsCount={totalCount}
         resolvedTicketsCount={resolvedCount}
+        staffMembersCount={teamMembers.length}
         onLogout={() => setIsLogoutModalOpen(true)}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -654,7 +673,7 @@ export const App: React.FC = () => {
           urgentTickets={urgentCount}
           tickets={tickets}
           permissionsMatrix={permissionsMatrix}
-          onNewIncidentClick={() => setIsSimulatorOpen(true)}
+          onNewIncidentClick={() => setIsCreateModalOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
           onSeedDemo={handleSeedDemo}
           onClearTickets={handleClearTickets}
@@ -709,7 +728,7 @@ export const App: React.FC = () => {
                   <span>Simulate Ingest</span>
                 </button>
 
-                {(currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:create'])) && (
+                {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
                   <button
                     type="button"
                     onClick={handleSeedDemo}
@@ -721,7 +740,7 @@ export const App: React.FC = () => {
                   </button>
                 )}
 
-                {tickets.length > 0 && (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:delete'])) && (
+                {tickets.length > 0 && hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete') && (
                   <button
                     type="button"
                     onClick={handleClearTickets}
@@ -777,13 +796,6 @@ export const App: React.FC = () => {
               }}
             />
 
-            {/* 5. Dynamic Squad Members Section */}
-            <TeamMembersSection
-              members={teamMembers}
-              openTicketCounts={openTicketCounts}
-              selectedAssigneeId={assigneeFilter === 'ALL' || assigneeFilter === 'UNASSIGNED' ? null : assigneeFilter}
-              onSelectAssignee={handleSelectTeamMember}
-            />
 
             {/* 6. Live Dynamic Tickets Table */}
             <section aria-labelledby="incident-table-heading" className="space-y-2">
@@ -852,13 +864,24 @@ export const App: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-2.5 shrink-0">
-                <button
-                  onClick={() => setIsSimulatorOpen(true)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>+ Ingest Incident</span>
-                </button>
+                {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
+                  <>
+                    <button
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>New Incident</span>
+                    </button>
+                    <button
+                      onClick={() => setIsSimulatorOpen(true)}
+                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Simulate Ingest</span>
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={fetchTickets}
                   disabled={isLoading}
@@ -931,13 +954,42 @@ export const App: React.FC = () => {
           </main>
         )}
 
-        {/* VIEW 4: SETTINGS (Dynamic RBAC Permissions Matrix) */}
+        {/* VIEW 4: STAFF MEMBERS & ACTIVE LOAD MODULE */}
+        {currentView === 'staff-members' && (
+          <StaffWorkloadView
+            currentTenantId={currentTenantId}
+            currentRole={currentRole}
+            teamMembers={teamMembers}
+            tickets={tickets}
+            permissionsMatrix={permissionsMatrix}
+            onSelectTicket={setSelectedTicket}
+            onUpdateStatus={handleUpdateStatus}
+            onAssignTicket={(ticketId, memberId, memberName) => {
+              handleUpdateTicketAssignee(ticketId, memberId, memberName);
+            }}
+            onRefresh={() => {
+              fetchTickets();
+              fetchTenantMetadata();
+              fetchAllTenants();
+            }}
+            onStaffUpdated={() => {
+              fetchTenantMetadata();
+              fetchTickets();
+              fetchAllTenants();
+            }}
+          />
+        )}
+
+        {/* VIEW 5: SETTINGS (Dynamic RBAC Permissions Matrix) */}
         {currentView === 'settings' && (
           <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
             <SettingsView 
               currentTenantId={currentTenantId}
               currentRole={currentRole}
               permissionsMatrix={permissionsMatrix}
+              onPermissionsUpdated={(matrix) => {
+                setPermissionsMatrix(matrix);
+              }}
               onTenantUpdated={() => {
                 fetchAllTenants();
                 fetchTickets();

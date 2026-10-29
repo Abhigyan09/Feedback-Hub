@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { tenantStore, isPostgresConnected, pool, persistRolePermissionsToDb } from '../config/db.js';
 import { requireRole, requirePermission, requireAnyPermission } from '../middleware/rbac.js';
 import { broadcastTicketEvent } from '../services/socket.js';
-import { Product, UserRole, PermissionKey } from '../types/index.js';
+import { Product, User, UserRole, PermissionKey } from '../types/index.js';
 import { PERMISSION_DEFINITIONS, ALL_ROLES } from '../config/permissions.js';
 
 export const tenantRouter = Router();
@@ -139,7 +139,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
   if (fullMatrix && typeof fullMatrix === 'object') {
     for (const r of ALL_ROLES) {
       if (fullMatrix[r] && typeof fullMatrix[r] === 'object') {
-        if ((r === 'super_admin' || r === 'tenant_admin') && fullMatrix[r]['permissions:edit'] === false) {
+        if ((r === 'super_admin' || r === 'tenant_admin' || r === 'squad_lead') && fullMatrix[r]['permissions:edit'] === false) {
           fullMatrix[r]['permissions:edit'] = true; // prevent lockout
         }
         tenantStore.updateRolePermissions(tenantId, r as UserRole, fullMatrix[r]);
@@ -168,8 +168,8 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
       return res.status(400).json({ error: `Invalid role: ${role}` });
     }
 
-    // Safety constraint: Prevent removing permissions:edit from super_admin or tenant_admin to prevent irreversible lockout
-    if ((role === 'super_admin' || role === 'tenant_admin') && permissions['permissions:edit'] === false) {
+    // Safety constraint: Prevent removing permissions:edit from super_admin, tenant_admin, or squad_lead to prevent lockout
+    if ((role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && permissions['permissions:edit'] === false) {
       permissions['permissions:edit'] = true;
     }
 
@@ -421,3 +421,271 @@ tenantRouter.get('/all', (req: Request, res: Response) => {
     }))
   });
 });
+
+// 11. GET SQUAD STAFF MEMBERS & ACTIVE LOAD METRICS
+tenantRouter.get('/staff', (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const users = tenantStore.users.filter(u => u.tenant_id === tenantId);
+  const tenantTickets = tenantStore.tickets.filter(t => t.tenant_id === tenantId);
+
+  const staffWithMetrics = users.map((u, idx) => {
+    const assignedTickets = tenantTickets.filter(t => t.assigned_to === u.id);
+    const openTickets = assignedTickets.filter(t => t.status !== 'RESOLVED' && t.status !== 'CLOSED');
+    const resolvedTickets = assignedTickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED');
+    const urgentTickets = openTickets.filter(t => t.severity === 'URGENT' || t.severity === 'CRITICAL');
+
+    return {
+      id: u.id,
+      tenant_id: u.tenant_id,
+      email: u.email,
+      name: u.full_name,
+      role: u.role === 'squad_lead' ? 'Squad Lead & Arch' : u.role === 'developer' ? 'Senior Engineer' : u.role === 'tenant_admin' ? 'Tenant Administrator' : 'Support Specialist',
+      raw_role: u.role,
+      avatarInitials: u.full_name
+        .replace(/\s*\([^)]*\)$/, '')
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'EM',
+      status: u.status || (idx === 0 ? 'ON_CALL' : 'ONLINE'),
+      squad: u.squad || (tenantStore.tenants.find(t => t.id === tenantId)?.default_squad || 'Core Platform Squad'),
+      open_load: openTickets.length,
+      resolved_load: resolvedTickets.length,
+      urgent_load: urgentTickets.length,
+      assigned_ticket_ids: openTickets.map(t => t.id),
+      created_at: u.created_at
+    };
+  });
+
+  const unassignedCount = tenantTickets.filter(
+    t => (!t.assigned_to || t.assigned_to === '') && t.status !== 'RESOLVED' && t.status !== 'CLOSED'
+  ).length;
+
+  res.json({
+    success: true,
+    staff: staffWithMetrics,
+    total_staff: staffWithMetrics.length,
+    unassigned_tickets: unassignedCount
+  });
+});
+
+// 12. CREATE NEW STAFF MEMBER (Admin / Lead Manager only)
+tenantRouter.post('/staff', async (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const userRole = req.auth!.role;
+  const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(userRole);
+  if (!isAdminOrLead) {
+    return res.status(403).json({ error: 'Only Administrators and Lead Managers can register new staff members.' });
+  }
+
+  const { full_name, email, role = 'developer', squad, status = 'ONLINE' } = req.body;
+  if (!full_name || !full_name.trim()) {
+    return res.status(400).json({ error: 'Staff member full name is required.' });
+  }
+  if (!email || !email.trim()) {
+    return res.status(400).json({ error: 'Valid staff email address is required.' });
+  }
+
+  // Check email uniqueness within tenant
+  const existing = tenantStore.users.find(u => u.tenant_id === tenantId && u.email.toLowerCase() === email.trim().toLowerCase());
+  if (existing) {
+    return res.status(400).json({ error: 'A staff member with this email address already exists in this workspace.' });
+  }
+
+  const newId = `user-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const newUser: User = {
+    id: newId,
+    tenant_id: tenantId,
+    email: email.trim(),
+    full_name: full_name.trim(),
+    role: role as UserRole,
+    is_active: true,
+    status: status as 'ONLINE' | 'AWAY' | 'ON_CALL',
+    squad: squad ? squad.trim() : (tenantStore.tenants.find(t => t.id === tenantId)?.default_squad || 'Core Engineering Squad'),
+    created_at: new Date().toISOString()
+  };
+
+  tenantStore.users.push(newUser);
+
+  if (isPostgresConnected) {
+    try {
+      await pool.query(
+        `INSERT INTO users (id, tenant_id, email, password_hash, full_name, role, is_active, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+         ON CONFLICT (tenant_id, email) DO NOTHING`,
+        [newUser.id, tenantId, newUser.email, 'hash_temp_pass', newUser.full_name, newUser.role, true]
+      );
+    } catch (dbErr) {
+      console.error('[Database User Insert Error]', dbErr);
+    }
+  }
+
+  tenantStore.saveToDisk();
+
+  broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', { tenantId, message: `New squad engineer '${newUser.full_name}' added.` });
+
+  res.status(201).json({
+    success: true,
+    message: `Staff member '${newUser.full_name}' registered successfully.`,
+    user: newUser
+  });
+});
+
+// 13. UPDATE STAFF MEMBER
+tenantRouter.patch('/staff/:id', async (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const userRole = req.auth!.role;
+  const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(userRole);
+  if (!isAdminOrLead) {
+    return res.status(403).json({ error: 'Only Administrators and Lead Managers can update staff details.' });
+  }
+
+  const { id } = req.params;
+  const { full_name, email, role, squad, status } = req.body;
+
+  const user = tenantStore.users.find(u => u.id === id && u.tenant_id === tenantId);
+  if (!user) {
+    return res.status(404).json({ error: 'Staff member not found.' });
+  }
+
+  if (full_name !== undefined && full_name.trim()) user.full_name = full_name.trim();
+  if (email !== undefined && email.trim()) user.email = email.trim();
+  if (role !== undefined) user.role = role as UserRole;
+  if (squad !== undefined) user.squad = squad.trim();
+  if (status !== undefined) {
+    user.status = status as 'ONLINE' | 'AWAY' | 'ON_CALL';
+    // If setting to ON_CALL, set other users to ONLINE
+    if (status === 'ON_CALL') {
+      tenantStore.users.forEach(u => {
+        if (u.tenant_id === tenantId && u.id !== id && u.status === 'ON_CALL') {
+          u.status = 'ONLINE';
+        }
+      });
+    }
+  }
+
+  if (isPostgresConnected) {
+    try {
+      await pool.query(
+        `UPDATE users SET full_name = $1, email = $2, role = $3, updated_at = NOW() WHERE id = $4 AND tenant_id = $5`,
+        [user.full_name, user.email, user.role, id, tenantId]
+      );
+    } catch (dbErr) {
+      console.error('[Database User Update Error]', dbErr);
+    }
+  }
+
+  tenantStore.saveToDisk();
+
+  broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', { tenantId, message: `Staff member '${user.full_name}' updated.` });
+
+  res.json({
+    success: true,
+    message: `Staff member '${user.full_name}' updated successfully.`,
+    user
+  });
+});
+
+// 14. DELETE STAFF MEMBER (With ticket reassignment protection)
+tenantRouter.delete('/staff/:id', async (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const userRole = req.auth!.role;
+  const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(userRole);
+  if (!isAdminOrLead) {
+    return res.status(403).json({ error: 'Only Administrators and Lead Managers can remove staff members.' });
+  }
+
+  const { id } = req.params;
+  const index = tenantStore.users.findIndex(u => u.id === id && u.tenant_id === tenantId);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Staff member not found.' });
+  }
+
+  const [removedUser] = tenantStore.users.splice(index, 1);
+
+  // Unassign all open tickets assigned to this removed member
+  let unassignedCount = 0;
+  tenantStore.tickets.forEach(t => {
+    if (t.tenant_id === tenantId && t.assigned_to === id) {
+      t.assigned_to = undefined;
+      t.assigned_to_name = undefined;
+      t.updated_at = new Date().toISOString();
+      unassignedCount++;
+    }
+  });
+
+  if (isPostgresConnected) {
+    try {
+      await pool.query(`DELETE FROM users WHERE id = $1 AND tenant_id = $2`, [id, tenantId]);
+      await pool.query(`UPDATE tickets SET assigned_to = NULL, updated_at = NOW() WHERE assigned_to = $1 AND tenant_id = $2`, [id, tenantId]);
+    } catch (dbErr) {
+      console.error('[Database User Delete Error]', dbErr);
+    }
+  }
+
+  tenantStore.saveToDisk();
+
+  broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', { tenantId, message: `Staff member '${removedUser.full_name}' removed. ${unassignedCount} tickets unassigned.` });
+  broadcastTicketEvent(tenantId, 'TICKETS_UPDATED', { tenantId });
+
+  res.json({
+    success: true,
+    message: `Staff member '${removedUser.full_name}' removed successfully. ${unassignedCount} tickets returned to unassigned backlog.`
+  });
+});
+
+// 15. AUTO-REBALANCE SQUAD WORKLOAD
+tenantRouter.post('/staff/rebalance', (req: Request, res: Response) => {
+  const tenantId = req.auth!.tenantId;
+  const squadMembers = tenantStore.users.filter(u => u.tenant_id === tenantId && u.is_active && u.role !== 'client_user');
+  if (squadMembers.length === 0) {
+    return res.status(400).json({ error: 'No active engineering staff available in this workspace to balance workload.' });
+  }
+
+  const tenantTickets = tenantStore.tickets.filter(
+    t => t.tenant_id === tenantId && t.status !== 'RESOLVED' && t.status !== 'CLOSED'
+  );
+
+  // Calculate current loads
+  const memberLoads: Record<string, number> = {};
+  squadMembers.forEach(m => {
+    memberLoads[m.id] = tenantTickets.filter(t => t.assigned_to === m.id).length;
+  });
+
+  // Find unassigned tickets first
+  const unassignedTickets = tenantTickets.filter(t => !t.assigned_to || t.assigned_to === '');
+  let rebalancedCount = 0;
+
+  for (const ticket of unassignedTickets) {
+    // Pick member with lowest current load
+    let lowestMember = squadMembers[0];
+    let minLoad = memberLoads[lowestMember.id] || 0;
+
+    for (const m of squadMembers) {
+      const load = memberLoads[m.id] || 0;
+      if (load < minLoad) {
+        minLoad = load;
+        lowestMember = m;
+      }
+    }
+
+    ticket.assigned_to = lowestMember.id;
+    ticket.assigned_to_name = lowestMember.full_name;
+    ticket.updated_at = new Date().toISOString();
+    memberLoads[lowestMember.id] = (memberLoads[lowestMember.id] || 0) + 1;
+    rebalancedCount++;
+  }
+
+  tenantStore.saveToDisk();
+
+  broadcastTicketEvent(tenantId, 'TICKETS_UPDATED', { tenantId, message: `Workload rebalanced: ${rebalancedCount} unassigned tickets allocated.` });
+  broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', { tenantId });
+
+  res.json({
+    success: true,
+    message: `Workload successfully balanced across ${squadMembers.length} engineers. ${rebalancedCount} incidents assigned.`,
+    rebalanced_count: rebalancedCount
+  });
+});
+

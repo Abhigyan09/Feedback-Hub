@@ -39,7 +39,8 @@ import {
 import { Product, Tenant, UserRole, PermissionDefinition, PermissionKey, RolePermissionsMatrix, PermissionModule } from '../types';
 import { 
   PERMISSION_DEFINITIONS as DEFAULT_PERMISSION_DEFINITIONS, 
-  createDefaultPermissionsMatrix 
+  createDefaultPermissionsMatrix,
+  hasRolePermission 
 } from '../constants/permissions';
 
 export const ALL_SYSTEM_ROLES: UserRole[] = [
@@ -125,13 +126,15 @@ interface SettingsViewProps {
   currentRole?: UserRole;
   onTenantUpdated?: () => void;
   permissionsMatrix?: RolePermissionsMatrix | null;
+  onPermissionsUpdated?: (newMatrix: RolePermissionsMatrix) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ 
   currentTenantId,
   currentRole = 'developer',
   onTenantUpdated,
-  permissionsMatrix: initialPermissionsMatrix
+  permissionsMatrix: initialPermissionsMatrix,
+  onPermissionsUpdated
 }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -219,26 +222,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
 
   // Read-only view permissions (Developers and above can view settings)
-  const canViewTenantProfile = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['tenant:view_profile']);
-  const canViewProducts = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:view']);
-  const canViewPermissions = isPlatformAdmin || ['tenant_admin', 'squad_lead'].includes(currentRole) || Boolean(permissionsMatrix?.[currentRole]?.['permissions:view']);
-  const canViewAudit = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['audit:view']);
+  const canViewTenantProfile = hasRolePermission(permissionsMatrix, currentRole, 'tenant:view_profile');
+  const canViewProducts = hasRolePermission(permissionsMatrix, currentRole, 'products:view');
+  const canViewPermissions = hasRolePermission(permissionsMatrix, currentRole, 'permissions:view');
+  const canViewAudit = hasRolePermission(permissionsMatrix, currentRole, 'audit:view');
 
   // Settings modification permissions: strictly restricted to Admin & Lead Manager
-  const canEditTenantProfile = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['tenant:edit_profile']);
-  const canManageDomains = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['tenant:manage_domains']);
-  const canManagePolicies = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['tenant:manage_policies']);
+  const canEditTenantProfile = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'tenant:edit_profile');
+  const canManageDomains = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'tenant:manage_domains');
+  const canManagePolicies = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'tenant:manage_policies');
 
-  const canCreateProduct = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['products:create']);
-  const canEditProduct = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['products:edit']);
-  const canDeleteProduct = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['products:delete']);
-  const canRotateProductKeys = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['products:rotate_keys']);
+  const canCreateProduct = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:create');
+  const canEditProduct = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:edit');
+  const canDeleteProduct = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:delete');
+  const canRotateProductKeys = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:rotate_keys');
 
   // Governance access: Only Admin (super_admin, tenant_admin) and Lead Manager (squad_lead) can configure RBAC permissions
-  const canEditPermissions = isAdminOrLead && (isPlatformAdmin || ['tenant_admin', 'squad_lead'].includes(currentRole) || Boolean(permissionsMatrix?.[currentRole]?.['permissions:edit']));
-  const canResetPermissions = isAdminOrLead && (isPlatformAdmin || ['tenant_admin', 'squad_lead'].includes(currentRole) || Boolean(permissionsMatrix?.[currentRole]?.['permissions:reset']));
+  const canEditPermissions = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'permissions:edit');
+  const canResetPermissions = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'permissions:reset');
 
-  const canTestBridge = isAdminOrLead && Boolean(permissionsMatrix?.[currentRole]?.['audit:test_bridge']);
+  const canTestBridge = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'audit:test_bridge');
 
   // Can view Settings general screen if has any relevant view permissions or is developer/squad_lead/admin
   const canViewSettings = isPlatformAdmin || currentRole === 'tenant_admin' || canViewTenantProfile || canViewProducts || canViewPermissions || 
@@ -605,10 +608,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   // Helper: Persist permissions matrix atomically to live backend, disk file & database
-  const persistMatrix = async (updatedMatrix: RolePermissionsMatrix, successMsg: string) => {
+  const persistMatrix = async (
+    updatedMatrix: RolePermissionsMatrix, 
+    successMsg: string,
+    targetRole?: UserRole
+  ) => {
     setIsSavingPerms(true);
     setErrorMessage(null);
     try {
+      const activeRole = targetRole || selectedRoleForPerms;
       const res = await fetch('/api/v1/tenants/permissions', {
         method: 'PUT',
         headers: {
@@ -618,14 +626,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         },
         body: JSON.stringify({
           matrix: updatedMatrix,
-          role: selectedRoleForPerms,
-          permissions: updatedMatrix[selectedRoleForPerms]
+          role: activeRole,
+          permissions: updatedMatrix[activeRole]
         })
       });
 
       if (res.ok) {
         const data = await res.json();
-        if (data.matrix) setPermissionsMatrix(data.matrix);
+        const serverMatrix = data.matrix || updatedMatrix;
+        setPermissionsMatrix(serverMatrix);
+        onPermissionsUpdated?.(serverMatrix);
         setHasUnsavedPerms(false);
         setPermsSuccessMessage(successMsg);
         setTimeout(() => setPermsSuccessMessage(null), 4000);
@@ -646,7 +656,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (!permissionsMatrix) return;
     await persistMatrix(
       permissionsMatrix, 
-      `Permissions for role '${ROLE_METADATA[selectedRoleForPerms].label}' saved to database!`
+      `All tenant role permissions successfully saved to database!`,
+      selectedRoleForPerms
     );
   };
 
@@ -672,7 +683,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        if (data.matrix) setPermissionsMatrix(data.matrix);
+        if (data.matrix) {
+          setPermissionsMatrix(data.matrix);
+          onPermissionsUpdated?.(data.matrix);
+        }
         setHasUnsavedPerms(false);
         setPermsSuccessMessage(data.message || `Permissions for ${roleName} reset to default baseline.`);
         setTimeout(() => setPermsSuccessMessage(null), 5000);
@@ -690,8 +704,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // 12. RBAC: Toggle Single Permission (Auto-persisted to Database)
   const handleTogglePermission = async (role: UserRole, key: PermissionKey) => {
-    // Super Admin protection against losing governance permission
-    if (role === 'super_admin' && key === 'permissions:edit') {
+    // Protection against losing governance permission for admins & lead
+    if ((role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && key === 'permissions:edit') {
       return;
     }
 
@@ -701,53 +715,61 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       return;
     }
 
-    const currentVal = Boolean(permissionsMatrix?.[role]?.[key]);
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
+    const currentVal = Boolean(baseMatrix[role]?.[key]);
     const newVal = !currentVal;
 
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [role]: {
-        ...permissionsMatrix[role],
+        ...(baseMatrix[role] || {}),
         [key]: newVal
       }
     };
 
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
+
     await persistMatrix(
       updatedMatrix,
-      `Permission '${key}' for ${ROLE_METADATA[role].label} set to ${newVal ? 'GRANTED' : 'REVOKED'} (Saved)`
+      `Permission '${key}' for ${ROLE_METADATA[role].label} set to ${newVal ? 'GRANTED' : 'REVOKED'} (Saved)`,
+      role
     );
   };
 
   // 13. RBAC: Grant All In Module (Auto-persisted)
   const handleGrantAllInModule = async (role: UserRole, module: PermissionModule) => {
-    if (!permissionsMatrix || !canEditPermissions) return;
+    if (!canEditPermissions) return;
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
     const modPerms = permissionDefinitions.filter(p => p.module === module);
     const updates: Record<string, boolean> = {};
     modPerms.forEach(p => { updates[p.key] = true; });
 
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [role]: {
-        ...permissionsMatrix[role],
+        ...(baseMatrix[role] || {}),
         ...updates
       }
     };
 
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
     await persistMatrix(
       updatedMatrix,
-      `All ${module} permissions granted to ${ROLE_METADATA[role].label} (Saved)`
+      `All ${module} permissions granted to ${ROLE_METADATA[role].label} (Saved)`,
+      role
     );
   };
 
   // 14. RBAC: Revoke All In Module (Auto-persisted)
   const handleRevokeAllInModule = async (role: UserRole, module: PermissionModule) => {
-    if (!permissionsMatrix || !canEditPermissions) return;
+    if (!canEditPermissions) return;
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
     const modPerms = permissionDefinitions.filter(p => p.module === module);
     const updates: Record<string, boolean> = {};
     modPerms.forEach(p => {
-      if (role === 'super_admin' && p.key === 'permissions:edit') {
+      if ((role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && p.key === 'permissions:edit') {
         updates[p.key] = true;
       } else {
         updates[p.key] = false;
@@ -755,38 +777,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
 
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [role]: {
-        ...permissionsMatrix[role],
+        ...(baseMatrix[role] || {}),
         ...updates
       }
     };
 
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
     await persistMatrix(
       updatedMatrix,
-      `All ${module} permissions revoked from ${ROLE_METADATA[role].label} (Saved)`
+      `All ${module} permissions revoked from ${ROLE_METADATA[role].label} (Saved)`,
+      role
     );
   };
 
   // 15. RBAC: Clone / Copy Permissions from another Role (Auto-persisted)
   const handleCopyPermissions = async (fromRole: UserRole, toRole: UserRole) => {
-    if (!permissionsMatrix || !canEditPermissions) return;
+    if (!canEditPermissions) return;
     if (!confirm(`Clone all permissions from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}'?`)) {
       return;
     }
 
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [toRole]: {
-        ...permissionsMatrix[fromRole]
+        ...(baseMatrix[fromRole] || {})
       }
     };
 
+    if (toRole === 'super_admin' || toRole === 'tenant_admin' || toRole === 'squad_lead') {
+      updatedMatrix[toRole]['permissions:edit'] = true;
+    }
+
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
     await persistMatrix(
       updatedMatrix,
-      `Permissions cloned from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}' (Saved)`
+      `Permissions cloned from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}' (Saved)`,
+      toRole
     );
   };
 
@@ -1983,13 +2014,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                       {defs.map((def) => {
                         const isGranted = Boolean(permissionsMatrix?.[selectedRoleForPerms]?.[def.key]);
-                        const isSuperAdminEditLock = selectedRoleForPerms === 'super_admin' && def.key === 'permissions:edit';
+                        const isGovernanceLock = (selectedRoleForPerms === 'super_admin' || selectedRoleForPerms === 'tenant_admin' || selectedRoleForPerms === 'squad_lead') && def.key === 'permissions:edit';
 
                         return (
                           <div
                             key={def.key}
                             onClick={() => {
-                              if (!isSuperAdminEditLock && canEditPermissions) {
+                              if (!isGovernanceLock && canEditPermissions) {
                                 handleTogglePermission(selectedRoleForPerms, def.key);
                               }
                             }}
@@ -1997,7 +2028,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               isGranted
                                 ? 'bg-blue-50/20 border-blue-200'
                                 : 'bg-white border-slate-200 hover:border-slate-300'
-                            } ${!isSuperAdminEditLock && canEditPermissions ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
+                            } ${!isGovernanceLock && canEditPermissions ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
+                            title={isGovernanceLock ? "Admin and Lead governance permission cannot be revoked" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : isGranted ? "Click to revoke" : "Click to grant"}
                           >
                             {/* Blue Checkbox */}
                             <div className="shrink-0 mt-0.5">
@@ -2008,7 +2040,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     : 'bg-white border-slate-300 text-transparent'
                                 }`}
                               >
-                                {isSuperAdminEditLock ? (
+                                {isGovernanceLock ? (
                                   <Lock className="w-3 h-3 text-white" />
                                 ) : (
                                   <Check className={`w-3 h-3 stroke-[3] ${isGranted ? 'opacity-100' : 'opacity-0'}`} />
@@ -2104,26 +2136,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                           {ALL_SYSTEM_ROLES.map((role) => {
                             const isGranted = Boolean(permissionsMatrix?.[role]?.[def.key]);
-                            const isSuperAdminLock = role === 'super_admin' && def.key === 'permissions:edit';
+                            const isGovernanceLock = (role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && def.key === 'permissions:edit';
 
                             return (
                               <td key={role} className="p-3 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (!isSuperAdminLock && canEditPermissions) {
+                                    if (!isGovernanceLock && canEditPermissions) {
                                       handleTogglePermission(role, def.key);
                                     }
                                   }}
-                                  disabled={isSuperAdminLock || !canEditPermissions || isSavingPerms}
+                                  disabled={isGovernanceLock || !canEditPermissions || isSavingPerms}
                                   className={`w-7 h-7 mx-auto flex items-center justify-center transition-colors border ${
                                     isGranted
                                       ? 'bg-emerald-600 border-emerald-700 text-white shadow-2xs'
                                       : 'bg-slate-100 border-slate-200 text-slate-400 hover:border-slate-300'
-                                  } ${!isSuperAdminLock && canEditPermissions ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
-                                  title={`${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
+                                  } ${!isGovernanceLock && canEditPermissions ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
+                                  title={isGovernanceLock ? "Admin and Lead governance permission cannot be revoked" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : `${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
                                 >
-                                  {isSuperAdminLock ? (
+                                  {isGovernanceLock ? (
                                     <Lock className="w-3.5 h-3.5 text-white" />
                                   ) : isGranted ? (
                                     <Check className="w-4 h-4" />

@@ -140,4 +140,8 @@ export interface TeamMember {
   avatarInitials: string;
   status: 'ONLINE' | 'AWAY' | 'ON_CALL';
   color: string;
+  squad?: string;
+  phone?: string;
+  openCount?: number;
+  resolvedCount?: number;
 }
