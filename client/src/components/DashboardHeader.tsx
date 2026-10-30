@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Building2, 
   ChevronDown, 
@@ -17,6 +17,7 @@ import {
 import { UserRole, Ticket, RolePermissionsMatrix } from '../types';
 import { normalizeStatus } from '../utils/formatters';
 import { hasRolePermission } from '../constants/permissions';
+import { NotificationPanel } from './NotificationPanel';
 
 export interface HeaderUser {
   name: string;
@@ -48,6 +49,8 @@ interface DashboardHeaderProps {
   onOpenSimulator?: () => void;
   onSeedDemo?: () => void;
   onClearTickets?: () => void;
+  onSelectTicket?: (ticket: Ticket) => void;
+  onSelectView?: (view: any) => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -65,14 +68,57 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onNewIncidentClick,
   onOpenSimulator,
   onSeedDemo,
-  onClearTickets
+  onClearTickets,
+  onSelectTicket,
+  onSelectView
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isTenantMenuOpen, setIsTenantMenuOpen] = useState(false);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const tenantMenuRef = useRef<HTMLDivElement>(null);
   const roleMenuRef = useRef<HTMLDivElement>(null);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+
+  // Read notifications tracking with localStorage persistence
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('fb_read_notifications');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const handleMarkAsRead = (ticketId: string) => {
+    setReadNotificationIds(prev => {
+      const next = new Set(prev).add(ticketId);
+      try {
+        localStorage.setItem('fb_read_notifications', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleMarkAllAsRead = () => {
+    setReadNotificationIds(prev => {
+      const allIds = tickets.map(t => t.id);
+      const next = new Set([...prev, ...allIds]);
+      try {
+        localStorage.setItem('fb_read_notifications', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  // Real-time unread count matching existing tickets data
+  const unreadCount = useMemo(() => {
+    const activeTickets = tickets.filter(
+      t => !readNotificationIds.has(t.id) && t.status !== 'RESOLVED' && t.status !== 'CLOSED'
+    );
+    return activeTickets.length;
+  }, [tickets, readNotificationIds]);
 
   // Close menus on outside click
   useEffect(() => {
@@ -82,6 +128,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       }
       if (roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
         setIsRoleMenuOpen(false);
+      }
+      if (notificationMenuRef.current && !notificationMenuRef.current.contains(e.target as Node)) {
+        setIsNotificationsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -272,19 +321,47 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               </button>
             )}
 
-            {/* Notification Bell */}
-            <button
-              type="button"
-              title="Alerts and Notifications"
-              className="relative p-1.5 sm:p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors shrink-0 cursor-pointer shadow-2xs"
-            >
-              <Bell className="w-4 h-4 text-slate-600" />
-              {totalOpenTickets > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                  {totalOpenTickets > 99 ? '99+' : totalOpenTickets}
-                </span>
+            {/* Notification Bell with Dropdown Container */}
+            <div className="relative shrink-0" ref={notificationMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsNotificationsOpen(prev => !prev)}
+                title="Alerts and Notifications"
+                aria-label="Alerts and Notifications"
+                aria-expanded={isNotificationsOpen}
+                className={`relative p-1.5 sm:p-2 border rounded-md transition-colors shrink-0 cursor-pointer shadow-2xs ${
+                  isNotificationsOpen
+                    ? 'bg-purple-50 border-purple-300 text-purple-700'
+                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                }`}
+              >
+                <Bell className="w-4 h-4 text-slate-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-in zoom-in duration-150">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <NotificationPanel
+                  tickets={tickets}
+                  unreadCount={unreadCount}
+                  readNotificationIds={readNotificationIds}
+                  onMarkAsRead={handleMarkAsRead}
+                  onMarkAllAsRead={handleMarkAllAsRead}
+                  onSelectTicket={(ticket) => {
+                    onSelectTicket?.(ticket);
+                    setIsNotificationsOpen(false);
+                  }}
+                  onViewAllTickets={() => {
+                    setIsNotificationsOpen(false);
+                    onSelectView?.('total-tickets');
+                  }}
+                  onClose={() => setIsNotificationsOpen(false)}
+                />
               )}
-            </button>
+            </div>
 
             {/* Dynamic User Profile Pill */}
             <div 
