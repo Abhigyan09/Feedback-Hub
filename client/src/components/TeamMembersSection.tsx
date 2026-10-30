@@ -1,6 +1,6 @@
 import React from 'react';
 import { TeamMember } from '../types';
-import { Users } from 'lucide-react';
+import { Users, ArrowRight } from 'lucide-react';
 
 interface TeamMembersSectionProps {
   members: TeamMember[];
