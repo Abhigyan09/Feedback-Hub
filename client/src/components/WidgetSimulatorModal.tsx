@@ -199,12 +199,12 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white text-slate-800 w-full max-w-[540px] rounded-none shadow-2xl border border-slate-300 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white text-slate-800 w-full max-w-[540px] rounded-lg shadow-2xl border border-slate-300 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 modal-subtle">
         
         {/* Modal Header */}
         <div className="px-6 pt-6 pb-4 flex items-start justify-between border-b border-slate-100 bg-slate-50">
           <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-none bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shadow-2xs">
+            <div className="w-10 h-10 rounded-md bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shadow-2xs">
               <MessageSquarePlus className="w-5 h-5" />
             </div>
             <div>
@@ -219,7 +219,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
           <button 
             type="button" 
             onClick={onClose} 
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-none hover:bg-slate-200 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-200 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -236,7 +236,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('BUG')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-none border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-md border text-xs font-medium transition-all cursor-pointer ${
                   category === 'BUG'
                     ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-semibold'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
@@ -250,7 +250,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('IDEA')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-none border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-md border text-xs font-medium transition-all cursor-pointer ${
                   category === 'IDEA'
                     ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-semibold'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
@@ -264,7 +264,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('HELP')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-none border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-md border text-xs font-medium transition-all cursor-pointer ${
                   category === 'HELP'
                     ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-semibold'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
@@ -278,7 +278,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('RATING')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-none border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-md border text-xs font-medium transition-all cursor-pointer ${
                   category === 'RATING'
                     ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-semibold'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
@@ -301,7 +301,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                     key={level}
                     type="button"
                     onClick={() => setSeverity(level)}
-                    className={`py-2 text-xs rounded-none font-medium border transition-all text-center cursor-pointer ${
+                    className={`py-2 text-xs rounded-sm font-medium border transition-all text-center cursor-pointer ${
                       severity === level
                         ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
                         : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -352,7 +352,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder={getSubjectPlaceholder()}
-              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-none focus:outline-none focus:border-purple-600 shadow-2xs"
+              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-purple-600 shadow-2xs"
             />
           </div>
 
@@ -367,7 +367,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               placeholder={getDetailsPlaceholder()}
               rows={3}
               required
-              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-none focus:outline-none focus:border-purple-600 resize-none shadow-2xs"
+              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-purple-600 resize-none shadow-2xs"
             />
           </div>
 
@@ -384,9 +384,9 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
             </div>
 
             {screenshot ? (
-              <div className="relative border border-slate-200 rounded-none p-2 bg-slate-50 flex items-center justify-between">
+              <div className="relative border border-slate-200 rounded-md p-2 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <img src={screenshot} alt="Screenshot preview" className="w-14 h-14 object-cover rounded-none border border-slate-200" />
+                  <img src={screenshot} alt="Screenshot preview" className="w-14 h-14 object-cover rounded-md border border-slate-200" />
                   <div className="text-xs">
                     <p className="font-medium text-slate-800">Screenshot Attached</p>
                     <p className="text-[11px] text-slate-400">Ready to transmit with incident</p>
@@ -395,7 +395,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setScreenshot(null)}
-                  className="p-1.5 text-slate-400 hover:text-red-500 rounded-none hover:bg-white transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-white transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -403,7 +403,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-none p-4 text-center cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                className="border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-md p-4 text-center cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors"
               >
                 <input
                   type="file"
@@ -413,7 +413,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                   className="hidden"
                 />
                 <div className="flex flex-col items-center justify-center space-y-1">
-                  <div className="w-8 h-8 rounded-none bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-2xs">
+                  <div className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-2xs">
                     <Upload className="w-4 h-4" />
                   </div>
                   <p className="text-xs font-medium text-slate-700">Click to upload or paste screenshot</p>
@@ -424,7 +424,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
           </div>
 
           {/* 6. Auto-Captured System Telemetry Accordion */}
-          <div className="border border-slate-200 rounded-none overflow-hidden text-xs">
+          <div className="border border-slate-200 rounded-md overflow-hidden text-xs">
             <button
               type="button"
               onClick={() => setIsTelemetryOpen(!isTelemetryOpen)}
@@ -451,7 +451,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                   <select
                     value={simulatedProduct}
                     onChange={(e) => setSimulatedProduct(e.target.value as any)}
-                    className="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-none p-2 text-slate-800 focus:outline-none focus:border-purple-600"
+                    className="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-md p-2 text-slate-800 focus:outline-none focus:border-purple-600"
                   >
                     <option value="checkout">Acme Payments (checkout.acme.com)</option>
                     <option value="merchant">Acme Payments (merchant.acme.com)</option>
@@ -459,7 +459,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-600 bg-slate-50 p-2.5 rounded-none border border-slate-100">
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-600 bg-slate-50 p-2.5 rounded-md border border-slate-100">
                   <div>
                     <span className="text-slate-400">Domain:</span> {currentConfig.domain}
                   </div>
@@ -482,14 +482,14 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-none hover:bg-slate-50 transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-medium rounded-none shadow-xs flex items-center space-x-2 disabled:opacity-50 transition-all cursor-pointer"
+              className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-medium rounded-md shadow-xs flex items-center space-x-2 disabled:opacity-50 transition-all cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Sending...' : 'Send Feedback'}</span>

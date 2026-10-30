@@ -247,32 +247,32 @@ export class MultiTenantStore {
         product_id: 'prod-checkout-gateway',
         product_name: 'Checkout Gateway API & SDK',
         short_code: 'FB-1041',
-        title: 'Payment Modal Drops Keypress on Safari 17.4',
-        description: 'Users on macOS Sonoma with Safari 17.4 report credit card expiration date input fails to register keypress events during 3DS authentication flow.',
+        title: 'BUG: Feedback from checkout.acme.com',
+        description: 'Customer encountered error during checkout payment flow. Form validation and payment token gateway threw HTTP 500.',
         category: 'BUG',
-        severity: 'URGENT',
+        severity: 'MEDIUM',
         status: 'OPEN',
-        reporter_email: 'sarah.jenkins@partner-client.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-dev-01',
-        assigned_to_name: 'Rahul Sharma (Senior Backend Dev)',
+        reporter_email: 'sarah.jenkins@clientops.acme.com',
+        assigned_squad: 'Checkout & Billing Squad',
+        assigned_to: undefined,
+        assigned_to_name: undefined,
         domain_origin: 'checkout.acme.com',
         telemetry: {
-          page_url: 'https://checkout.acme.com/v2/pay/upi',
+          page_url: 'https://checkout.acme.com/pay',
           domain_origin: 'checkout.acme.com',
-          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/17.4',
-          viewport_dimensions: '1440x900',
+          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          viewport_dimensions: '1358x636',
           console_logs: [
-            { type: 'info', message: 'Mounted CheckoutModal v2.4.1', timestamp: '14:22:01' },
-            { type: 'error', message: 'TypeError: undefined is not an object (evaluating e.inputDevice.isKeyboard)', timestamp: '14:22:04' }
+            { type: 'error', message: 'Failed to load resource: the server responded with a status of 500', timestamp: '18:31:01' },
+            { type: 'warn', message: 'Transaction state reset to unconfirmed', timestamp: '18:31:02' }
           ],
           network_errors: [
-            { url: 'https://checkout.acme.com/api/v2/session/validate', status: 400, method: 'POST', timestamp: '14:22:04' }
+            { url: 'https://checkout.acme.com/api/v1/payments/charge', status: 500, method: 'POST', timestamp: '18:31:02' }
           ]
         },
-        sla_due_at: new Date(now + 30 * 60000).toISOString(),
-        created_at: new Date(now - 45 * 60000).toISOString(),
-        updated_at: new Date(now - 20 * 60000).toISOString()
+        sla_due_at: new Date(now + 119 * 60000).toISOString(),
+        created_at: new Date(now - 8 * 60000).toISOString(),
+        updated_at: new Date(now - 8 * 60000).toISOString()
       },
       {
         id: 'ticket-1042',

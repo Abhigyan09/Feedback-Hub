@@ -223,26 +223,26 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     switch (priority) {
       case 'Urgent':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] bg-red-50 text-red-700 border border-red-200 shadow-2xs">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-sm bg-red-50 text-red-700 border border-red-200 shadow-2xs">
             <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
             <span>Urgent</span>
           </span>
         );
       case 'High':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-sm bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
             <span>High</span>
           </span>
         );
       case 'Medium':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-sm bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
             <span>Medium</span>
           </span>
         );
       case 'Low':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-[2px] bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-sm bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
             <span>Low</span>
           </span>
         );
@@ -266,7 +266,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
         {hasBrowser && (
           <span 
-            className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-[2px] bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs"
+            className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-sm bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs"
             title={`Browser Telemetry: ${t.viewport_dimensions || 'Web Viewport'} | ${t.user_agent ? t.user_agent.slice(0, 35) + '...' : 'Browser Engine'}`}
           >
             <Globe className="w-3 h-3 text-sky-600 flex-shrink-0" />
@@ -279,7 +279,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
 
         {hasApi && (
           <span 
-            className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-[2px] bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs"
+            className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-sm bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs"
             title={`API Telemetry Attached: ${t.page_url || 'Endpoint failure'}`}
           >
             <Terminal className="w-3 h-3 text-rose-600 flex-shrink-0" />
@@ -291,7 +291,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         )}
 
         {!hasBrowser && !hasApi && (
-          <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-medium rounded-[2px] bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-medium rounded-sm bg-purple-50 text-purple-700 border border-purple-200">
             <Activity className="w-3 h-3 text-purple-600" />
             <span>Telemetry Attached</span>
           </span>
@@ -299,7 +299,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
 
         {hasLogs && (
           <span 
-            className="inline-flex items-center space-x-1 px-1.5 py-0.2 text-[9px] font-mono rounded-[2px] bg-slate-100 text-slate-600 border border-slate-200"
+            className="inline-flex items-center space-x-1 px-1.5 py-0.2 text-[9px] font-mono rounded-sm bg-slate-100 text-slate-600 border border-slate-200"
             title={`${t.console_logs?.length} console log entries captured`}
           >
             <span>{t.console_logs?.length} logs</span>
@@ -338,7 +338,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-[2px] border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 space-y-4">
+    <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 space-y-4 card-subtle">
       
       {/* Top Filter & Search Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -354,7 +354,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search tickets by title, ID (e.g. FH-402), or reporter..."
             aria-label="Search tickets"
-            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs pl-9 pr-8 py-2 rounded-[2px] placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200 transition-all"
+            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs pl-9 pr-8 py-2 rounded-md placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200 transition-all"
           />
           {searchQuery && (
             <button
@@ -381,7 +381,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               value={statusFilter}
               onChange={(e) => onStatusFilterChange(e.target.value)}
               aria-label="Filter tickets by status"
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-[2px] font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
             >
               <option value="ALL">All Statuses</option>
               <option value="Open">Open</option>
@@ -401,7 +401,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               value={assigneeFilter}
               onChange={(e) => onAssigneeFilterChange(e.target.value)}
               aria-label="Filter tickets by assignee"
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-[2px] font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
             >
               <option value="ALL">All Assignees</option>
               {teamMembers.map((m) => (
@@ -421,7 +421,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               value={priorityFilter}
               onChange={(e) => onPriorityFilterChange(e.target.value)}
               aria-label="Filter tickets by priority"
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-[2px] font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
             >
               <option value="ALL">All Priorities</option>
               <option value="Urgent">Urgent (P0)</option>
@@ -436,7 +436,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
             <button
               type="button"
               onClick={onResetFilters}
-              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[2px] shadow-xs transition-all active:scale-[0.98]"
+              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-md shadow-xs transition-all active:scale-[0.98]"
               title="Reset all search queries and filters"
             >
               <RotateCcw className="w-3 h-3" />
@@ -455,7 +455,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
             Showing <strong className="text-slate-900 font-bold">{filteredAndSortedTickets.length}</strong> of {tickets.length} tickets
           </span>
           {hasActiveFilters && (
-            <span className="text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-[2px]">
+            <span className="text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-sm">
               Filters Active
             </span>
           )}
@@ -463,7 +463,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
 
         {/* Data Freshness Indicator */}
         <div className="flex items-center space-x-3">
-          <div className="inline-flex items-center space-x-1.5 text-[11px] text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-[2px]">
+          <div className="inline-flex items-center space-x-1.5 text-[11px] text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -482,7 +482,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       </div>
 
       {/* Table Container */}
-      <div className="overflow-x-auto rounded-[2px] border border-slate-200/90">
+      <div className="overflow-x-auto rounded-md border border-slate-200/90">
         {isLoading ? (
           /* Loading State Skeleton */
           <div className="py-12 px-6 text-center space-y-4">
@@ -501,7 +501,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         ) : tickets.length === 0 ? (
           /* Empty State: Clear No Active Incidents message with Quick Seed and Simulate Telemetry actions */
           <div className="py-16 px-4 text-center space-y-3">
-            <div className="w-14 h-14 mx-auto bg-purple-50 border border-purple-200 rounded-[2px] flex items-center justify-center text-purple-600 shadow-2xs">
+            <div className="w-14 h-14 mx-auto bg-purple-50 border border-purple-200 rounded-md flex items-center justify-center text-purple-600 shadow-2xs">
               <CheckCircle2 className="w-7 h-7 text-emerald-600" />
             </div>
             <div className="space-y-1">
@@ -517,7 +517,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 <button
                   type="button"
                   onClick={onSeedDemo}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-[2px] shadow-xs transition-colors"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                   <span>Quick Seed Demo Incidents</span>
@@ -527,7 +527,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 <button
                   type="button"
                   onClick={onOpenSimulatorModal}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-[2px] shadow-xs transition-colors"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-md shadow-xs transition-colors"
                 >
                   <Cpu className="w-3.5 h-3.5" />
                   <span>Simulate SDK Telemetry</span>
@@ -537,7 +537,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 <button
                   type="button"
                   onClick={onOpenCreateModal}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[2px] shadow-xs transition-colors cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-md shadow-xs transition-colors cursor-pointer"
                 >
                   <span>Log New Incident</span>
                 </button>
@@ -547,7 +547,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         ) : filteredAndSortedTickets.length === 0 ? (
           /* Filtered Empty State */
           <div className="py-14 px-4 text-center space-y-3">
-            <div className="w-12 h-12 mx-auto bg-purple-50 border border-purple-100 rounded-[2px] flex items-center justify-center text-purple-600">
+            <div className="w-12 h-12 mx-auto bg-purple-50 border border-purple-100 rounded-md flex items-center justify-center text-purple-600">
               <Search className="w-6 h-6" />
             </div>
             <div className="space-y-1">
@@ -562,7 +562,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               <button
                 type="button"
                 onClick={onResetFilters}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[2px] shadow-xs transition-colors"
+                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-md shadow-xs transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Clear All Active Filters</span>
@@ -667,12 +667,12 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       <div className="space-y-1.5">
                         <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                           {/* Ticket Code Tag in Purple */}
-                          <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-[2px] shadow-2xs">
+                          <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-sm shadow-2xs">
                             {ticket.short_code}
                           </span>
 
                           {/* Category Tag */}
-                          <span className="inline-flex items-center space-x-1 text-[11px] font-medium text-slate-500">
+                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-sm bg-amber-50 text-amber-700 border border-amber-200">
                             {renderCategoryIcon(ticket.category)}
                             <span>{(ticket.category || 'BUG').replace('_', ' ')}</span>
                           </span>
@@ -682,14 +682,9 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                         </div>
 
                         {/* Title */}
-                        <div className="font-bold text-slate-800 group-hover:text-purple-700 transition-colors line-clamp-1">
+                        <div className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors line-clamp-1 text-sm">
                           {ticket.title}
                         </div>
-
-                        {/* Description snippet */}
-                        <p className="text-[11px] text-slate-500 line-clamp-1">
-                          {ticket.description}
-                        </p>
                       </div>
                     </td>
 
@@ -710,7 +705,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                               }
                             }}
                             aria-label={`Change status for incident ${ticket.short_code}`}
-                            className={`text-xs font-semibold px-2.5 py-1 rounded-[2px] border cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-6 shadow-2xs transition-colors ${
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-sm border cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-6 shadow-2xs transition-colors ${
                               normStatus === 'In Dev'
                                 ? 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-300'
                                 : normStatus === 'In QA'
@@ -734,7 +729,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       ) : (
                         <span
                           title="Status change restricted by role permissions"
-                          className={`inline-flex items-center space-x-1 text-xs font-semibold px-2.5 py-1 rounded-[2px] border ${
+                          className={`inline-flex items-center space-x-1 text-xs font-semibold px-2.5 py-1 rounded-sm border ${
                             normStatus === 'In Dev'
                               ? 'bg-purple-50 text-purple-700 border-purple-200'
                               : normStatus === 'In QA'
@@ -756,44 +751,57 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                       <div className="flex items-center space-x-2">
                         {/* Avatar */}
                         {assignedMember ? (
-                          <div className={`w-6 h-6 rounded-[2px] border flex items-center justify-center font-bold text-[9px] shadow-2xs flex-shrink-0 ${assignedMember.color}`}>
+                          <div className={`w-6 h-6 rounded-sm border flex items-center justify-center font-bold text-[9px] shadow-2xs flex-shrink-0 ${assignedMember.color}`}>
                             {assignedMember.avatarInitials}
                           </div>
                         ) : ticket.assigned_to_name ? (
-                          <div className="w-6 h-6 rounded-[2px] border flex items-center justify-center font-bold text-[9px] bg-indigo-100 text-indigo-700 border-indigo-200 flex-shrink-0">
+                          <div className="w-6 h-6 rounded-sm border flex items-center justify-center font-bold text-[9px] bg-indigo-100 text-indigo-700 border-indigo-200 flex-shrink-0">
                             {ticket.assigned_to_name.slice(0, 2).toUpperCase()}
                           </div>
                         ) : (
-                          <div className="w-6 h-6 rounded-[2px] border border-dashed border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center text-[10px] flex-shrink-0">
+                          <div className="w-6 h-6 rounded-sm border border-dashed border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center text-[10px] flex-shrink-0">
                             <UserX className="w-3 h-3" />
                           </div>
                         )}
 
                         {canAssign ? (
-                          /* Inline Assignee Selector */
-                          <div className="relative inline-block flex-1 max-w-[150px]">
-                            <select
-                              value={ticket.assigned_to || 'UNASSIGNED'}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === 'UNASSIGNED') {
-                                  onUpdateAssignee?.(ticket.id, null, null);
-                                } else {
-                                  const m = teamMembers.find(mem => mem.id === val);
-                                  onUpdateAssignee?.(ticket.id, val, m ? m.name : null);
-                                }
-                              }}
-                              aria-label={`Change assignee for incident ${ticket.short_code}`}
-                              className="w-full text-xs font-medium text-slate-700 bg-slate-50 hover:bg-white border border-slate-200 hover:border-purple-300 px-2 py-1 rounded-[2px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 appearance-none pr-5 truncate shadow-2xs transition-colors"
-                            >
-                              <option value="UNASSIGNED">Unassigned</option>
-                              {teamMembers.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                  {m.name}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="w-3 h-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          /* Inline Assignee Selector matching Image 3 */
+                          <div className="relative inline-flex items-center">
+                            <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-sm border ${
+                              ticket.assigned_to 
+                                ? 'bg-slate-50 border-slate-200 text-slate-700' 
+                                : 'border-dashed border-amber-300 bg-amber-50 text-amber-700'
+                            }`}>
+                              {assignedMember ? (
+                                <div className={`w-4 h-4 rounded-xs border flex items-center justify-center font-bold text-[8px] flex-shrink-0 ${assignedMember.color}`}>
+                                  {assignedMember.avatarInitials}
+                                </div>
+                              ) : (
+                                <UserX className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                              )}
+                              <select
+                                value={ticket.assigned_to || 'UNASSIGNED'}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === 'UNASSIGNED') {
+                                    onUpdateAssignee?.(ticket.id, null, null);
+                                  } else {
+                                    const m = teamMembers.find(mem => mem.id === val);
+                                    onUpdateAssignee?.(ticket.id, val, m ? m.name : null);
+                                  }
+                                }}
+                                aria-label={`Change assignee for incident ${ticket.short_code}`}
+                                className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer appearance-none pr-4 text-inherit"
+                              >
+                                <option value="UNASSIGNED">Unassigned</option>
+                                {teamMembers.map((m) => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2 pointer-events-none" />
+                            </div>
                           </div>
                         ) : (
                           <span

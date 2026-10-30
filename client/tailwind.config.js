@@ -8,19 +8,35 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Poppins', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        poppins: ['Poppins', 'Plus Jakarta Sans', 'sans-serif'],
         mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+      },
+      borderRadius: {
+        none: '0',
+        xs: '2px',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '6px',
+        lg: '8px',
+        xl: '10px',
+        '2xl': '12px',
+        full: '9999px',
+        subtle: '6px',
+        card: '6px',
+        panel: '6px',
+        badge: '4px',
       },
       fontWeight: {
         thin: '100',
         extralight: '200',
         light: '300',
         normal: '400',
-        medium: '400',
-        semibold: '500',
-        bold: '500',
-        extrabold: '500',
-        black: '500',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
+        extrabold: '800',
+        black: '900',
       },
       colors: {
         navy: {

@@ -125,6 +125,52 @@
   ],
   "tickets": [
     {
+      "id": "ticket-1041",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "short_code": "FB-1041",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "Customer encountered error during checkout payment flow. Form validation and payment token gateway threw HTTP 500.",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "assigned_to": null,
+      "assigned_to_name": null,
+      "reporter_email": "sarah.jenkins@clientops.acme.com",
+      "assigned_squad": "Checkout & Billing Squad",
+      "domain_origin": "checkout.acme.com",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/pay",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "error",
+            "message": "Failed to load resource: the server responded with a status of 500",
+            "timestamp": "18:31:01"
+          },
+          {
+            "type": "warn",
+            "message": "Transaction state reset to unconfirmed",
+            "timestamp": "18:31:02"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "https://checkout.acme.com/api/v1/payments/charge",
+            "status": 500,
+            "method": "POST",
+            "timestamp": "18:31:02"
+          }
+        ]
+      },
+      "sla_due_at": "2026-10-29T15:31:58.404Z",
+      "created_at": "2026-10-29T13:24:58.405Z",
+      "updated_at": "2026-10-29T13:24:58.405Z"
+    },
+    {
       "id": "ticket-2001",
       "tenant_id": "tenant-medsync-002",
       "product_id": "prod-telehealth-portal",

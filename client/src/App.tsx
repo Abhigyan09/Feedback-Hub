@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Ticket, Tenant, UserRole, RolePermissionsMatrix, TeamMember, TicketCategory, TicketSeverity } from './types';
 import { normalizeSeverity, normalizeStatus } from './utils/formatters';
@@ -36,7 +36,7 @@ export const App: React.FC = () => {
 
   // Authenticated User Context (Dynamically loaded from backend)
   const [currentUser, setCurrentUser] = useState<HeaderUser>({
-    name: 'Elena Rostova (Admin)',
+    name: 'Elena Rostova',
     role: 'Tenant Administrator',
     initials: 'ER',
     email: 'admin@acme.com'
@@ -52,6 +52,7 @@ export const App: React.FC = () => {
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [apiLatencyMs, setApiLatencyMs] = useState<number | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -62,7 +63,29 @@ export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<SidebarView>(() => {
     return (localStorage.getItem('fb_current_view') as SidebarView) || 'dashboard';
   });
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    const saved = localStorage.getItem('fb_sidebar_collapsed');
+    if (saved !== null) return saved === 'true';
+    return typeof window !== 'undefined' && window.innerWidth < 1024;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fb_sidebar_collapsed', String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
+
+  // Disable browser automatic scroll restoration so page doesn't anchor at bottom on reload
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  // Guarantee that the view always starts at top when switching navigation tabs
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [currentView]);
 
   // Search & Filter state for dashboard table
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -619,9 +642,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#f4f6fb] text-slate-900 flex font-sans select-none">
+    <div className="h-screen w-full flex overflow-hidden bg-[#f4f6fb] text-slate-800 font-sans">
       
-      {/* Sleek Dark Left Sidebar */}
+      {/* Sleek Dark Left Sidebar - Fixed at left, independent vertical scroll */}
       <Sidebar
         currentView={currentView}
         onSelectView={setCurrentView}
@@ -634,10 +657,10 @@ export const App: React.FC = () => {
         openCount={openCount}
       />
 
-      {/* Main Content Area - Dedicated Vertical Scroll Container */}
-      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-y-auto overflow-x-hidden bg-[#f4f6fb]">
+      {/* Main App Column: Header fixed at top, independent scrollable content below */}
+      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-[#f4f6fb]">
         
-        {/* Dynamic Dashboard Header with live workspace selector, role switcher, and user details */}
+        {/* Dynamic Dashboard Header - Fixed at top of main area */}
         <DashboardHeader
           tenants={tenants}
           currentTenantId={currentTenantId}
@@ -661,7 +684,7 @@ export const App: React.FC = () => {
 
         {/* Real-time Incident Alert Banner */}
         {alertBanner && (
-          <div className="bg-purple-900 border-b border-purple-800 text-purple-100 px-6 py-2.5 text-xs font-semibold flex items-center justify-between animate-in slide-in-from-top duration-200">
+          <div className="bg-purple-900 border-b border-purple-800 text-purple-100 px-6 py-2.5 text-xs font-semibold flex items-center justify-between animate-in slide-in-from-top duration-200 shrink-0">
             <div className="flex items-center space-x-2.5">
               <Bell className="w-4 h-4 text-purple-300 animate-bounce" />
               <span>{alertBanner}</span>
@@ -675,19 +698,26 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {/* Dedicated Independent Vertical Scroll Container for Main Content ONLY */}
+        <div 
+          ref={scrollContainerRef}
+          id="main-scroll-container"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col bg-[#f4f6fb] main-content-scroll"
+        >
+
         {/* VIEW 1: DASHBOARD (Edge-to-Edge Observability & Incident Workspace) */}
         {currentView === 'dashboard' && (
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
             
             {/* Greeting & Operations Breadcrumb Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2.5">
                   <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                    {greeting}, {currentUser.name} 👋
+                    {greeting}, {currentUser.name.replace(/\s*\([^)]*\)/g, '').trim()} 👋
                   </h1>
-                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-[2px] text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                    <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-sm text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                    <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
                     <span>{isConnected ? 'Live WebSockets Connected' : 'Syncing Live Engine'}</span>
                   </span>
                 </div>
@@ -702,7 +732,7 @@ export const App: React.FC = () => {
                   type="button"
                   onClick={() => setIsSimulatorOpen(true)}
                   title="Test live client SDK crash / error telemetry"
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-[2px] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
                   <Cpu className="w-3.5 h-3.5 text-purple-600" />
                   <span>Simulate Ingest</span>
@@ -713,7 +743,7 @@ export const App: React.FC = () => {
                     type="button"
                     onClick={handleSeedDemo}
                     title="Seed 3 dynamic test incidents"
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-slate-700 rounded-[2px] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-slate-700 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     <span>Quick Seed</span>
@@ -725,7 +755,7 @@ export const App: React.FC = () => {
                     type="button"
                     onClick={handleClearTickets}
                     title="Clear all tickets in this workspace"
-                    className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-[2px] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Clear</span>
@@ -736,7 +766,7 @@ export const App: React.FC = () => {
                   type="button"
                   onClick={fetchTickets}
                   title="Refresh live tickets from API"
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-purple-700 rounded-[2px] text-xs font-semibold shadow-xs hover:border-purple-200 transition-colors cursor-pointer"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-purple-700 rounded-md text-xs font-semibold shadow-xs hover:border-purple-200 transition-colors cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -832,7 +862,7 @@ export const App: React.FC = () => {
 
         {/* VIEW 2: TOTAL TICKETS */}
         {currentView === 'total-tickets' && (
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
             {/* Header Box */}
             <div className="bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
               <div className="space-y-1">
@@ -885,7 +915,7 @@ export const App: React.FC = () => {
 
         {/* VIEW 3: TICKETS RESOLVED */}
         {currentView === 'resolved-tickets' && (
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
             {/* Header Box */}
             <div className="bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
               <div className="space-y-1">
@@ -947,19 +977,20 @@ export const App: React.FC = () => {
         )}
 
         {/* Footer */}
-        <footer className="border-t border-slate-200/80 bg-white py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 w-full mt-auto">
+        <footer className="border-t border-slate-200/90 bg-white/95 py-5 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 w-full mt-auto shrink-0 shadow-xs">
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-700">FEEDBACK-HUB ENTERPRISE</span>
+            <span className="font-bold text-slate-800">FEEDBACK-HUB ENTERPRISE</span>
             <span>•</span>
-            <span>DYNAMIC REST API & WEBSOCKET ENGINE</span>
+            <span className="text-slate-500">DYNAMIC REST API & WEBSOCKET ENGINE</span>
           </div>
-          <div className="flex items-center space-x-3 text-slate-500">
+          <div className="flex items-center space-x-3 text-slate-500 font-mono text-[11px]">
             <span className="text-purple-600 font-medium">REAL-TIME TELEMETRY</span>
             <span>•</span>
             <span>POSTGRESQL 16 RLS READY</span>
           </div>
         </footer>
 
+        </div>
       </div>
 
       {/* Ticket Details & Edit / Delete Modal */}

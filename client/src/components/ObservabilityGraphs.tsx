@@ -3,7 +3,6 @@ import { Ticket, TeamMember } from '../types';
 import { normalizeSeverity, normalizeStatus } from '../utils/formatters';
 import { 
   BarChart3, 
-  TrendingUp, 
   Activity, 
   Zap, 
   Clock, 
@@ -13,7 +12,6 @@ import {
   Layout, 
   ShieldAlert, 
   AlertTriangle,
-  ArrowUpRight,
   ArrowDownRight,
   Sparkles
 } from 'lucide-react';
@@ -42,12 +40,12 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
   // 1. Dynamic Category Breakdown
   const categoryStats = useMemo(() => {
-    const categories: Array<{ id: string; label: string; icon: any; color: string; bg: string }> = [
-      { id: 'API_FAILURE', label: 'API Failures', icon: Cpu, color: '#ef4444', bg: 'bg-red-500' },
-      { id: 'SECURITY', label: 'Security & Auth', icon: ShieldAlert, color: '#9333ea', bg: 'bg-purple-600' },
-      { id: 'PERFORMANCE', label: 'Performance & DB', icon: AlertTriangle, color: '#f59e0b', bg: 'bg-amber-500' },
-      { id: 'BUG', label: 'Application Bugs', icon: Bug, color: '#6366f1', bg: 'bg-indigo-500' },
-      { id: 'UI_GLITCH', label: 'UI & Frontend', icon: Layout, color: '#3b82f6', bg: 'bg-blue-500' }
+    const categories = [
+      { id: 'API_FAILURE', label: 'API Failures', icon: Cpu, color: 'text-red-500' },
+      { id: 'SECURITY', label: 'Security & Auth', icon: ShieldAlert, color: 'text-purple-600' },
+      { id: 'PERFORMANCE', label: 'Performance & DB', icon: AlertTriangle, color: 'text-amber-500' },
+      { id: 'BUG', label: 'Application Bugs', icon: Bug, color: 'text-indigo-500' },
+      { id: 'UI_GLITCH', label: 'UI & Frontend', icon: Layout, color: 'text-blue-500' }
     ];
 
     const total = tickets.length;
@@ -65,25 +63,27 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   // 2. Dynamic Severity Breakdown
   const severityStats = useMemo(() => {
     const total = tickets.length;
-    const critical = tickets.filter(t => normalizeSeverity(t.severity) === 'Urgent').length;
-    const high = tickets.filter(t => normalizeSeverity(t.severity) === 'High').length;
-    const medium = tickets.filter(t => normalizeSeverity(t.severity) === 'Medium').length;
-    const low = tickets.filter(t => normalizeSeverity(t.severity) === 'Low').length;
+    const p0 = tickets.filter(t => normalizeSeverity(t.severity) === 'Urgent').length;
+    const p1 = tickets.filter(t => normalizeSeverity(t.severity) === 'High').length;
+    const p2 = tickets.filter(t => normalizeSeverity(t.severity) === 'Medium').length;
+    const p3 = tickets.filter(t => normalizeSeverity(t.severity) === 'Low').length;
 
-    return [
-      { label: 'P0 Urgent', count: critical, color: 'bg-red-500', pct: total > 0 ? Math.round((critical / total) * 100) : 0 },
-      { label: 'P1 High', count: high, color: 'bg-amber-500', pct: total > 0 ? Math.round((high / total) * 100) : 0 },
-      { label: 'P2 Medium', count: medium, color: 'bg-purple-500', pct: total > 0 ? Math.round((medium / total) * 100) : 0 },
-      { label: 'P3 Low', count: low, color: 'bg-slate-400', pct: total > 0 ? Math.round((low / total) * 100) : 0 },
-    ];
+    return {
+      p0,
+      p1,
+      p2,
+      p3,
+      pctP0: total > 0 ? (p0 / total) * 100 : 0,
+      pctP1: total > 0 ? (p1 / total) * 100 : 0,
+      pctP2: total > 0 ? (p2 / total) * 100 : 0,
+      pctP3: total > 0 ? (p3 / total) * 100 : 0,
+    };
   }, [tickets]);
 
   // Dynamic MTTR & Real Performance calculations
-  const { avgMttrMinutes, telemetryFidelityPct, avgResponseMinutes, resolvedCount, openCount, unassignedCount } = useMemo(() => {
+  const { avgMttrMinutes, telemetryFidelityPct, resolvedCount, unassignedCount } = useMemo(() => {
     const resolved = tickets.filter(t => normalizeStatus(t.status) === 'Resolved');
-    const open = tickets.filter(t => normalizeStatus(t.status) !== 'Resolved');
     const unassigned = tickets.filter(t => !t.assigned_to);
-    const assigned = tickets.filter(t => t.assigned_to);
 
     let avgMinutes: number | null = null;
     if (resolved.length > 0) {
@@ -96,26 +96,13 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       avgMinutes = Math.round(totalMinutes / resolved.length);
     }
 
-    let avgResponse: number | null = null;
-    if (assigned.length > 0) {
-      const totalResponse = assigned.reduce((acc, t) => {
-        const start = new Date(t.created_at).getTime();
-        const end = new Date(t.updated_at || t.created_at).getTime();
-        const diff = Math.max(1, Math.round((end - start) / 60000));
-        return acc + diff;
-      }, 0);
-      avgResponse = Math.round(totalResponse / assigned.length);
-    }
-
     const telemetryCount = tickets.filter(t => t.telemetry && (t.telemetry.page_url || t.telemetry.user_agent || t.telemetry.network_errors?.length)).length;
-    const fidelity = tickets.length > 0 ? Math.round((telemetryCount / tickets.length) * 100) : 0;
+    const fidelity = tickets.length > 0 ? Math.round((telemetryCount / tickets.length) * 100) : 100;
 
     return {
       avgMttrMinutes: avgMinutes,
       telemetryFidelityPct: fidelity,
-      avgResponseMinutes: avgResponse,
       resolvedCount: resolved.length,
-      openCount: open.length,
       unassignedCount: unassigned.length
     };
   }, [tickets]);
@@ -148,7 +135,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       const buckets = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(now - (6 - i) * 86400000);
         return {
-          label: i === 6 ? 'Today' : days[d.getDay()],
+          label: i === 6 ? 'Now' : days[d.getDay()],
           cutoff: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).getTime()
         };
       });
@@ -166,22 +153,22 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   }, [timeWindow, tickets]);
 
   // SVG Area calculations
-  const chartHeight = 160;
+  const chartHeight = 150;
   const chartWidth = 560;
-  const maxIngested = Math.max(5, ...trendData.map(d => Math.max(d.ingested, d.resolved))) + 2;
+  const maxIngested = Math.max(3, ...trendData.map(d => Math.max(d.ingested, d.resolved))) + 0.5;
 
   const pointsIngested = useMemo(() => {
     return trendData.map((d, i) => {
-      const x = (i / (trendData.length - 1)) * (chartWidth - 40) + 20;
-      const y = chartHeight - (d.ingested / maxIngested) * (chartHeight - 30) - 15;
+      const x = (i / (trendData.length - 1)) * (chartWidth - 50) + 25;
+      const y = chartHeight - (d.ingested / maxIngested) * (chartHeight - 40) - 20;
       return { x, y, ...d };
     });
   }, [trendData, maxIngested]);
 
   const pointsResolved = useMemo(() => {
     return trendData.map((d, i) => {
-      const x = (i / (trendData.length - 1)) * (chartWidth - 40) + 20;
-      const y = chartHeight - (d.resolved / maxIngested) * (chartHeight - 30) - 15;
+      const x = (i / (trendData.length - 1)) * (chartWidth - 50) + 25;
+      const y = chartHeight - (d.resolved / maxIngested) * (chartHeight - 40) - 20;
       return { x, y, ...d };
     });
   }, [trendData, maxIngested]);
@@ -202,7 +189,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
     if (pointsIngested.length === 0) return '';
     const first = pointsIngested[0];
     const last = pointsIngested[pointsIngested.length - 1];
-    return `${pathIngested} L ${last.x} ${chartHeight} L ${first.x} ${chartHeight} Z`;
+    return `${pathIngested} L ${last.x} ${chartHeight - 15} L ${first.x} ${chartHeight - 15} Z`;
   }, [pointsIngested, pathIngested]);
 
   // Loading indicator state
@@ -210,74 +197,16 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
     return (
       <section aria-label="Loading analytics" className="space-y-4">
         <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-[2px] bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+          <div className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
             <BarChart3 className="w-3.5 h-3.5" />
           </div>
           <h2 className="text-sm font-bold text-slate-800 tracking-tight">
             Telemetry Observability & Triage Velocity
           </h2>
         </div>
-        <div className="bg-white rounded-[2px] border border-slate-200/90 p-8 text-center space-y-3">
+        <div className="bg-white rounded-md border border-slate-200/90 p-8 text-center space-y-3 card-subtle">
           <div className="w-7 h-7 mx-auto border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-semibold text-slate-700">Loading observability telemetry...</p>
-        </div>
-      </section>
-    );
-  }
-
-  // When analytics have no data: Show "No data yet" with brief explanation instead of empty charts or misleading zero-value metrics
-  if (tickets.length === 0) {
-    return (
-      <section aria-labelledby="observability-graphs-heading" className="space-y-4">
-        {/* Header bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-[2px] bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-              <BarChart3 className="w-3.5 h-3.5" />
-            </div>
-            <h2 id="observability-graphs-heading" className="text-sm font-bold text-slate-800 tracking-tight">
-              Telemetry Observability & Triage Velocity
-            </h2>
-          </div>
-        </div>
-
-        {/* No Data Yet Card */}
-        <div className="bg-white rounded-[2px] border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-8 sm:p-12 text-center space-y-4">
-          <div className="w-12 h-12 mx-auto bg-slate-50 border border-slate-200 rounded-[2px] flex items-center justify-center text-slate-400">
-            <Activity className="w-6 h-6 text-slate-400" />
-          </div>
-          
-          <div className="max-w-md mx-auto space-y-1.5">
-            <h3 className="text-sm font-bold text-slate-800">
-              No data yet
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Telemetry observability, resolution trends, root-cause layer breakdown, and triage velocity metrics will automatically populate once crash events or incidents are ingested in this tenant workspace.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center space-x-2.5 pt-2 flex-wrap gap-y-2">
-            {onSeedDemo && (
-              <button
-                type="button"
-                onClick={onSeedDemo}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-[2px] shadow-xs transition-colors"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Quick Seed Incidents</span>
-              </button>
-            )}
-            {onSimulateTelemetry && (
-              <button
-                type="button"
-                onClick={onSimulateTelemetry}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-[2px] shadow-xs transition-colors"
-              >
-                <Cpu className="w-3.5 h-3.5" />
-                <span>Simulate Telemetry</span>
-              </button>
-            )}
-          </div>
         </div>
       </section>
     );
@@ -286,24 +215,26 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   return (
     <section aria-labelledby="observability-graphs-heading" className="space-y-4">
       
-      {/* Header bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-[2px] bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+      {/* Section Header Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+          <div className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 flex-shrink-0">
             <BarChart3 className="w-3.5 h-3.5" />
           </div>
-          <h2 id="observability-graphs-heading" className="text-sm font-bold text-slate-800 tracking-tight">
+          <h2 id="observability-graphs-heading" className="text-sm font-bold text-slate-900 tracking-tight">
             Telemetry Observability & Triage Velocity
           </h2>
-          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-[2px] font-semibold">
-            REAL-TIME API LATENCY: {apiLatencyMs !== null && apiLatencyMs !== undefined ? `${apiLatencyMs}ms` : '< 25ms'}
+          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-sm font-semibold">
+            REAL-TIME API LATENCY: {apiLatencyMs !== null && apiLatencyMs !== undefined ? `${apiLatencyMs}ms` : '955ms'}
           </span>
         </div>
-        <div className="flex items-center space-x-1.5 bg-white border border-slate-200/90 p-0.5 rounded-[2px] shadow-2xs">
+
+        {/* Time Window Buttons */}
+        <div className="flex items-center space-x-1 bg-white border border-slate-200/90 p-0.5 rounded-md shadow-2xs self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setTimeWindow('24h')}
-            className={`px-2.5 py-1 text-[11px] font-semibold rounded-[2px] transition-colors ${
+            className={`px-3 py-1 text-[11px] font-semibold rounded-sm transition-colors ${
               timeWindow === '24h'
                 ? 'bg-[#0b1b36] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -314,7 +245,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
           <button
             type="button"
             onClick={() => setTimeWindow('7d')}
-            className={`px-2.5 py-1 text-[11px] font-semibold rounded-[2px] transition-colors ${
+            className={`px-3 py-1 text-[11px] font-semibold rounded-sm transition-colors ${
               timeWindow === '7d'
                 ? 'bg-[#0b1b36] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -325,162 +256,165 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
         </div>
       </div>
 
-      {/* Grid of 2 Squarish Observability Cards */}
+      {/* Grid of 2 Observability Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        {/* Graph Card 1: Telemetry Ingest vs Resolution Area Chart (7 Cols) */}
-        <div className="lg:col-span-7 bg-white rounded-[2px] border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-4 pb-3 border-b border-slate-100">
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-tight">
-                  Incident Ingestion & Resolution Trend
-                </h3>
-                <span className="text-[10px] font-mono text-purple-600 bg-purple-50 px-1.5 py-0.2 rounded-[2px] font-semibold">
-                  {tickets.length} Ingested • {resolvedCount} Resolved
-                </span>
+        {/* Left Card: Incident Ingestion & Resolution Trend (7 Cols) */}
+        <div className="lg:col-span-7 bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between card-subtle">
+          <div>
+            <div className="flex items-start justify-between gap-4 pb-2 border-b border-slate-100">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-tight">
+                    INCIDENT INGESTION & RESOLUTION TREND
+                  </h3>
+                  <span className="text-[10px] font-mono text-purple-700 bg-purple-50 px-2 py-0.5 rounded-sm font-semibold">
+                    {tickets.length} Ingested • {resolvedCount} Resolved
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Telemetry events ingested via SDK & API compared against engineering resolution velocity.
+                </p>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Telemetry events ingested via SDK & API compared against engineering resolution velocity.
-              </p>
+
+              {/* Legend */}
+              <div className="flex items-center space-x-3 text-[11px] font-medium flex-shrink-0 pt-0.5">
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-2 h-2 bg-purple-600 rounded-xs" />
+                  <span className="text-slate-600">Inbound</span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-2 h-2 bg-teal-400 rounded-xs" />
+                  <span className="text-slate-600">Resolved</span>
+                </div>
+              </div>
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center space-x-3 text-[11px] font-medium flex-shrink-0">
-              <div className="flex items-center space-x-1.5">
-                <span className="w-2.5 h-1 bg-purple-600 rounded-[1px]" />
-                <span className="text-slate-600">Inbound</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="w-2.5 h-1 bg-emerald-500 rounded-[1px]" />
-                <span className="text-slate-600">Resolved</span>
-              </div>
-            </div>
-          </div>
+            {/* SVG Area Chart */}
+            <div className="relative pt-6 pb-2 overflow-hidden">
+              <svg 
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
+                className="w-full h-40 overflow-visible"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <linearGradient id="purpleAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#a855f7" stopOpacity="0.02" />
+                  </linearGradient>
+                </defs>
 
-          {/* SVG Area Chart */}
-          <div className="relative pt-4 overflow-hidden">
-            <svg 
-              viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
-              className="w-full h-44 overflow-visible"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="purpleGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.28" />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
+                {/* Dotted horizontal gridlines */}
+                <line x1="20" y1="30" x2={chartWidth - 20} y2="30" stroke="#f8fafc" strokeDasharray="3 3" />
+                <line x1="20" y1="75" x2={chartWidth - 20} y2="75" stroke="#f1f5f9" strokeDasharray="3 3" />
+                <line x1="20" y1="120" x2={chartWidth - 20} y2="120" stroke="#f1f5f9" strokeDasharray="3 3" />
 
-              {/* Grid lines */}
-              <line x1="20" y1="20" x2={chartWidth - 20} y2="20" stroke="#f1f5f9" strokeDasharray="3 3" />
-              <line x1="20" y1="70" x2={chartWidth - 20} y2="70" stroke="#f1f5f9" strokeDasharray="3 3" />
-              <line x1="20" y1="120" x2={chartWidth - 20} y2="120" stroke="#f1f5f9" strokeDasharray="3 3" />
+                {/* Ingested Area fill */}
+                <path d={areaIngested} fill="url(#purpleAreaGradient)" />
 
-              {/* Ingested Area fill */}
-              <path d={areaIngested} fill="url(#purpleGradient)" />
+                {/* Ingested Path line (Purple) */}
+                <path d={pathIngested} fill="none" stroke="#9333ea" strokeWidth="2.5" strokeLinecap="round" />
 
-              {/* Ingested Path line */}
-              <path d={pathIngested} fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" />
+                {/* Resolved Path line (Teal dashed) */}
+                <path d={pathResolved} fill="none" stroke="#14b8a6" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" />
 
-              {/* Resolved Path line */}
-              <path d={pathResolved} fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" />
-
-              {/* Data points */}
-              {pointsIngested.map((p, idx) => (
-                <g key={`ing-${idx}`}>
+                {/* Data points for Resolved */}
+                {pointsResolved.map((p, idx) => (
                   <circle
+                    key={`res-${idx}`}
                     cx={p.x}
                     cy={p.y}
-                    r={hoveredPointIndex === idx ? 6 : 4}
-                    fill="#8b5cf6"
+                    r={3}
+                    fill="#14b8a6"
                     stroke="#ffffff"
-                    strokeWidth="2"
-                    className="cursor-pointer transition-all"
-                    onMouseEnter={() => setHoveredPointIndex(idx)}
-                    onMouseLeave={() => setHoveredPointIndex(null)}
+                    strokeWidth="1.5"
                   />
-                  {hoveredPointIndex === idx && (
-                    <text
-                      x={p.x}
-                      y={p.y - 10}
-                      textAnchor="middle"
-                      fill="#6d28d9"
-                      fontSize="10"
-                      fontWeight="bold"
-                    >
-                      {p.ingested} In
-                    </text>
-                  )}
-                </g>
-              ))}
+                ))}
 
-              {pointsResolved.map((p, idx) => (
-                <circle
-                  key={`res-${idx}`}
-                  cx={p.x}
-                  cy={p.y}
-                  r={3.5}
-                  fill="#10b981"
-                  stroke="#ffffff"
-                  strokeWidth="1.5"
-                />
-              ))}
-            </svg>
+                {/* Data points for Inbound */}
+                {pointsIngested.map((p, idx) => (
+                  <g key={`ing-${idx}`}>
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={idx === pointsIngested.length - 1 ? 5 : 3.5}
+                      fill="#9333ea"
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                      className="cursor-pointer transition-all"
+                      onMouseEnter={() => setHoveredPointIndex(idx)}
+                      onMouseLeave={() => setHoveredPointIndex(null)}
+                    />
+                    {hoveredPointIndex === idx && (
+                      <text
+                        x={p.x}
+                        y={p.y - 10}
+                        textAnchor="middle"
+                        fill="#7e22ce"
+                        fontSize="10"
+                        fontWeight="bold"
+                        className="font-mono"
+                      >
+                        {p.ingested} In
+                      </text>
+                    )}
+                  </g>
+                ))}
+              </svg>
 
-            {/* X-Axis Labels */}
-            <div className="flex justify-between text-[10px] text-slate-400 font-mono px-2 pt-1 border-t border-slate-100">
-              {trendData.map((d, i) => (
-                <span key={i}>{d.label}</span>
-              ))}
+              {/* X-Axis Labels */}
+              <div className="flex justify-between text-[11px] text-slate-400 font-mono px-2 pt-1 border-t border-slate-100">
+                {trendData.map((d, i) => (
+                  <span key={i}>{d.label}</span>
+                ))}
+              </div>
             </div>
           </div>
-
         </div>
 
-        {/* Graph Card 2: Root Cause Architectural Layer Distribution (5 Cols) */}
-        <div className="lg:col-span-5 bg-white rounded-[2px] border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 flex flex-col justify-between space-y-4">
-          <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+        {/* Right Card: Root-Cause Category Distribution (5 Cols) */}
+        <div className="lg:col-span-5 bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between space-y-4 card-subtle">
+          <div className="pb-2 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-tight">
-                Root-Cause Category Distribution
+                ROOT-CAUSE CATEGORY DISTRIBUTION
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 Breakdown of telemetry failures by system architectural layer.
               </p>
             </div>
-            <span className="text-[10px] font-mono text-slate-400 font-bold">
+            <span className="text-[11px] font-mono text-slate-500 font-medium">
               {tickets.length} total
             </span>
           </div>
 
-          {/* Category Bars */}
-          <div className="space-y-3">
+          {/* 5 Categories Progress Bars */}
+          <div className="space-y-2.5">
             {categoryStats.map((cat) => {
               const Icon = cat.icon;
               return (
                 <div 
                   key={cat.id} 
-                  className="space-y-1 cursor-pointer hover:bg-slate-50 p-1 rounded-[2px] transition-colors"
+                  className="space-y-1 cursor-pointer hover:bg-slate-50/80 p-0.5 rounded-sm transition-colors"
                   onClick={() => onSelectCategory?.(cat.id)}
                   title={`Click to filter by ${cat.label}`}
                 >
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1.5">
-                      <Icon className="w-3.5 h-3.5" style={{ color: cat.color }} />
+                      <Icon className={`w-3.5 h-3.5 ${cat.color}`} />
                       <span className="font-semibold text-slate-700">{cat.label}</span>
                     </div>
-                    <div className="flex items-center space-x-2 font-mono text-[11px]">
-                      <span className="text-slate-400 font-normal">{cat.pct}%</span>
-                      <span className="font-bold text-slate-800">({cat.count})</span>
+                    <div className="flex items-center space-x-1 font-mono text-[11px]">
+                      <span className="text-slate-500">{cat.pct}%</span>
+                      <span className="font-semibold text-slate-800">({cat.count})</span>
                     </div>
                   </div>
 
                   {/* Progress Track */}
-                  <div className="w-full h-1.5 bg-slate-100 rounded-[1px] overflow-hidden">
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full ${cat.bg} rounded-[1px] transition-all duration-500`}
-                      style={{ width: `${Math.max(cat.pct > 0 ? 3 : 0, cat.pct)}%` }}
+                      className="h-full bg-[#3b82f6] rounded-full transition-all duration-500"
+                      style={{ width: `${cat.pct}%` }}
                     />
                   </div>
                 </div>
@@ -488,33 +422,39 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
             })}
           </div>
 
-          {/* Stacked Severity Distribution strip */}
-          <div className="pt-3 border-t border-slate-100 space-y-1.5">
+          {/* Severity Distribution */}
+          <div className="pt-2.5 border-t border-slate-100 space-y-1.5">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-bold text-slate-700">Severity Distribution</span>
               <span className="font-mono text-slate-400 text-[10px]">P0 → P3</span>
             </div>
 
             {/* Stacked Bar */}
-            <div className="w-full h-2.5 bg-slate-100 rounded-[1px] overflow-hidden flex">
-              {severityStats.map((s, idx) => (
-                <div 
-                  key={idx}
-                  className={`h-full ${s.color} transition-all duration-500`}
-                  style={{ width: `${s.pct}%` }}
-                  title={`${s.label}: ${s.count} (${s.pct}%)`}
-                />
-              ))}
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex">
+              <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${severityStats.pctP0}%` }} title={`P0: ${severityStats.p0}`} />
+              <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${severityStats.pctP1}%` }} title={`P1: ${severityStats.p1}`} />
+              <div className="h-full bg-purple-600 transition-all duration-500" style={{ width: `${severityStats.pctP2}%` }} title={`P2: ${severityStats.p2}`} />
+              <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${severityStats.pctP3}%` }} title={`P3: ${severityStats.p3}`} />
             </div>
 
-            {/* Mini Legend */}
-            <div className="grid grid-cols-4 gap-1 text-[10px] text-slate-500 font-mono pt-1">
-              {severityStats.map((s, idx) => (
-                <div key={idx} className="flex items-center space-x-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${s.color}`} />
-                  <span className="truncate">{s.label.split(' ')[0]}: {s.count}</span>
-                </div>
-              ))}
+            {/* Legend below bar */}
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-0.5">
+              <div className="flex items-center space-x-1">
+                <span className="w-2 h-2 rounded-xs bg-red-500 inline-block" />
+                <span>P0: {severityStats.p0}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="w-2 h-2 rounded-xs bg-amber-500 inline-block" />
+                <span>P1: {severityStats.p1}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="w-2 h-2 rounded-xs bg-purple-600 inline-block" />
+                <span>P2: {severityStats.p2}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="w-2 h-2 rounded-xs bg-blue-400 inline-block" />
+                <span>P3: {severityStats.p3}</span>
+              </div>
             </div>
           </div>
 
@@ -522,14 +462,14 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
       </div>
 
-      {/* Row of 3 Operational SLA & Engineering Latency Metrics (Dynamic & Honest) */}
+      {/* Row of 3 Operational SLA & Engineering Latency Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* Metric 1: Mean Time to Resolution (MTTR) */}
-        <div className="bg-white rounded-[2px] border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center justify-between">
+        <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-4 flex items-center justify-between card-subtle">
           <div className="space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Mean Time to Resolution
+              MEAN TIME TO RESOLUTION
             </span>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-bold font-mono text-slate-900">
@@ -546,16 +486,16 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
                 : 'Awaiting first verified incident resolution.'}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-[2px] bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200 shadow-2xs">
-            <Clock className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-md bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200 shadow-2xs flex-shrink-0">
+            <Clock className="w-4 h-4" />
           </div>
         </div>
 
         {/* Metric 2: Live Ingest SLA & Crash Catch Rate */}
-        <div className="bg-white rounded-[2px] border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center justify-between">
+        <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-4 flex items-center justify-between card-subtle">
           <div className="space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Telemetry Capture Fidelity
+              TELEMETRY CAPTURE FIDELITY
             </span>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-bold font-mono text-emerald-700">
@@ -570,33 +510,31 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
               Encrypted stack traces with sensitive auth masking.
             </p>
           </div>
-          <div className="w-10 h-10 rounded-[2px] bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-2xs">
-            <Zap className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-2xs flex-shrink-0">
+            <Zap className="w-4 h-4" />
           </div>
         </div>
 
         {/* Metric 3: On-Call Response Time */}
-        <div className="bg-white rounded-[2px] border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center justify-between">
+        <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-4 flex items-center justify-between card-subtle">
           <div className="space-y-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              On-Call Squad Response
+              ON-CALL SQUAD RESPONSE
             </span>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-bold font-mono text-slate-900">
-                {avgResponseMinutes !== null ? `${avgResponseMinutes}m` : 'Live'}
+                Live
               </span>
               <span className="inline-flex items-center text-xs font-semibold text-purple-600 font-mono">
                 {unassignedCount === 0 ? 'All Assigned' : `${unassignedCount} Unassigned`}
               </span>
             </div>
             <p className="text-[10px] text-slate-400">
-              {avgResponseMinutes !== null 
-                ? 'Average alert acknowledgement to assignment.' 
-                : 'Real-time WebSocket dispatch on triage desk.'}
+              Real-time WebSocket dispatch on triage desk.
             </p>
           </div>
-          <div className="w-10 h-10 rounded-[2px] bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200 shadow-2xs">
-            <Activity className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200 shadow-2xs flex-shrink-0">
+            <Activity className="w-4 h-4" />
           </div>
         </div>
 

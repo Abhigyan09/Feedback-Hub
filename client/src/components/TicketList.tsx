@@ -148,7 +148,7 @@ export const TicketList: React.FC<TicketListProps> = ({
     <div className="space-y-4 select-none">
       
       {/* Clean, Modern Search & Filter Toolbar */}
-      <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-3 font-sans">
+      <div className="bg-white border border-slate-200 rounded-md card-subtle p-4 shadow-2xs space-y-3 font-sans">
         
         {/* Top Search & Dropdown Filters Bar */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -161,7 +161,7 @@ export const TicketList: React.FC<TicketListProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title, ticket code (e.g. FB-1041), squad, or reporter..."
-              className="w-full bg-[#f8fafc] border border-slate-200 pl-9 pr-8 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 transition-colors font-mono"
+              className="w-full bg-[#f8fafc] border border-slate-200 pl-9 pr-8 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 rounded-md transition-colors font-mono"
             />
             {searchQuery && (
               <button 
@@ -319,7 +319,7 @@ export const TicketList: React.FC<TicketListProps> = ({
         </div>
       ) : (
         /* Modern, Clean Ticket Rows List */
-        <div className="border border-slate-200 divide-y divide-slate-200 bg-white shadow-2xs">
+        <div className="border border-slate-200 divide-y divide-slate-200 bg-white shadow-2xs rounded-md card-subtle overflow-hidden">
           {filteredTickets.map((ticket) => {
             const domain = ticket.domain_origin || 
               (ticket.telemetry?.page_url ? new URL(ticket.telemetry.page_url).hostname : 'client.app');

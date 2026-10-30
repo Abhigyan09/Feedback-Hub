@@ -222,32 +222,32 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-300 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl rounded-none animate-in fade-in zoom-in-95 duration-150 text-slate-900">
+      <div className="bg-white border border-slate-300 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl rounded-lg modal-subtle overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-900">
         
         {/* Header */}
         <div className="p-5 border-b border-slate-200 flex items-start justify-between bg-slate-50">
           <div className="space-y-1.5 flex-1 pr-4">
             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-              <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5">
+              <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-sm">
                 {ticket.short_code}
               </span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-purple-200 bg-purple-50/50 text-purple-800">
+              <span className="text-xs font-mono px-2 py-0.5 border border-purple-200 bg-purple-50/50 text-purple-800 rounded-sm">
                 {ticket.category}
                 {ticket.category === 'RATING' && ticket.rating && ` (${ticket.rating}★)`}
               </span>
               <span className="text-xs font-mono text-slate-500">[{ticket.product_name || 'Product'}]</span>
               {ticket.domain_origin && (
-                <span className="text-xs font-mono text-slate-600 flex items-center space-x-1 border border-slate-200 bg-white px-1.5 py-0.5">
+                <span className="text-xs font-mono text-slate-600 flex items-center space-x-1 border border-slate-200 bg-white px-1.5 py-0.5 rounded-sm">
                   <Globe className="w-3 h-3 text-slate-400" />
                   <span>{ticket.domain_origin}</span>
                 </span>
               )}
-              <span className="text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5">[{ticket.assigned_squad}]</span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-blue-200 bg-blue-50 text-blue-700 flex items-center space-x-1">
+              <span className="text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-sm">[{ticket.assigned_squad}]</span>
+              <span className="text-xs font-mono px-2 py-0.5 border border-blue-200 bg-blue-50 text-blue-700 flex items-center space-x-1 rounded-sm">
                 <User className="w-3 h-3 text-blue-500" />
                 <span>{ticket.assigned_to_name ? ticket.assigned_to_name.split(' (')[0] : 'Unassigned'}</span>
               </span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-slate-300 bg-slate-100 text-slate-800 font-semibold">
+              <span className="text-xs font-mono px-2 py-0.5 border border-slate-300 bg-slate-100 text-slate-800 font-semibold rounded-sm">
                 STATUS: {ticket.status}
               </span>
             </div>
@@ -265,7 +265,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   <button
                     onClick={() => setIsEditing(true)}
                     title="Edit Ticket Details"
-                    className="px-2.5 py-1 text-xs font-mono border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 bg-white flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1 text-xs font-mono border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 bg-white flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
                   >
                     <Pencil className="w-3 h-3 text-purple-600" />
                     <span>Edit</span>
@@ -275,7 +275,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   <button
                     onClick={() => setIsConfirmingDelete(true)}
                     title="Delete Ticket"
-                    className="px-2.5 py-1 text-xs font-mono border border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 bg-red-50 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1 text-xs font-mono border border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 bg-red-50 flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
                   >
                     <Trash2 className="w-3 h-3" />
                     <span>Delete</span>
@@ -286,7 +286,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 border border-transparent hover:border-slate-200 transition-all cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-200 transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -303,14 +303,14 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setIsConfirmingDelete(false)}
-                className="px-3 py-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                className="px-3 py-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer"
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md cursor-pointer"
               >
                 {isDeleting ? 'Deleting...' : 'Confirm Delete'}
               </button>
@@ -328,7 +328,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 required
-                className="w-full bg-white border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs"
+                className="w-full bg-white border border-slate-300 p-2.5 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs"
               />
             </div>
 
@@ -338,7 +338,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value as any)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
                 >
                   <option value="BUG">BUG</option>
                   <option value="IDEA">IDEA</option>
@@ -354,7 +354,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 <select
                   value={editSeverity}
                   onChange={(e) => setEditSeverity(e.target.value as any)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
                 >
                   <option value="LOW">LOW</option>
                   <option value="MEDIUM">MEDIUM</option>
@@ -369,7 +369,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as any)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
                 >
                   <option value="OPEN">OPEN</option>
                   <option value="TRIAGED">TRIAGED</option>
@@ -385,7 +385,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 <select
                   value={editSquad}
                   onChange={(e) => setEditSquad(e.target.value)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
                 >
                   <option value="CORE_ENGINEERING_SQUAD">CORE_ENGINEERING_SQUAD</option>
                   <option value="PAYMENT_CORE_API">PAYMENT_CORE_API</option>
@@ -406,7 +406,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     setEditAssignedTo(selectedId);
                     setEditAssignedToName(dev && dev.id ? dev.name : '');
                   }}
-                  className="w-full bg-white border border-slate-300 p-2 text-indigo-700 font-semibold focus:outline-none focus:border-indigo-500 cursor-pointer shadow-2xs"
+                  className="w-full bg-white border border-slate-300 p-2 text-indigo-700 font-semibold rounded-md focus:outline-none focus:border-indigo-500 cursor-pointer shadow-2xs"
                 >
                   {activeRoster.map(dev => (
                     <option key={dev.id} value={dev.id} className="bg-white text-slate-900">
@@ -424,7 +424,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 onChange={(e) => setEditDescription(e.target.value)}
                 rows={4}
                 required
-                className="w-full bg-white border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-indigo-500 resize-none leading-relaxed shadow-2xs"
+                className="w-full bg-white border border-slate-300 p-2.5 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 resize-none leading-relaxed shadow-2xs"
               />
             </div>
 
@@ -432,14 +432,14 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-3.5 py-1.5 border border-slate-300 hover:border-slate-400 text-slate-700 bg-white cursor-pointer shadow-2xs"
+                className="px-3.5 py-1.5 border border-slate-300 hover:border-slate-400 text-slate-700 bg-white rounded-md cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSavingEdit}
-                className="px-4 py-1.5 bg-[#0066FF] hover:bg-blue-600 text-white font-medium flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+                className="px-4 py-1.5 bg-[#0066FF] hover:bg-blue-600 text-white font-medium flex items-center space-x-1.5 rounded-md disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>{isSavingEdit ? 'Saving...' : 'Save Changes'}</span>
@@ -453,7 +453,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setActiveTab('TELEMETRY')}
-                  className={`px-3 py-1.5 text-xs font-mono border transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs font-mono border transition-all flex items-center space-x-1.5 rounded-md cursor-pointer ${
                     activeTab === 'TELEMETRY'
                       ? 'bg-white text-slate-900 border-slate-300 font-bold shadow-2xs'
                       : 'bg-transparent text-slate-500 border-transparent hover:border-slate-200 hover:text-slate-800'
@@ -465,7 +465,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                 <button
                   onClick={() => setActiveTab('TIMELINE')}
-                  className={`px-3 py-1.5 text-xs font-mono border transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs font-mono border transition-all flex items-center space-x-1.5 rounded-md cursor-pointer ${
                     activeTab === 'TIMELINE'
                       ? 'bg-white text-slate-900 border-slate-300 font-bold shadow-2xs'
                       : 'bg-transparent text-slate-500 border-transparent hover:border-slate-200 hover:text-slate-800'
@@ -482,7 +482,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   
                   {/* Lead / Admin Developer Assignment Dropdown */}
                   {canAssignAnyDeveloper && (
-                    <div className="flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 shadow-2xs">
+                    <div className="flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded-md shadow-2xs">
                       <UserCheck className="w-3.5 h-3.5 text-purple-600" />
                       <span className="text-[11px] font-mono text-slate-500 uppercase font-semibold">ASSIGN:</span>
                       <select

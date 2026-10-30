@@ -4,63 +4,99 @@
 
 :root {
   color-scheme: light;
+  --font-primary: 'Poppins', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, Monaco, Courier New, monospace;
+
+  /* Subtle, Restrained Design Tokens for Corner Radii */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-card: 6px;
+  --radius-panel: 6px;
+  --radius-button: 5px;
+  --radius-input: 5px;
+  --radius-badge: 4px;
+  --radius-modal: 8px;
 }
 
-/* UNIVERSAL SQUARE ENFORCEMENT: Each and everything must be strictly square, not rounded */
-*, *::before, *::after {
-  border-radius: 0px !important;
-}
-
-/* UNIVERSAL DE-BOLDING: Remove harsh, heavy boldness across the entire website */
-html, body {
-  font-weight: 400;
+/* PRIMARY TYPOGRAPHY: Exact Crisp Poppins matching Blackbat.ai design system */
+html, body, button, input, select, textarea, optgroup {
+  font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
 }
 
+.font-poppins {
+  font-family: var(--font-primary) !important;
+}
+
+/* Headings: Clean, modern Poppins with crisp optical tracking */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 500;
+  font-family: var(--font-primary);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #0f172a;
 }
 
 strong, b, th {
-  font-weight: 500;
-}
-
-/* Override utility classes so any font-bold or font-semibold renders crisp, light and modern */
-.font-bold,
-.font-extrabold,
-.font-black {
-  font-weight: 500 !important;
-}
-
-.font-semibold {
-  font-weight: 500 !important;
-}
-
-.font-medium {
-  font-weight: 450 !important;
-}
-
-html, body, #root {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 body {
   margin: 0;
+  padding: 0;
   background-color: #f4f6fb;
-  color: #0f172a;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  color: #1e293b;
 }
 
-/* Custom Scrollbars in clean style */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f6fb;
+  color: #1e293b;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+/* RESTRAINED SUBTLE RADIUS GLOBAL TOKENS */
+/* Subtle corner radii for cards, panels, dialogs, buttons, inputs, and badges */
+.card-subtle,
+[data-card] {
+  border-radius: var(--radius-card);
+}
+
+.modal-subtle,
+[role="dialog"] {
+  border-radius: var(--radius-modal);
+}
+
+/* Global mappings so component-level [2px] / [1px] map to clean subtle radius */
+.rounded-\[2px\] {
+  border-radius: var(--radius-card) !important;
+}
+
+.rounded-\[1px\] {
+  border-radius: var(--radius-xs) !important;
+}
+
+/* Custom Scrollbars in clean style - clearly visible & easily draggable */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -69,14 +105,50 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 0px !important;
+  border-radius: 4px !important;
+  border: 1px solid #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-/* Code styling */
-code, pre {
-  font-family: 'JetBrains Mono', monospace;
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Dedicated smooth dark scrollbar for the sidebar */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #1e2d5a #0b112c;
+  overscroll-behavior-y: contain;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #0b112c;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #1e2d5a;
+  border-radius: 3px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #314682;
+}
+
+/* Dedicated main scroll container overscroll containment */
+.main-content-scroll {
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+}
+
+/* Code and telemetry styling */
+code, pre, .font-mono {
+  font-family: var(--font-mono);
 }

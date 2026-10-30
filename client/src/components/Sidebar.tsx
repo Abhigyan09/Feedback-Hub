@@ -71,16 +71,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside 
-      className={`sticky top-0 h-screen bg-[#0B112C] border-r border-[#152042] flex flex-col justify-between transition-all duration-300 ease-in-out select-none z-30 shrink-0 overflow-y-auto ${
-        isCollapsed ? 'w-20' : 'w-64'
+      className={`h-screen bg-[#0B112C] border-r border-[#152042] flex flex-col justify-between transition-all duration-300 ease-in-out select-none z-30 shrink-0 overflow-y-auto overscroll-y-contain sidebar-scroll ${
+        isCollapsed ? 'w-16 sm:w-20' : 'w-64'
       }`}
     >
       {/* Top Header / Brand */}
       <div>
         <div className="h-16 border-b border-[#152042] px-4 flex items-center justify-between">
           <div className="flex items-center space-x-3 overflow-hidden">
-            {/* Logo Box (Strictly Square) */}
-            <div className="w-8 h-8 bg-[#6366F1] flex items-center justify-center font-mono font-bold text-white text-xs shrink-0 shadow-sm">
+            {/* Logo Box */}
+            <div className="w-8 h-8 rounded-md bg-[#6366F1] flex items-center justify-center font-mono font-bold text-white text-xs shrink-0 shadow-sm">
               FH
             </div>
 
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onToggleCollapse}
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="w-7 h-7 bg-[#152042] hover:bg-[#1E2D5A] text-slate-400 hover:text-white border border-[#23356D] flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-sm bg-[#152042] hover:bg-[#1E2D5A] text-slate-400 hover:text-white border border-[#23356D] flex items-center justify-center transition-colors cursor-pointer"
           >
             {isCollapsed ? (
               <ChevronRight className="w-4 h-4" />
@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectView(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium transition-all group cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-md transition-all group cursor-pointer ${
                   isActive
                     ? 'bg-[#0066FF] text-white shadow-md shadow-blue-600/30 font-semibold'
                     : 'text-slate-400 hover:text-white hover:bg-[#152042]'
@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Badge count if present */}
                 {!isCollapsed && item.badge !== null && (
                   <span
-                    className={`px-2 py-0.5 text-[10px] font-mono font-semibold ${
+                    className={`px-2 py-0.5 text-[10px] font-mono font-semibold rounded-sm ${
                       isActive 
                         ? 'bg-blue-700/90 text-white' 
                         : 'bg-[#152042] text-slate-300 border border-[#23356D]'
@@ -174,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Logout Button */}
         <button
           onClick={onLogout}
-          className={`w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 transition-all cursor-pointer ${
+          className={`w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 rounded-md transition-all cursor-pointer ${
             isCollapsed ? 'justify-center' : ''
           }`}
           title="Logout"
