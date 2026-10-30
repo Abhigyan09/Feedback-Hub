@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Ticket, TeamMember, UserRole, RolePermissionsMatrix } from '../types';
 import { normalizeSeverity, normalizeStatus, formatTimeAgo } from '../utils/formatters';
+import { hasRolePermission } from '../constants/permissions';
 import { 
   Search, 
   X, 
@@ -84,21 +85,10 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   isLoading = false
 }) => {
   // Dynamic RBAC Permission Checks
-  const canChangeStatus = currentRole
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:change_status']))
-    : true;
-
-  const canAssign = currentRole
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:assign']))
-    : true;
-
-  const canViewTelemetry = currentRole
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:view_telemetry_internal']))
-    : true;
-
-  const canCreateTicket = currentRole
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix?.[currentRole]?.['tickets:create']))
-    : true;
+  const canChangeStatus = hasRolePermission(permissionsMatrix, currentRole, 'tickets:change_status');
+  const canAssign = hasRolePermission(permissionsMatrix, currentRole, 'tickets:assign');
+  const canViewTelemetry = hasRolePermission(permissionsMatrix, currentRole, 'tickets:view_telemetry_internal');
+  const canCreateTicket = hasRolePermission(permissionsMatrix, currentRole, 'tickets:create');
 
   // Format last updated time
   const [freshnessLabel, setFreshnessLabel] = useState<string>('Just now');

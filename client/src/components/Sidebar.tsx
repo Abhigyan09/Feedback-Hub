@@ -7,16 +7,18 @@ import {
   LogOut, 
   ChevronLeft, 
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Users
 } from 'lucide-react';
 
-export type SidebarView = 'dashboard' | 'total-tickets' | 'resolved-tickets' | 'settings';
+export type SidebarView = 'dashboard' | 'total-tickets' | 'resolved-tickets' | 'staff-members' | 'settings';
 
 interface SidebarProps {
   currentView?: SidebarView;
   onSelectView?: (view: SidebarView) => void;
   totalTicketsCount?: number;
   resolvedTicketsCount?: number;
+  staffMembersCount?: number;
   onLogout?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -29,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectView = () => {},
   totalTicketsCount = 0,
   resolvedTicketsCount = 0,
+  staffMembersCount = 0,
   onLogout = () => {},
   isCollapsed = false,
   onToggleCollapse = () => {},
@@ -61,8 +64,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: resolvedTicketsCount
     },
     {
-      id: 'settings' as SidebarView,
+      id: 'staff-members' as SidebarView,
       index: '04',
+      label: 'Staff & Active Load',
+      icon: Users,
+      badge: staffMembersCount !== undefined && staffMembersCount > 0 ? staffMembersCount : null
+    },
+    {
+      id: 'settings' as SidebarView,
+      index: '05',
       label: 'Settings',
       icon: SettingsIcon,
       badge: null

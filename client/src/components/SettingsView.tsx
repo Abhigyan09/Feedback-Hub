@@ -39,7 +39,8 @@ import {
 import { Product, Tenant, UserRole, PermissionDefinition, PermissionKey, RolePermissionsMatrix, PermissionModule } from '../types';
 import { 
   PERMISSION_DEFINITIONS as DEFAULT_PERMISSION_DEFINITIONS, 
-  createDefaultPermissionsMatrix 
+  createDefaultPermissionsMatrix,
+  hasRolePermission 
 } from '../constants/permissions';
 
 export const ALL_SYSTEM_ROLES: UserRole[] = [
@@ -125,13 +126,15 @@ interface SettingsViewProps {
   currentRole?: UserRole;
   onTenantUpdated?: () => void;
   permissionsMatrix?: RolePermissionsMatrix | null;
+  onPermissionsUpdated?: (newMatrix: RolePermissionsMatrix) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ 
   currentTenantId,
   currentRole = 'developer',
   onTenantUpdated,
-  permissionsMatrix: initialPermissionsMatrix
+  permissionsMatrix: initialPermissionsMatrix,
+  onPermissionsUpdated
 }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -213,33 +216,39 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [selectedProductForSnippet, setSelectedProductForSnippet] = useState<string>('');
 
   // Dynamic Granular Permissions derived from active tenant matrix and role
+  // Strict Security Rule: Only Admin (super_admin, tenant_admin) and Lead Manager (squad_lead) can make changes in settings.
+  // Developer and other non-admin/non-lead roles cannot do any changes.
   const isPlatformAdmin = currentRole === 'super_admin';
+  const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
 
-  const canViewTenantProfile = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['tenant:view_profile']);
-  const canEditTenantProfile = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['tenant:edit_profile']);
-  const canManageDomains = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['tenant:manage_domains']);
-  const canManagePolicies = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['tenant:manage_policies']);
+  // Read-only view permissions (Developers and above can view settings)
+  const canViewTenantProfile = hasRolePermission(permissionsMatrix, currentRole, 'tenant:view_profile');
+  const canViewProducts = hasRolePermission(permissionsMatrix, currentRole, 'products:view');
+  const canViewPermissions = hasRolePermission(permissionsMatrix, currentRole, 'permissions:view');
+  const canViewAudit = hasRolePermission(permissionsMatrix, currentRole, 'audit:view');
 
-  const canViewProducts = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:view']);
-  const canCreateProduct = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:create']);
-  const canEditProduct = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:edit']);
-  const canDeleteProduct = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:delete']);
-  const canRotateProductKeys = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['products:rotate_keys']);
+  // Settings modification permissions: strictly restricted to Admin & Lead Manager
+  const canEditTenantProfile = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'tenant:edit_profile');
+  const canManageDomains = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'tenant:manage_domains');
+  const canManagePolicies = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'tenant:manage_policies');
 
-  // Governance access: Super Admin and Tenant Admin retain governance authority to avoid lockout
-  const canViewPermissions = isPlatformAdmin || currentRole === 'tenant_admin' || Boolean(permissionsMatrix?.[currentRole]?.['permissions:view']);
-  const canEditPermissions = isPlatformAdmin || currentRole === 'tenant_admin' || Boolean(permissionsMatrix?.[currentRole]?.['permissions:edit']);
-  const canResetPermissions = isPlatformAdmin || currentRole === 'tenant_admin' || Boolean(permissionsMatrix?.[currentRole]?.['permissions:reset']);
+  const canCreateProduct = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:create');
+  const canEditProduct = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:edit');
+  const canDeleteProduct = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:delete');
+  const canRotateProductKeys = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'products:rotate_keys');
 
-  const canTestBridge = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['audit:test_bridge']);
-  const canViewAudit = isPlatformAdmin || Boolean(permissionsMatrix?.[currentRole]?.['audit:view']);
+  // Governance access: Only Admin (super_admin, tenant_admin) and Lead Manager (squad_lead) can configure RBAC permissions
+  const canEditPermissions = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'permissions:edit');
+  const canResetPermissions = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'permissions:reset');
+
+  const canTestBridge = isAdminOrLead && hasRolePermission(permissionsMatrix, currentRole, 'audit:test_bridge');
 
   // Can view Settings general screen if has any relevant view permissions or is developer/squad_lead/admin
   const canViewSettings = isPlatformAdmin || currentRole === 'tenant_admin' || canViewTenantProfile || canViewProducts || canViewPermissions || 
     ['squad_lead', 'developer'].includes(currentRole);
 
-  // Can save any tenant setting if has edit profile, domains, or policies
-  const canSaveAnyTenantSettings = isPlatformAdmin || canEditTenantProfile || canManageDomains || canManagePolicies;
+  // Can save any tenant setting if has edit profile, domains, or policies AND is Admin or Lead Manager
+  const canSaveAnyTenantSettings = isAdminOrLead && (canEditTenantProfile || canManageDomains || canManagePolicies);
 
   // 1. Fetch live tenant settings, products, and dynamic permissions from backend
   const loadTenantSettings = async () => {
@@ -599,10 +608,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   // Helper: Persist permissions matrix atomically to live backend, disk file & database
-  const persistMatrix = async (updatedMatrix: RolePermissionsMatrix, successMsg: string) => {
+  const persistMatrix = async (
+    updatedMatrix: RolePermissionsMatrix, 
+    successMsg: string,
+    targetRole?: UserRole
+  ) => {
     setIsSavingPerms(true);
     setErrorMessage(null);
     try {
+      const activeRole = targetRole || selectedRoleForPerms;
       const res = await fetch('/api/v1/tenants/permissions', {
         method: 'PUT',
         headers: {
@@ -612,14 +626,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         },
         body: JSON.stringify({
           matrix: updatedMatrix,
-          role: selectedRoleForPerms,
-          permissions: updatedMatrix[selectedRoleForPerms]
+          role: activeRole,
+          permissions: updatedMatrix[activeRole]
         })
       });
 
       if (res.ok) {
         const data = await res.json();
-        if (data.matrix) setPermissionsMatrix(data.matrix);
+        const serverMatrix = data.matrix || updatedMatrix;
+        setPermissionsMatrix(serverMatrix);
+        onPermissionsUpdated?.(serverMatrix);
         setHasUnsavedPerms(false);
         setPermsSuccessMessage(successMsg);
         setTimeout(() => setPermsSuccessMessage(null), 4000);
@@ -640,7 +656,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (!permissionsMatrix) return;
     await persistMatrix(
       permissionsMatrix, 
-      `Permissions for role '${ROLE_METADATA[selectedRoleForPerms].label}' saved to database!`
+      `All tenant role permissions successfully saved to database!`,
+      selectedRoleForPerms
     );
   };
 
@@ -666,7 +683,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        if (data.matrix) setPermissionsMatrix(data.matrix);
+        if (data.matrix) {
+          setPermissionsMatrix(data.matrix);
+          onPermissionsUpdated?.(data.matrix);
+        }
         setHasUnsavedPerms(false);
         setPermsSuccessMessage(data.message || `Permissions for ${roleName} reset to default baseline.`);
         setTimeout(() => setPermsSuccessMessage(null), 5000);
@@ -684,8 +704,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // 12. RBAC: Toggle Single Permission (Auto-persisted to Database)
   const handleTogglePermission = async (role: UserRole, key: PermissionKey) => {
-    // Super Admin protection against losing governance permission
-    if (role === 'super_admin' && key === 'permissions:edit') {
+    // Protection against losing governance permission for admins & lead
+    if ((role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && key === 'permissions:edit') {
       return;
     }
 
@@ -695,53 +715,61 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       return;
     }
 
-    const currentVal = Boolean(permissionsMatrix?.[role]?.[key]);
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
+    const currentVal = Boolean(baseMatrix[role]?.[key]);
     const newVal = !currentVal;
 
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [role]: {
-        ...permissionsMatrix[role],
+        ...(baseMatrix[role] || {}),
         [key]: newVal
       }
     };
 
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
+
     await persistMatrix(
       updatedMatrix,
-      `Permission '${key}' for ${ROLE_METADATA[role].label} set to ${newVal ? 'GRANTED' : 'REVOKED'} (Saved)`
+      `Permission '${key}' for ${ROLE_METADATA[role].label} set to ${newVal ? 'GRANTED' : 'REVOKED'} (Saved)`,
+      role
     );
   };
 
   // 13. RBAC: Grant All In Module (Auto-persisted)
   const handleGrantAllInModule = async (role: UserRole, module: PermissionModule) => {
-    if (!permissionsMatrix || !canEditPermissions) return;
+    if (!canEditPermissions) return;
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
     const modPerms = permissionDefinitions.filter(p => p.module === module);
     const updates: Record<string, boolean> = {};
     modPerms.forEach(p => { updates[p.key] = true; });
 
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [role]: {
-        ...permissionsMatrix[role],
+        ...(baseMatrix[role] || {}),
         ...updates
       }
     };
 
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
     await persistMatrix(
       updatedMatrix,
-      `All ${module} permissions granted to ${ROLE_METADATA[role].label} (Saved)`
+      `All ${module} permissions granted to ${ROLE_METADATA[role].label} (Saved)`,
+      role
     );
   };
 
   // 14. RBAC: Revoke All In Module (Auto-persisted)
   const handleRevokeAllInModule = async (role: UserRole, module: PermissionModule) => {
-    if (!permissionsMatrix || !canEditPermissions) return;
+    if (!canEditPermissions) return;
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
     const modPerms = permissionDefinitions.filter(p => p.module === module);
     const updates: Record<string, boolean> = {};
     modPerms.forEach(p => {
-      if (role === 'super_admin' && p.key === 'permissions:edit') {
+      if ((role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && p.key === 'permissions:edit') {
         updates[p.key] = true;
       } else {
         updates[p.key] = false;
@@ -749,38 +777,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
 
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [role]: {
-        ...permissionsMatrix[role],
+        ...(baseMatrix[role] || {}),
         ...updates
       }
     };
 
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
     await persistMatrix(
       updatedMatrix,
-      `All ${module} permissions revoked from ${ROLE_METADATA[role].label} (Saved)`
+      `All ${module} permissions revoked from ${ROLE_METADATA[role].label} (Saved)`,
+      role
     );
   };
 
   // 15. RBAC: Clone / Copy Permissions from another Role (Auto-persisted)
   const handleCopyPermissions = async (fromRole: UserRole, toRole: UserRole) => {
-    if (!permissionsMatrix || !canEditPermissions) return;
+    if (!canEditPermissions) return;
     if (!confirm(`Clone all permissions from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}'?`)) {
       return;
     }
 
+    const baseMatrix = permissionsMatrix || createDefaultPermissionsMatrix();
     const updatedMatrix: RolePermissionsMatrix = {
-      ...permissionsMatrix,
+      ...baseMatrix,
       [toRole]: {
-        ...permissionsMatrix[fromRole]
+        ...(baseMatrix[fromRole] || {})
       }
     };
 
+    if (toRole === 'super_admin' || toRole === 'tenant_admin' || toRole === 'squad_lead') {
+      updatedMatrix[toRole]['permissions:edit'] = true;
+    }
+
     setPermissionsMatrix(updatedMatrix);
+    onPermissionsUpdated?.(updatedMatrix);
     await persistMatrix(
       updatedMatrix,
-      `Permissions cloned from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}' (Saved)`
+      `Permissions cloned from '${ROLE_METADATA[fromRole].label}' to '${ROLE_METADATA[toRole].label}' (Saved)`,
+      toRole
     );
   };
 
@@ -1026,19 +1063,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
+        {/* Read-Only Notice if role cannot edit profile */}
+        {!canEditTenantProfile && (
+          <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center space-x-2.5 shadow-2xs">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>READ-ONLY PROFILE:</strong> Role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> cannot modify tenant settings. Only <strong>Admin</strong> and <strong>Lead Manager</strong> can make changes.
+            </span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
           
           {/* Editable Organization Name */}
           <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
             <label className="text-slate-500 uppercase text-[10px] font-bold block">
-              Organization Name <span className="text-indigo-600 font-bold">(Editable)</span>
+              Organization Name {canEditTenantProfile ? <span className="text-indigo-600 font-bold">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
             </label>
             <input
               type="text"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
+              disabled={!canEditTenantProfile || isSaving}
               placeholder="Enter organization name"
-              className="w-full bg-white border border-slate-300 focus:border-indigo-600 px-2.5 py-1.5 text-slate-900 font-bold text-xs focus:outline-none transition-colors"
+              className={`w-full border px-2.5 py-1.5 font-bold text-xs focus:outline-none transition-colors ${
+                !canEditTenantProfile 
+                  ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
+                  : 'bg-white border-slate-300 focus:border-indigo-600 text-slate-900'
+              }`}
             />
           </div>
 
@@ -1061,12 +1113,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {/* Plan Tier Selector */}
           <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
             <label className="text-slate-500 uppercase text-[10px] font-bold block">
-              Enterprise Plan Tier <span className="text-indigo-600 font-bold">(Editable)</span>
+              Enterprise Plan Tier {canEditTenantProfile ? <span className="text-indigo-600 font-bold">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
             </label>
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-              className="w-full bg-white border border-slate-300 px-2.5 py-1.5 text-emerald-700 font-bold text-xs focus:outline-none focus:border-indigo-600 cursor-pointer"
+              disabled={!canEditTenantProfile || isSaving}
+              className={`w-full border px-2.5 py-1.5 font-bold text-xs focus:outline-none ${
+                !canEditTenantProfile 
+                  ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
+                  : 'bg-white border-slate-300 focus:border-indigo-600 text-emerald-700 cursor-pointer'
+              }`}
             >
               <option value="ENTERPRISE">ENTERPRISE (SOC2 + AES-256)</option>
               <option value="PRO">PRO (SLA 99.9%)</option>
@@ -1084,8 +1141,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               type="url"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
+              disabled={!canEditTenantProfile || isSaving}
               placeholder="https://api.yourcompany.com/v1/webhooks/incidents"
-              className="w-full bg-white border border-slate-300 focus:border-indigo-600 px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none transition-colors"
+              className={`w-full border px-2.5 py-1.5 text-xs focus:outline-none transition-colors ${
+                !canEditTenantProfile 
+                  ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
+                  : 'bg-white border-slate-300 focus:border-indigo-600 text-slate-800'
+              }`}
             />
           </div>
 
@@ -1099,8 +1161,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               type="email"
               value={notificationEmail}
               onChange={(e) => setNotificationEmail(e.target.value)}
+              disabled={!canEditTenantProfile || isSaving}
               placeholder="alerts@yourcompany.com"
-              className="w-full bg-white border border-slate-300 focus:border-indigo-600 px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none transition-colors"
+              className={`w-full border px-2.5 py-1.5 text-xs focus:outline-none transition-colors ${
+                !canEditTenantProfile 
+                  ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
+                  : 'bg-white border-slate-300 focus:border-indigo-600 text-slate-800'
+              }`}
             />
           </div>
 
@@ -1111,8 +1178,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={() => handleSaveChanges('Tenant profile updated and saved.')}
-            disabled={isSaving}
-            className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+            disabled={isSaving || !canEditTenantProfile}
+            className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!canEditTenantProfile ? "Profile editing restricted to Admin and Lead Manager" : undefined}
           >
             <Save className="w-3.5 h-3.5" />
             <span>UPDATE PROFILE</span>
@@ -1143,6 +1211,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           )}
         </div>
+
+        {/* Read-Only Notice if role cannot create or modify products */}
+        {!canCreateProduct && (
+          <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center space-x-2.5 shadow-2xs">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>READ-ONLY PRODUCTS:</strong> Role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> cannot register, edit, rotate keys, or delete products. Only <strong>Admin</strong> and <strong>Lead Manager</strong> can make changes.
+            </span>
+          </div>
+        )}
 
         {/* Add Product Inline Form */}
         {isAddingProduct && (
@@ -1383,6 +1461,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         <div className="space-y-3 text-xs font-mono">
+          {!canManageDomains && (
+            <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center space-x-2.5 shadow-2xs">
+              <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>READ-ONLY WHITELIST:</strong> Role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> cannot modify permitted origin domains. Only <strong>Admin</strong> and <strong>Lead Manager</strong> can make changes.
+              </span>
+            </div>
+          )}
+
           <p className="text-slate-500 text-[11px]">
             Only requests with origin headers matching these domains will be ingested into this tenant's incident queue:
           </p>
@@ -1439,8 +1526,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={() => handleSaveChanges('Domain whitelist updated and saved.')}
-              disabled={isSaving}
-              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
+              disabled={isSaving || !canManageDomains}
+              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!canManageDomains ? "Domain management restricted to Admin and Lead Manager" : undefined}
             >
               <Save className="w-3.5 h-3.5" />
               <span>UPDATE WHITELIST</span>
@@ -1464,17 +1552,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         <div className="space-y-4 font-mono text-xs">
+          {!canManagePolicies && (
+            <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center space-x-2.5 shadow-2xs rounded-md">
+              <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>READ-ONLY POLICIES:</strong> Role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> cannot modify telemetry and routing policies. Only <strong>Admin</strong> and <strong>Lead Manager</strong> can make changes.
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* Default Squad Assignment */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1.5">
               <label className="text-slate-600 uppercase text-[10px] font-bold block">
-                Default Squad Assignment
+                Default Squad Assignment {canManagePolicies ? <span className="text-indigo-600 font-bold">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
               </label>
               <select
                 value={defaultSquad}
                 onChange={(e) => setDefaultSquad(e.target.value)}
-                className="w-full bg-white border border-slate-300 px-2.5 py-1.5 text-indigo-700 font-bold text-xs rounded-md focus:outline-none focus:border-indigo-600 cursor-pointer"
+                disabled={!canManagePolicies || isSaving}
+                className={`w-full border px-2.5 py-1.5 font-bold text-xs rounded-md focus:outline-none ${
+                  !canManagePolicies 
+                    ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
+                    : 'bg-white border-slate-300 text-indigo-700 focus:border-indigo-600 cursor-pointer'
+                }`}
               >
                 <option value="Core Platform & API Squad">Core Platform & API Squad</option>
                 <option value="Checkout & Billing Squad">Checkout & Billing Squad</option>
@@ -1485,7 +1587,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             {/* User Email Requirement */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-between">
+            <div className={`p-3 border rounded-md flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
               <div className="space-y-0.5">
                 <span className="text-slate-900 font-bold block text-xs">Require Reporter Email</span>
                 <span className="text-[11px] text-slate-500 block">Enforces valid user email for ticket submission</span>
@@ -1494,12 +1596,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="checkbox"
                 checked={requireEmail}
                 onChange={(e) => setRequireEmail(e.target.checked)}
-                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer"
+                disabled={!canManagePolicies || isSaving}
+                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             {/* Console Log Capture Toggle */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-between">
+            <div className={`p-3 border rounded-md flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
               <div className="space-y-0.5">
                 <span className="text-slate-900 font-bold block text-xs">Auto-Capture Browser Console Logs</span>
                 <span className="text-[11px] text-slate-500 block">Captures console errors and exceptions</span>
@@ -1508,12 +1611,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="checkbox"
                 checked={autoCaptureTelemetry}
                 onChange={(e) => setAutoCaptureTelemetry(e.target.checked)}
-                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer"
+                disabled={!canManagePolicies || isSaving}
+                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             {/* Network API Failure Capture Toggle */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-between">
+            <div className={`p-3 border rounded-md flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
               <div className="space-y-0.5">
                 <span className="text-slate-900 font-bold block text-xs">Auto-Capture Network API Failures</span>
                 <span className="text-[11px] text-slate-500 block">Tracks 4xx/5xx HTTP failures for diagnostics</span>
@@ -1522,7 +1626,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="checkbox"
                 checked={autoCaptureNetwork}
                 onChange={(e) => setAutoCaptureNetwork(e.target.checked)}
-                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer"
+                disabled={!canManagePolicies || isSaving}
+                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
@@ -1533,8 +1638,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={() => handleSaveChanges('Incident routing and telemetry policies updated.')}
-              disabled={isSaving}
-              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+              disabled={isSaving || !canManagePolicies}
+              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!canManagePolicies ? "Policy configuration restricted to Admin and Lead Manager" : undefined}
             >
               <Save className="w-3.5 h-3.5" />
               <span>UPDATE POLICIES</span>
@@ -1634,7 +1740,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="flex items-center space-x-2.5">
               <Lock className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
-                <strong>READ-ONLY RBAC VIEW:</strong> Your active test role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> does not possess <code>permissions:edit</code> authority. Switch to <strong>Tenant Administrator</strong> or <strong>Super Admin</strong> in the top header to modify security policies.
+                <strong>READ-ONLY RBAC VIEW:</strong> Your active role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> cannot modify security permissions. Only <strong>Admin</strong> and <strong>Lead Manager</strong> can make changes.
               </span>
             </div>
           </div>
@@ -1908,13 +2014,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                       {defs.map((def) => {
                         const isGranted = Boolean(permissionsMatrix?.[selectedRoleForPerms]?.[def.key]);
-                        const isSuperAdminEditLock = selectedRoleForPerms === 'super_admin' && def.key === 'permissions:edit';
+                        const isGovernanceLock = (selectedRoleForPerms === 'super_admin' || selectedRoleForPerms === 'tenant_admin' || selectedRoleForPerms === 'squad_lead') && def.key === 'permissions:edit';
 
                         return (
                           <div
                             key={def.key}
                             onClick={() => {
-                              if (!isSuperAdminEditLock && canEditPermissions) {
+                              if (!isGovernanceLock && canEditPermissions) {
                                 handleTogglePermission(selectedRoleForPerms, def.key);
                               }
                             }}
@@ -1922,7 +2028,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               isGranted
                                 ? 'bg-blue-50/20 border-blue-200'
                                 : 'bg-white border-slate-200 hover:border-slate-300'
-                            } ${!isSuperAdminEditLock && canEditPermissions ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
+                            } ${!isGovernanceLock && canEditPermissions ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
+                            title={isGovernanceLock ? "Admin and Lead governance permission cannot be revoked" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : isGranted ? "Click to revoke" : "Click to grant"}
                           >
                             {/* Blue Checkbox */}
                             <div className="shrink-0 mt-0.5">
@@ -1933,7 +2040,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     : 'bg-white border-slate-300 text-transparent'
                                 }`}
                               >
-                                {isSuperAdminEditLock ? (
+                                {isGovernanceLock ? (
                                   <Lock className="w-3 h-3 text-white" />
                                 ) : (
                                   <Check className={`w-3 h-3 stroke-[3] ${isGranted ? 'opacity-100' : 'opacity-0'}`} />
@@ -2029,26 +2136,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                           {ALL_SYSTEM_ROLES.map((role) => {
                             const isGranted = Boolean(permissionsMatrix?.[role]?.[def.key]);
-                            const isSuperAdminLock = role === 'super_admin' && def.key === 'permissions:edit';
+                            const isGovernanceLock = (role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && def.key === 'permissions:edit';
 
                             return (
                               <td key={role} className="p-3 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (!isSuperAdminLock && canEditPermissions) {
+                                    if (!isGovernanceLock && canEditPermissions) {
                                       handleTogglePermission(role, def.key);
                                     }
                                   }}
-                                  disabled={isSuperAdminLock || !canEditPermissions || isSavingPerms}
+                                  disabled={isGovernanceLock || !canEditPermissions || isSavingPerms}
                                   className={`w-7 h-7 mx-auto flex items-center justify-center transition-colors border ${
                                     isGranted
                                       ? 'bg-emerald-600 border-emerald-700 text-white shadow-2xs'
                                       : 'bg-slate-100 border-slate-200 text-slate-400 hover:border-slate-300'
-                                  } ${!isSuperAdminLock && canEditPermissions ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
-                                  title={`${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
+                                  } ${!isGovernanceLock && canEditPermissions ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
+                                  title={isGovernanceLock ? "Admin and Lead governance permission cannot be revoked" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : `${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
                                 >
-                                  {isSuperAdminLock ? (
+                                  {isGovernanceLock ? (
                                     <Lock className="w-3.5 h-3.5 text-white" />
                                   ) : isGranted ? (
                                     <Check className="w-4 h-4" />
@@ -2300,7 +2407,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 6. Bottom Sticky Save Changes & Update Action Bar */}
       <div className="p-4 border border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono text-xs shadow-2xs">
         <div className="text-slate-500">
-          Click 'UPDATE & SAVE CHANGES' to persist organization profile, whitelist firewall, and routing policies to the database.
+          {!canSaveAnyTenantSettings && !hasUnsavedPerms
+            ? "Settings modifications are restricted to Admin and Lead Manager roles (Read-only mode active)."
+            : "Click 'UPDATE & SAVE CHANGES' to persist organization profile, whitelist firewall, and routing policies to the database."}
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -2315,8 +2424,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={() => handleSaveChanges()}
-            disabled={isSaving}
-            className="px-6 py-2.5 bg-[#0066FF] hover:bg-blue-600 text-white font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            disabled={isSaving || (!canSaveAnyTenantSettings && !hasUnsavedPerms)}
+            className="px-6 py-2.5 bg-[#0066FF] hover:bg-blue-600 text-white font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!canSaveAnyTenantSettings && !hasUnsavedPerms ? "Settings modification restricted to Admin and Lead Manager" : undefined}
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'SAVING CHANGES...' : 'UPDATE & SAVE CHANGES'}</span>

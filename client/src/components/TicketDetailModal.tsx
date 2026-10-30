@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix } from '../types';
+import { hasRolePermission } from '../constants/permissions';
 import { 
   X, 
   Terminal, 
@@ -31,6 +32,7 @@ interface TicketDetailModalProps {
   ticket: Ticket | null;
   onClose: () => void;
   currentRole: UserRole;
+  accessToken: string | null;
   onUpdateStatus: (ticketId: string, newStatus: string, note?: string) => Promise<void>;
   onAddEvent: (ticketId: string, content: string, isInternalOnly: boolean) => Promise<void>;
   onUpdateTicket?: (ticketId: string, updatedFields: Partial<Ticket>) => Promise<void>;
@@ -43,6 +45,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   ticket,
   onClose,
   currentRole,
+  accessToken,
   onUpdateStatus,
   onAddEvent,
   onUpdateTicket,
@@ -85,6 +88,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   useEffect(() => {
     if (!ticket) return;
 
+    const headers: Record<string, string> = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     // Initialize edit fields
     setEditTitle(ticket.title);
     setEditDescription(ticket.description);
@@ -98,10 +106,8 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     setIsConfirmingDelete(false);
 
     fetch(`/api/v1/tickets/${ticket.id}`, {
-      headers: {
-        'x-user-role': currentRole,
-        'x-tenant-id': ticket.tenant_id
-      }
+      headers,
+      credentials: 'include'
     })
       .then(res => res.json())
       .then(data => {
@@ -110,38 +116,18 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         }
       })
       .catch(err => console.error('Failed to load events:', err));
-  }, [ticket, currentRole]);
+  }, [ticket, currentRole, accessToken]);
 
   if (!ticket) return null;
 
-  // Dynamic RBAC Permission Checks (with fallback)
-  const canEditTicket = permissionsMatrix 
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:edit']))
-    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
-
-  const canDeleteTicket = permissionsMatrix 
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:delete']))
-    : ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
-
-  const canAssignAnyDeveloper = permissionsMatrix 
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:assign']))
-    : ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
-
-  const canSelfAssign = permissionsMatrix
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:assign']))
-    : (currentRole === 'developer');
-
-  const canChangeStatus = permissionsMatrix 
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:change_status']))
-    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer', 'support_agent'].includes(currentRole);
-
-  const canPostInternalNotes = permissionsMatrix 
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:create_internal_notes']))
-    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
-
-  const canViewTechnicalTelemetry = permissionsMatrix 
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:view_telemetry_internal']))
-    : ['super_admin', 'tenant_admin', 'squad_lead', 'developer'].includes(currentRole);
+  // Dynamic RBAC Permission Checks
+  const canEditTicket = hasRolePermission(permissionsMatrix, currentRole, 'tickets:edit');
+  const canDeleteTicket = hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete');
+  const canAssign = hasRolePermission(permissionsMatrix, currentRole, 'tickets:assign');
+  const canChangeStatus = hasRolePermission(permissionsMatrix, currentRole, 'tickets:change_status');
+  const canPostInternalNotes = hasRolePermission(permissionsMatrix, currentRole, 'tickets:create_internal_notes');
+  const canViewInternalNotes = hasRolePermission(permissionsMatrix, currentRole, 'tickets:view_internal_notes');
+  const canViewTechnicalTelemetry = hasRolePermission(permissionsMatrix, currentRole, 'tickets:view_telemetry_internal');
 
   const isClientRole = currentRole === 'client_user';
 
@@ -477,11 +463,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               </div>
 
               {/* Status & Developer Quick Assignment */}
-              {(canAssignAnyDeveloper || canSelfAssign || canChangeStatus) && (
+              {(canAssign || canChangeStatus) && (
                 <div className="flex items-center space-x-3 flex-wrap gap-y-1">
                   
-                  {/* Lead / Admin Developer Assignment Dropdown */}
-                  {canAssignAnyDeveloper && (
+                  {/* Developer Assignment Dropdown */}
+                  {canAssign && (
                     <div className="flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded-md shadow-2xs">
                       <UserCheck className="w-3.5 h-3.5 text-purple-600" />
                       <span className="text-[11px] font-mono text-slate-500 uppercase font-semibold">ASSIGN:</span>
@@ -509,72 +495,37 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     </div>
                   )}
 
-                  {/* Developer Self-Assignment Action */}
-                  {canSelfAssign && !canAssignAnyDeveloper && (
-                    <div className="flex items-center space-x-2">
-                      {ticket.assigned_to === 'user-dev-01' ? (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (onUpdateTicket) {
-                              await onUpdateTicket(ticket.id, {
-                                assigned_to: undefined,
-                                assigned_to_name: undefined
-                              });
-                            }
-                          }}
-                          className="px-2.5 py-1 text-xs font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-medium cursor-pointer shadow-2xs"
-                        >
-                          Unassign Me
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (onUpdateTicket) {
-                              await onUpdateTicket(ticket.id, {
-                                assigned_to: 'user-dev-01',
-                                assigned_to_name: 'Rahul Sharma (Senior Backend Dev)',
-                                status: ticket.status === 'OPEN' ? 'IN_DEV' : ticket.status
-                              });
-                            }
-                          }}
-                          className="px-2.5 py-1 text-xs font-mono bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-semibold cursor-pointer shadow-2xs flex items-center space-x-1"
-                        >
-                          <UserCheck className="w-3.5 h-3.5" />
-                          <span>Claim / Assign to Me</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Status Buttons based on Role */}
+                  {/* Status Advancement Buttons */}
                   {canChangeStatus && (
                     <div className="flex items-center space-x-1.5">
                       <span className="text-xs font-mono text-slate-500 font-semibold">STATUS:</span>
-                      {currentRole === 'support_agent' ? (
-                        <button
-                          onClick={() => onUpdateStatus(ticket.id, 'TRIAGED', 'Support agent verified and triaged incident.')}
-                          className="px-2.5 py-1 text-xs font-mono bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer shadow-2xs font-semibold"
-                        >
-                          TRIAGED
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => onUpdateStatus(ticket.id, 'IN_DEV', 'Dev squad started active investigation.')}
-                            className="px-2.5 py-1 text-xs font-mono bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer shadow-2xs font-semibold"
-                          >
-                            IN_DEV
-                          </button>
-                          <button
-                            onClick={() => onUpdateStatus(ticket.id, 'RESOLVED', 'Incident resolved and verified.')}
-                            className="px-2.5 py-1 text-xs font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs font-semibold"
-                          >
-                            RESOLVED
-                          </button>
-                        </>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(ticket.id, 'TRIAGED', 'Status changed to TRIAGED.')}
+                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
+                          ticket.status === 'TRIAGED' ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                        }`}
+                      >
+                        TRIAGED
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(ticket.id, 'IN_DEV', 'Dev squad started active investigation.')}
+                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
+                          ticket.status === 'IN_DEV' ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                        }`}
+                      >
+                        IN_DEV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStatus(ticket.id, 'RESOLVED', 'Incident resolved and verified.')}
+                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
+                          ticket.status === 'RESOLVED' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        }`}
+                      >
+                        RESOLVED
+                      </button>
                     </div>
                   )}
                 </div>
@@ -735,10 +686,10 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     </h4>
                     
                     <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {events.length === 0 ? (
+                      {events.filter(ev => !ev.is_internal_only || canViewInternalNotes).length === 0 ? (
                         <p className="text-xs font-mono text-slate-400">No events recorded yet.</p>
                       ) : (
-                        events.map((ev) => (
+                        events.filter(ev => !ev.is_internal_only || canViewInternalNotes).map((ev) => (
                           <div
                             key={ev.id}
                             className={`p-3 border text-xs font-mono space-y-1 ${
@@ -771,7 +722,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   <form onSubmit={handleSendComment} className="space-y-3 pt-4 border-t border-slate-200">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono uppercase text-slate-500 font-semibold">Post Timeline Update</span>
-                      {!isClientRole && (
+                      {canPostInternalNotes && (
                         <label className="flex items-center space-x-2 text-xs font-mono text-slate-600 cursor-pointer">
                           <input
                             type="checkbox"

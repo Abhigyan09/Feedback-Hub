@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Ticket, TicketSeverity, TicketStatus, UserRole, RolePermissionsMatrix } from '../types';
+import { hasRolePermission } from '../constants/permissions';
 import { 
   Bug, 
   Lightbulb, 
@@ -52,13 +53,8 @@ export const TicketList: React.FC<TicketListProps> = ({
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
 
   // Dynamic RBAC permissions (with role fallback)
-  const canChangeStatus = permissionsMatrix
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:change_status']))
-    : currentRole !== 'client_user';
-
-  const canDeleteTicket = permissionsMatrix
-    ? (currentRole === 'super_admin' || Boolean(permissionsMatrix[currentRole]?.['tickets:delete']))
-    : ['super_admin', 'tenant_admin', 'squad_lead'].includes(currentRole);
+  const canChangeStatus = hasRolePermission(permissionsMatrix, currentRole, 'tickets:change_status');
+  const canDeleteTicket = hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete');
 
   const filteredTickets = tickets.filter(t => {
     // Search filter

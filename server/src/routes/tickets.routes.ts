@@ -239,17 +239,21 @@ ticketRouter.patch('/:id/status', requirePermission('tickets:change_status'), (r
   if (userRole === 'support_agent' && status !== 'TRIAGED' && status !== 'OPEN') {
     return res.status(403).json({
       error: 'Permission Denied',
+      code: 'FORBIDDEN',
       message: 'Support agents are authorized for triage (TRIAGED or OPEN). Advancing to IN_DEV or RESOLVED requires an engineering or lead role.'
     });
   }
 
+  if (!status || typeof status !== 'string') {
+    return res.status(400).json({ error: 'Valid ticket status is required.' });
+  }
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
   const oldStatus = ticket.status;
-  ticket.status = status;
+  ticket.status = status as any;
   ticket.updated_at = new Date().toISOString();
 
   // Create timeline event
@@ -284,16 +288,19 @@ ticketRouter.post('/:id/events', requirePermission('tickets:view'), (req: Reques
   const tenantId = req.auth!.tenantId;
   const userRole = req.auth!.role;
 
+  if (!content || typeof content !== 'string' || !content.trim()) {
+    return res.status(400).json({ error: 'Event content is required.' });
+  }
+
   const ticket = tenantStore.tickets.find(t => t.id === id && t.tenant_id === tenantId);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
-  // Dynamic Permission: Posting internal notes requires 'tickets:create_internal_notes'
-  let internalFlag = Boolean(is_internal_only);
-  if (internalFlag && !tenantStore.hasPermission(tenantId, userRole, 'tickets:create_internal_notes')) {
-    internalFlag = false; // Fallback to public client reply if not permitted to post internal quarantined notes
-  }
+  // Dynamic Permission: Only privileged roles (with tickets:create_internal_notes) can post internal notes.
+  // For unprivileged roles (like client_user), is_internal_only is safely forced to false.
+  const canPostInternal = tenantStore.hasPermission(tenantId, userRole, 'tickets:create_internal_notes');
+  const internalFlag = Boolean(is_internal_only && canPostInternal);
 
   const event: TicketEvent = {
     id: `ev-${Date.now()}`,

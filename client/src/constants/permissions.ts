@@ -285,26 +285,26 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
     'tickets:view': true,
     'tickets:create': true,
     'tickets:edit': true,
-    'tickets:delete': true,
+    'tickets:delete': false,
     'tickets:change_status': true,
     'tickets:assign': true,
     'tickets:view_telemetry_internal': true,
     'tickets:view_internal_notes': true,
     'tickets:create_internal_notes': true,
     'products:view': true,
-    'products:create': true,
-    'products:edit': true,
-    'products:delete': true,
-    'products:rotate_keys': true,
+    'products:create': false,
+    'products:edit': false,
+    'products:delete': false,
+    'products:rotate_keys': false,
     'tenant:view_profile': true,
-    'tenant:edit_profile': true,
-    'tenant:manage_domains': true,
-    'tenant:manage_policies': true,
+    'tenant:edit_profile': false,
+    'tenant:manage_domains': false,
+    'tenant:manage_policies': false,
     'permissions:view': true,
-    'permissions:edit': true,
-    'permissions:reset': true,
+    'permissions:edit': false,
+    'permissions:reset': false,
     'audit:view': true,
-    'audit:test_bridge': true
+    'audit:test_bridge': false
   },
   support_agent: {
     'tickets:view': true,
@@ -365,3 +365,42 @@ export const createDefaultPermissionsMatrix = (): RolePermissionsMatrix => {
   }
   return matrix as RolePermissionsMatrix;
 };
+
+export const hasRolePermission = (
+  matrix: RolePermissionsMatrix | null | undefined,
+  role: UserRole | undefined,
+  key: PermissionKey
+): boolean => {
+  if (!role) return false;
+  if (role === 'super_admin') return true;
+
+  // Protect tenant admin and squad lead (lead manager) from permissions governance lockout
+  if ((role === 'tenant_admin' || role === 'squad_lead') && (key === 'permissions:edit' || key === 'permissions:reset' || key === 'permissions:view')) {
+    return true;
+  }
+
+  // Strict constraint: Developer and non-admin/lead roles cannot perform any settings changes
+  const SETTINGS_CHANGE_PERMISSIONS: PermissionKey[] = [
+    'tenant:edit_profile',
+    'tenant:manage_domains',
+    'tenant:manage_policies',
+    'products:create',
+    'products:edit',
+    'products:rotate_keys',
+    'products:delete',
+    'permissions:edit',
+    'permissions:reset',
+    'audit:test_bridge'
+  ];
+  const isAdminOrLead = ['super_admin', 'tenant_admin', 'squad_lead'].includes(role);
+  if (!isAdminOrLead && SETTINGS_CHANGE_PERMISSIONS.includes(key)) {
+    return false;
+  }
+
+  if (matrix && matrix[role] && matrix[role][key] !== undefined) {
+    return Boolean(matrix[role][key]);
+  }
+  return Boolean(DEFAULT_ROLE_PERMISSIONS[role]?.[key]);
+};
+
+

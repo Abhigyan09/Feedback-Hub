@@ -7,13 +7,15 @@ interface TeamMembersSectionProps {
   openTicketCounts: Record<string, number>;
   selectedAssigneeId: string | null;
   onSelectAssignee: (memberId: string | null) => void;
+  onNavigateToStaffModule?: () => void;
 }
 
 export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   members,
   openTicketCounts,
   selectedAssigneeId,
-  onSelectAssignee
+  onSelectAssignee,
+  onNavigateToStaffModule
 }) => {
   return (
     <section aria-labelledby="squad-members-heading" className="space-y-3">
@@ -30,13 +32,25 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
             {members.length} Active
           </span>
         </div>
-        <span className="text-xs text-slate-400">
-          Click any teammate to filter workload
-        </span>
+        <div className="flex items-center space-x-3 text-xs">
+          <span className="text-slate-400 hidden sm:inline">
+            Click any teammate to filter workload
+          </span>
+          {onNavigateToStaffModule && (
+            <button
+              type="button"
+              onClick={onNavigateToStaffModule}
+              className="text-purple-700 hover:text-purple-900 font-semibold flex items-center space-x-1 cursor-pointer transition-colors"
+            >
+              <span>Full Workload Module</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Teammates Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {members.map((member) => {
           const openCount = openTicketCounts[member.id] || 0;
           const isSelected = selectedAssigneeId === member.id;

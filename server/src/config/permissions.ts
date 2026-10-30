@@ -287,31 +287,31 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
     'audit:test_bridge': true
   },
 
-  // DEVELOPER: Bug resolution, status advancement, technical notes & telemetry investigation
+  // DEVELOPER: Bug resolution, status advancement, technical notes & telemetry investigation (Read-only in Settings)
   developer: {
     'tickets:view': true,
     'tickets:create': true,
     'tickets:edit': true,
-    'tickets:delete': true,
+    'tickets:delete': false,
     'tickets:change_status': true,
     'tickets:assign': true,
     'tickets:view_telemetry_internal': true,
     'tickets:view_internal_notes': true,
     'tickets:create_internal_notes': true,
     'products:view': true,
-    'products:create': true,
-    'products:edit': true,
-    'products:delete': true,
-    'products:rotate_keys': true,
+    'products:create': false,
+    'products:edit': false,
+    'products:delete': false,
+    'products:rotate_keys': false,
     'tenant:view_profile': true,
-    'tenant:edit_profile': true,
-    'tenant:manage_domains': true,
-    'tenant:manage_policies': true,
+    'tenant:edit_profile': false,
+    'tenant:manage_domains': false,
+    'tenant:manage_policies': false,
     'permissions:view': true,
-    'permissions:edit': true,
-    'permissions:reset': true,
+    'permissions:edit': false,
+    'permissions:reset': false,
     'audit:view': true,
-    'audit:test_bridge': true
+    'audit:test_bridge': false
   },
 
   // SUPPORT AGENT: Customer ticket triage, initial verification & status updates
