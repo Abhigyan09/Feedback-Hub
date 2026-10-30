@@ -215,6 +215,27 @@
   ],
   "tickets": [
     {
+      "id": "ticket-1793366486183",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "client.app",
+      "short_code": "FB-1058",
+      "title": "RBAC verification test incident",
+      "description": "Testing public ingest telemetry",
+      "category": "BUG",
+      "severity": "LOW",
+      "status": "OPEN",
+      "reporter_email": "client-user@enterprise.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-10-30T15:21:26.183Z",
+      "created_at": "2026-10-30T13:21:26.183Z",
+      "updated_at": "2026-10-30T13:21:26.183Z",
+      "telemetry": {
+        "domain_origin": "client.app"
+      }
+    },
+    {
       "id": "ticket-1041",
       "tenant_id": "tenant-acme-corp-001",
       "product_id": "prod-checkout-gateway",
@@ -514,7 +535,7 @@
       "assigned_to_name": "Rahul Sharma (Senior Backend Dev)",
       "sla_due_at": "2026-10-29T19:13:06.691Z",
       "created_at": "2026-10-29T17:53:06.691Z",
-      "updated_at": "2026-10-30T11:52:05.241Z",
+      "updated_at": "2026-10-30T13:21:26.028Z",
       "telemetry": {
         "page_url": "https://checkout.acme.com/v2/pay/upi/intent?session=sess_982b",
         "app_version": "v2.14.0-prod",
@@ -1416,6 +1437,83 @@
       "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
       "is_internal_only": false,
       "created_at": "2026-10-30T11:52:05.574Z"
+    },
+    {
+      "id": "ev-1793366486003",
+      "ticket_id": "ticket-fb-1042",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Developer active on fix",
+      "is_internal_only": false,
+      "created_at": "2026-10-30T13:21:26.003Z"
+    },
+    {
+      "id": "ev-1793366486014",
+      "ticket_id": "ticket-fb-1042",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Vikram Mehta",
+      "author_role": "squad_lead",
+      "event_type": "STATUS_CHANGE",
+      "content": "Lead pushed to QA review",
+      "is_internal_only": false,
+      "created_at": "2026-10-30T13:21:26.014Z"
+    },
+    {
+      "id": "ev-1793366486021",
+      "ticket_id": "ticket-fb-1042",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Priya Sharma",
+      "author_role": "tenant_admin",
+      "event_type": "STATUS_CHANGE",
+      "content": "Admin verified resolution",
+      "is_internal_only": false,
+      "created_at": "2026-10-30T13:21:26.021Z"
+    },
+    {
+      "id": "ev-1793366486028",
+      "ticket_id": "ticket-fb-1042",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Alex Vance",
+      "author_role": "super_admin",
+      "event_type": "STATUS_CHANGE",
+      "content": "Super Admin closed ticket",
+      "is_internal_only": false,
+      "created_at": "2026-10-30T13:21:26.028Z"
+    },
+    {
+      "id": "ev-1793366486096",
+      "ticket_id": "ticket-fb-1042",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Sarah Jenkins",
+      "author_role": "client_user",
+      "event_type": "CLIENT_REPLY",
+      "content": "Client comment attempting internal flag",
+      "is_internal_only": false,
+      "created_at": "2026-10-30T13:21:26.096Z"
+    },
+    {
+      "id": "ev-1793366486102",
+      "ticket_id": "ticket-fb-1042",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma",
+      "author_role": "developer",
+      "event_type": "DEV_NOTE",
+      "content": "Internal developer trace log note",
+      "is_internal_only": true,
+      "created_at": "2026-10-30T13:21:26.102Z"
+    },
+    {
+      "id": "ev-1793366486183",
+      "ticket_id": "ticket-1793366486183",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
+      "is_internal_only": false,
+      "created_at": "2026-10-30T13:21:26.183Z"
     }
   ],
   "permissionsMatrix": {
@@ -1724,5 +1822,5 @@
       }
     }
   },
-  "last_updated": "2026-10-30T11:52:05.574Z"
+  "last_updated": "2026-10-30T13:21:26.183Z"
 }
