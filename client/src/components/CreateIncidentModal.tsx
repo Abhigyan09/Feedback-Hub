@@ -72,19 +72,19 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
       aria-modal="true"
       aria-labelledby="create-modal-title"
     >
-      <div className="bg-white border border-slate-200 rounded-lg w-full max-w-lg shadow-2xl overflow-hidden modal-subtle">
+      <div className="bg-white border border-slate-200/80 rounded-[12px] w-full max-w-lg shadow-2xl overflow-hidden font-poppins">
         
         {/* Header */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-md bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200">
+            <div className="w-8 h-8 rounded-[8px] bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200/80">
               <Plus className="w-4 h-4 stroke-[2.5]" />
             </div>
             <div>
-              <h2 id="create-modal-title" className="text-base font-bold text-slate-900">
+              <h2 id="create-modal-title" className="text-base font-medium text-slate-900">
                 Create Live Incident
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 font-normal">
                 Record new bug or telemetry event directly to the live backend API.
               </p>
             </div>
@@ -93,7 +93,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-[8px] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -104,7 +104,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
           
           {/* Title */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">
+            <label className="text-xs font-medium text-slate-700">
               Incident Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -113,13 +113,13 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Memory leak in WebSocket telemetry relay"
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-md focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200 transition-all"
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all font-normal"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">
+            <label className="text-xs font-medium text-slate-700">
               Technical Description
             </label>
             <textarea
@@ -127,20 +127,20 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe reproducing steps, observed errors, and impact..."
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs p-3 rounded-md focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200 transition-all resize-none"
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs p-3 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all resize-none font-normal"
             />
           </div>
 
           {/* Category & Severity Row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-medium text-slate-700">
                 Category
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as TicketCategory)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
               >
                 <option value="BUG">Bug</option>
                 <option value="API_FAILURE">API Failure</option>
@@ -151,13 +151,13 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-medium text-slate-700">
                 Severity / Priority
               </label>
               <select
                 value={severity}
                 onChange={(e) => setSeverity(e.target.value as TicketSeverity)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
               >
                 <option value="CRITICAL">Critical (Urgent P0)</option>
                 <option value="HIGH">High (P1)</option>
@@ -170,13 +170,13 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
           {/* Assignee & Reporter Email Row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-medium text-slate-700">
                 Assignee
               </label>
               <select
                 value={assigneeId}
                 onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
               >
                 <option value="UNASSIGNED">-- Unassigned --</option>
                 {teamMembers.map((m) => (
@@ -186,7 +186,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">
+              <label className="text-xs font-medium text-slate-700">
                 Reporter Email
               </label>
               <input
@@ -194,24 +194,24 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
                 value={reporterEmail}
                 onChange={(e) => setReporterEmail(e.target.value)}
                 placeholder="dev-lead@acme.com"
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-md focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200 transition-all"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all font-normal"
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+          <div className="pt-3.5 border-t border-slate-100 flex items-center justify-end space-x-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+              className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-[8px] transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="px-4 py-2 text-xs font-semibold bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-md shadow-xs disabled:opacity-50 transition-all"
+              className="px-4.5 py-2 text-xs font-medium bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[8px] shadow-2xs disabled:opacity-50 transition-all cursor-pointer"
             >
               {isSubmitting ? 'Creating...' : 'Create Incident'}
             </button>

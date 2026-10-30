@@ -207,53 +207,71 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-300 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl rounded-lg modal-subtle overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-900">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-200/90 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl rounded-[12px] overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-900 font-poppins">
         
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 flex items-start justify-between bg-slate-50">
-          <div className="space-y-1.5 flex-1 pr-4">
-            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-              <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-sm">
+        <div className="p-5 border-b border-slate-200/80 flex items-start justify-between bg-slate-50/60">
+          <div className="space-y-2 flex-1 pr-4">
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="font-medium text-blue-700 bg-blue-50 border border-blue-200/70 px-2 py-0.5 rounded-[6px]">
                 {ticket.short_code}
               </span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-purple-200 bg-purple-50/50 text-purple-800 rounded-sm">
+              <span className="font-medium px-2 py-0.5 border border-slate-200 bg-white text-slate-700 rounded-[6px]">
                 {ticket.category}
                 {ticket.category === 'RATING' && ticket.rating && ` (${ticket.rating}★)`}
               </span>
-              <span className="text-xs font-mono text-slate-500">[{ticket.product_name || 'Product'}]</span>
+              {ticket.product_name && (
+                <span className="text-slate-500 font-normal">
+                  {ticket.product_name}
+                </span>
+              )}
               {ticket.domain_origin && (
-                <span className="text-xs font-mono text-slate-600 flex items-center space-x-1 border border-slate-200 bg-white px-1.5 py-0.5 rounded-sm">
-                  <Globe className="w-3 h-3 text-slate-400" />
+                <span className="text-slate-500 font-normal flex items-center gap-1">
+                  <Globe className="w-3.5 h-3.5 text-slate-400" />
                   <span>{ticket.domain_origin}</span>
                 </span>
               )}
-              <span className="text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-sm">[{ticket.assigned_squad}]</span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-blue-200 bg-blue-50 text-blue-700 flex items-center space-x-1 rounded-sm">
-                <User className="w-3 h-3 text-blue-500" />
+              {ticket.assigned_squad && (
+                <span className="text-slate-600 bg-slate-100 border border-slate-200/70 px-2 py-0.5 rounded-[6px] font-normal text-[11px]">
+                  {ticket.assigned_squad.replace(/_/g, ' ')}
+                </span>
+              )}
+              <span className="px-2 py-0.5 border border-indigo-200/80 bg-indigo-50/60 text-indigo-700 flex items-center gap-1 rounded-[6px] font-medium">
+                <User className="w-3 h-3 text-indigo-500" />
                 <span>{ticket.assigned_to_name ? ticket.assigned_to_name.split(' (')[0] : 'Unassigned'}</span>
               </span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-slate-300 bg-slate-100 text-slate-800 font-semibold rounded-sm">
-                STATUS: {ticket.status}
+              <span className={`px-2 py-0.5 border font-medium rounded-[6px] ${
+                ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : ticket.status === 'IN_DEV' || ticket.status === 'IN_QA'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : ticket.status === 'TRIAGED'
+                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                {ticket.status}
               </span>
             </div>
 
             {!isEditing && (
-              <h2 className="text-lg font-bold text-slate-900">{ticket.title}</h2>
+              <h2 className="text-lg font-medium text-slate-900 tracking-tight leading-snug">
+                {ticket.title}
+              </h2>
             )}
           </div>
 
           {/* Action Buttons (Edit, Delete, Close) */}
-          <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {!isEditing && !isConfirmingDelete && (
               <>
                 {canEditTicket && (
                   <button
                     onClick={() => setIsEditing(true)}
                     title="Edit Ticket Details"
-                    className="px-2.5 py-1 text-xs font-mono border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 bg-white flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1.5 text-xs font-medium border border-slate-200/80 hover:bg-slate-50 text-slate-700 bg-white flex items-center gap-1.5 rounded-[8px] transition-colors cursor-pointer shadow-2xs"
                   >
-                    <Pencil className="w-3 h-3 text-purple-600" />
+                    <Pencil className="w-3.5 h-3.5 text-blue-600" />
                     <span>Edit</span>
                   </button>
                 )}
@@ -261,9 +279,9 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   <button
                     onClick={() => setIsConfirmingDelete(true)}
                     title="Delete Ticket"
-                    className="px-2.5 py-1 text-xs font-mono border border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 bg-red-50 flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1.5 text-xs font-medium border border-red-200/80 hover:bg-red-50 text-red-600 bg-red-50/50 flex items-center gap-1.5 rounded-[8px] transition-colors cursor-pointer shadow-2xs"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete</span>
                   </button>
                 )}
@@ -272,7 +290,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-200 transition-all cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-[8px] hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -281,22 +299,22 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
         {/* Delete Confirmation Bar */}
         {isConfirmingDelete && (
-          <div className="bg-red-50 border-b border-red-200 p-3 px-5 flex items-center justify-between text-xs font-mono text-red-800">
-            <div className="flex items-center space-x-2">
+          <div className="bg-red-50 border-b border-red-200 p-3 px-5 flex items-center justify-between text-xs text-red-800">
+            <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
               <span>Permanently delete ticket <strong>{ticket.short_code}</strong>? This cannot be undone.</span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsConfirmingDelete(false)}
-                className="px-3 py-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md cursor-pointer"
+                className="px-3 py-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-[8px] cursor-pointer font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md cursor-pointer"
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-medium rounded-[8px] cursor-pointer"
               >
                 {isDeleting ? 'Deleting...' : 'Confirm Delete'}
               </button>
@@ -306,25 +324,25 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
         {/* EDIT FORM (When isEditing === true) */}
         {isEditing ? (
-          <form onSubmit={handleSaveEdit} className="p-6 overflow-y-auto flex-1 space-y-4 font-mono text-xs bg-white">
+          <form onSubmit={handleSaveEdit} className="p-6 overflow-y-auto flex-1 space-y-4 text-xs bg-white">
             <div className="space-y-1">
-              <label className="text-slate-600 uppercase text-[11px] font-semibold">Ticket Title</label>
+              <label className="text-slate-600 font-medium text-xs">Ticket Title</label>
               <input
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 required
-                className="w-full bg-white border border-slate-300 p-2.5 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs"
+                className="w-full bg-white border border-slate-200 p-2.5 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs text-xs font-normal"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="space-y-1">
-                <label className="text-slate-600 uppercase text-[11px] font-semibold">Category</label>
+                <label className="text-slate-600 font-medium text-xs">Category</label>
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value as any)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
                 >
                   <option value="BUG">BUG</option>
                   <option value="IDEA">IDEA</option>
@@ -336,11 +354,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-600 uppercase text-[11px] font-semibold">Severity</label>
+                <label className="text-slate-600 font-medium text-xs">Severity</label>
                 <select
                   value={editSeverity}
                   onChange={(e) => setEditSeverity(e.target.value as any)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
                 >
                   <option value="LOW">LOW</option>
                   <option value="MEDIUM">MEDIUM</option>
@@ -351,11 +369,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-600 uppercase text-[11px] font-semibold">Status</label>
+                <label className="text-slate-600 font-medium text-xs">Status</label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as any)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
                 >
                   <option value="OPEN">OPEN</option>
                   <option value="TRIAGED">TRIAGED</option>
@@ -367,23 +385,23 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-600 uppercase text-[11px] font-semibold">Assigned Squad</label>
+                <label className="text-slate-600 font-medium text-xs">Assigned Squad</label>
                 <select
                   value={editSquad}
                   onChange={(e) => setEditSquad(e.target.value)}
-                  className="w-full bg-white border border-slate-300 p-2 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
                 >
-                  <option value="CORE_ENGINEERING_SQUAD">CORE_ENGINEERING_SQUAD</option>
-                  <option value="PAYMENT_CORE_API">PAYMENT_CORE_API</option>
-                  <option value="FRONTEND_PORTAL">FRONTEND_PORTAL</option>
-                  <option value="PRODUCT_DESIGN_SQUAD">PRODUCT_DESIGN_SQUAD</option>
-                  <option value="CLIENT_SUPPORT_SQUAD">CLIENT_SUPPORT_SQUAD</option>
-                  <option value="CUSTOMER_SUCCESS_SQUAD">CUSTOMER_SUCCESS_SQUAD</option>
+                  <option value="CORE_ENGINEERING_SQUAD">Core Engineering Squad</option>
+                  <option value="PAYMENT_CORE_API">Payment Core API</option>
+                  <option value="FRONTEND_PORTAL">Frontend Portal</option>
+                  <option value="PRODUCT_DESIGN_SQUAD">Product Design Squad</option>
+                  <option value="CLIENT_SUPPORT_SQUAD">Client Support Squad</option>
+                  <option value="CUSTOMER_SUCCESS_SQUAD">Customer Success Squad</option>
                 </select>
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-600 uppercase text-[11px] font-semibold">Assigned Developer</label>
+                <label className="text-slate-600 font-medium text-xs">Assigned Developer</label>
                 <select
                   value={editAssignedTo}
                   onChange={(e) => {
@@ -392,7 +410,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     setEditAssignedTo(selectedId);
                     setEditAssignedToName(dev && dev.id ? dev.name : '');
                   }}
-                  className="w-full bg-white border border-slate-300 p-2 text-indigo-700 font-semibold rounded-md focus:outline-none focus:border-indigo-500 cursor-pointer shadow-2xs"
+                  className="w-full bg-white border border-slate-200 p-2 text-blue-700 font-medium rounded-[8px] focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs text-xs"
                 >
                   {activeRoster.map(dev => (
                     <option key={dev.id} value={dev.id} className="bg-white text-slate-900">
@@ -404,28 +422,28 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-slate-600 uppercase text-[11px] font-semibold">Report Description / Details</label>
+              <label className="text-slate-600 font-medium text-xs">Report Description / Details</label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 rows={4}
                 required
-                className="w-full bg-white border border-slate-300 p-2.5 text-slate-900 rounded-md focus:outline-none focus:border-indigo-500 resize-none leading-relaxed shadow-2xs"
+                className="w-full bg-white border border-slate-200 p-2.5 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 resize-none leading-relaxed shadow-2xs text-xs font-normal"
               />
             </div>
 
-            <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200/80">
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-3.5 py-1.5 border border-slate-300 hover:border-slate-400 text-slate-700 bg-white rounded-md cursor-pointer shadow-2xs"
+                className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 bg-white rounded-[8px] cursor-pointer shadow-2xs font-medium text-xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSavingEdit}
-                className="px-4 py-1.5 bg-[#0066FF] hover:bg-blue-600 text-white font-medium flex items-center space-x-1.5 rounded-md disabled:opacity-50 cursor-pointer shadow-xs"
+                className="px-4 py-1.5 bg-[#0066FF] hover:bg-blue-600 text-white font-medium flex items-center gap-1.5 rounded-[8px] disabled:opacity-50 cursor-pointer shadow-xs text-xs"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>{isSavingEdit ? 'Saving...' : 'Save Changes'}</span>
@@ -435,42 +453,43 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         ) : (
           <>
             {/* Tab Switcher & Status Controls */}
-            <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="flex items-center space-x-2">
+            <div className="px-5 py-3 border-b border-slate-200/80 bg-slate-50/40 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              {/* Segmented Tab Switcher */}
+              <div className="inline-flex p-1 bg-slate-100/90 border border-slate-200/70 rounded-[8px] space-x-1">
                 <button
                   onClick={() => setActiveTab('TELEMETRY')}
-                  className={`px-3 py-1.5 text-xs font-mono border transition-all flex items-center space-x-1.5 rounded-md cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs transition-all flex items-center gap-1.5 rounded-[8px] cursor-pointer ${
                     activeTab === 'TELEMETRY'
-                      ? 'bg-white text-slate-900 border-slate-300 font-bold shadow-2xs'
-                      : 'bg-transparent text-slate-500 border-transparent hover:border-slate-200 hover:text-slate-800'
+                      ? 'bg-white text-slate-900 font-medium border border-slate-200/60 shadow-2xs'
+                      : 'bg-transparent text-slate-600 border border-transparent hover:text-slate-900 font-normal'
                   }`}
                 >
-                  <Terminal className="w-3.5 h-3.5 text-purple-600" />
-                  <span>TELEMETRY & LOGS</span>
+                  <Terminal className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Telemetry & Logs</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('TIMELINE')}
-                  className={`px-3 py-1.5 text-xs font-mono border transition-all flex items-center space-x-1.5 rounded-md cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs transition-all flex items-center gap-1.5 rounded-[8px] cursor-pointer ${
                     activeTab === 'TIMELINE'
-                      ? 'bg-white text-slate-900 border-slate-300 font-bold shadow-2xs'
-                      : 'bg-transparent text-slate-500 border-transparent hover:border-slate-200 hover:text-slate-800'
+                      ? 'bg-white text-slate-900 font-medium border border-slate-200/60 shadow-2xs'
+                      : 'bg-transparent text-slate-600 border border-transparent hover:text-slate-900 font-normal'
                   }`}
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
-                  <span>TIMELINE & NOTES ({events.length})</span>
+                  <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Timeline & Notes ({events.length})</span>
                 </button>
               </div>
 
               {/* Status & Developer Quick Assignment */}
               {(canAssign || canChangeStatus) && (
-                <div className="flex items-center space-x-3 flex-wrap gap-y-1">
+                <div className="flex items-center gap-3 flex-wrap">
                   
                   {/* Developer Assignment Dropdown */}
                   {canAssign && (
-                    <div className="flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded-md shadow-2xs">
-                      <UserCheck className="w-3.5 h-3.5 text-purple-600" />
-                      <span className="text-[11px] font-mono text-slate-500 uppercase font-semibold">ASSIGN:</span>
+                    <div className="flex items-center gap-1.5 bg-white border border-slate-200/80 px-2.5 py-1 rounded-[8px] shadow-2xs">
+                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="text-[11px] text-slate-400 font-medium">Assign:</span>
                       <select
                         value={ticket.assigned_to || ''}
                         onChange={async (e) => {
@@ -484,7 +503,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                             });
                           }
                         }}
-                        className="bg-transparent text-indigo-700 text-xs font-mono font-semibold focus:outline-none cursor-pointer"
+                        className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer"
                       >
                         {activeRoster.map(dev => (
                           <option key={dev.id} value={dev.id} className="bg-white text-slate-900">
@@ -497,34 +516,34 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Status Advancement Buttons */}
                   {canChangeStatus && (
-                    <div className="flex items-center space-x-1.5">
-                      <span className="text-xs font-mono text-slate-500 font-semibold">STATUS:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-slate-400 font-medium">Status:</span>
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(ticket.id, 'TRIAGED', 'Status changed to TRIAGED.')}
-                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
-                          ticket.status === 'TRIAGED' ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                        className={`px-2.5 py-1 text-xs border transition-colors cursor-pointer rounded-[8px] font-medium ${
+                          ticket.status === 'TRIAGED' ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        TRIAGED
+                        Triaged
                       </button>
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(ticket.id, 'IN_DEV', 'Dev squad started active investigation.')}
-                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
-                          ticket.status === 'IN_DEV' ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                        className={`px-2.5 py-1 text-xs border transition-colors cursor-pointer rounded-[8px] font-medium ${
+                          ticket.status === 'IN_DEV' ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        IN_DEV
+                        In Dev
                       </button>
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(ticket.id, 'RESOLVED', 'Incident resolved and verified.')}
-                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
-                          ticket.status === 'RESOLVED' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        className={`px-2.5 py-1 text-xs border transition-colors cursor-pointer rounded-[8px] font-medium ${
+                          ticket.status === 'RESOLVED' ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        RESOLVED
+                        Resolved
                       </button>
                     </div>
                   )}
@@ -533,27 +552,27 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             </div>
 
             {/* Tab Content Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-white">
+            <div className="p-6 overflow-y-auto flex-1 space-y-5 bg-white">
               {activeTab === 'TELEMETRY' ? (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   
                   {/* Description */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-mono uppercase text-slate-500 tracking-wider font-semibold">Report Details</h4>
-                    <p className="text-sm text-slate-800 bg-slate-50 p-4 border border-slate-200 leading-relaxed">
+                  <div className="space-y-1.5">
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400">Report Details</h4>
+                    <p className="text-sm text-slate-700 bg-slate-50/70 p-4 border border-slate-200/80 rounded-[12px] leading-relaxed font-normal">
                       {ticket.description}
                     </p>
                   </div>
 
                   {/* Rating Display if RATING Category */}
                   {ticket.rating && (
-                    <div className="p-4 border border-amber-200 bg-amber-50 flex items-center space-x-3">
-                      <div className="flex items-center space-x-1 text-amber-500">
+                    <div className="p-3.5 border border-amber-200/80 bg-amber-50/70 rounded-[12px] flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-amber-500">
                         {[1, 2, 3, 4, 5].map((s) => (
-                          <span key={s} className={`text-lg ${s <= ticket.rating! ? 'opacity-100' : 'opacity-30'}`}>★</span>
+                          <span key={s} className={`text-base ${s <= ticket.rating! ? 'opacity-100' : 'opacity-30'}`}>★</span>
                         ))}
                       </div>
-                      <span className="text-xs font-mono text-amber-900 font-bold">
+                      <span className="text-xs text-amber-900 font-medium">
                         Client Satisfaction Score: {ticket.rating}/5
                       </span>
                     </div>
@@ -561,31 +580,31 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Attached Screenshot Preview if present */}
                   {(ticket.screenshot_url || ticket.telemetry?.screenshot_url) && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-mono uppercase text-slate-500 tracking-wider font-semibold flex items-center space-x-2">
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400 flex items-center gap-2">
                         <span>Attached User Screenshot</span>
                       </h4>
-                      <div className="border border-slate-200 bg-slate-50 p-3">
+                      <div className="border border-slate-200/80 bg-slate-50/60 p-3 rounded-[12px]">
                         <img 
                           src={ticket.screenshot_url || ticket.telemetry?.screenshot_url} 
                           alt="Client attached screenshot" 
-                          className="max-h-72 object-contain border border-slate-300"
+                          className="max-h-72 object-contain border border-slate-200 rounded-[8px]"
                         />
                       </div>
                     </div>
                   )}
 
                   {/* Environment Information (Safe for all roles) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-3 border border-slate-200 bg-slate-50 space-y-1">
-                      <span className="text-[11px] font-mono text-slate-500 uppercase font-semibold">Page URL</span>
-                      <p className="text-xs font-mono text-slate-800 truncate">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div className="p-3.5 border border-slate-200/80 bg-slate-50/60 rounded-[12px] space-y-1">
+                      <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Page URL</span>
+                      <p className="text-xs text-slate-700 font-normal truncate">
                         {ticket.telemetry?.page_url || 'https://client-app.com/dashboard'}
                       </p>
                     </div>
-                    <div className="p-3 border border-slate-200 bg-slate-50 space-y-1">
-                      <span className="text-[11px] font-mono text-slate-500 uppercase font-semibold">User Agent & Viewport</span>
-                      <p className="text-xs font-mono text-slate-800 truncate">
+                    <div className="p-3.5 border border-slate-200/80 bg-slate-50/60 rounded-[12px] space-y-1">
+                      <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">User Agent & Viewport</span>
+                      <p className="text-xs text-slate-700 font-normal truncate">
                         {ticket.telemetry?.viewport_dimensions || '1920x1080'} • {ticket.telemetry?.app_version || 'v1.0.0'}
                       </p>
                     </div>
@@ -593,11 +612,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Client User Quarantine Notice */}
                   {!canViewTechnicalTelemetry && (
-                    <div className="p-4 border border-indigo-200 bg-indigo-50/50 flex items-start space-x-3 text-xs font-mono text-slate-700">
+                    <div className="p-4 border border-indigo-200/70 bg-indigo-50/40 rounded-[12px] flex items-start gap-3 text-xs text-slate-700">
                       <Shield className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                       <div className="space-y-1">
-                        <p className="font-bold text-slate-900 uppercase">Protected Client Scope</p>
-                        <p className="text-slate-600 font-sans">
+                        <p className="font-medium text-slate-900">Protected Client Scope</p>
+                        <p className="text-slate-600 font-normal leading-relaxed">
                           Internal application stack traces, AES-256 decryption context, and engineering console diagnostics are quarantined to authorized engineering and lead roles.
                         </p>
                       </div>
@@ -606,28 +625,28 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Console Logs (Engineering Only) */}
                   {canViewTechnicalTelemetry && (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-mono uppercase text-slate-500 tracking-wider font-semibold flex items-center space-x-1.5">
-                          <Terminal className="w-3.5 h-3.5 text-purple-600" />
+                        <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                          <Terminal className="w-3.5 h-3.5 text-blue-600" />
                           <span>Captured Browser Console Logs</span>
                         </h4>
-                        <span className="text-[10px] font-mono text-slate-400">AUTO-EXTRACTED BY SDK</span>
+                        <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-[6px]">AUTO-EXTRACTED BY SDK</span>
                       </div>
                       
-                      <div className="bg-[#0f172a] border border-slate-700 p-3 font-mono text-xs text-slate-200 space-y-1.5 max-h-40 overflow-y-auto">
+                      <div className="bg-[#151c2c] border border-slate-800 p-3.5 font-mono text-xs text-slate-300 space-y-1.5 max-h-40 overflow-y-auto rounded-[12px]">
                         {ticket.telemetry?.console_logs && ticket.telemetry.console_logs.length > 0 ? (
                           ticket.telemetry.console_logs.map((log, idx) => (
-                            <div key={idx} className="flex items-start space-x-2">
+                            <div key={idx} className="flex items-start gap-2">
                               <span className="text-slate-500 text-[10px]">[{log.timestamp}]</span>
-                              <span className={`text-[10px] uppercase font-bold ${log.type === 'error' ? 'text-red-400' : 'text-blue-400'}`}>
+                              <span className={`text-[10px] uppercase font-medium ${log.type === 'error' ? 'text-red-400' : 'text-blue-400'}`}>
                                 [{log.type}]
                               </span>
-                              <span className="flex-1 text-slate-200">{log.message}</span>
+                              <span className="flex-1 text-slate-200 font-normal">{log.message}</span>
                             </div>
                           ))
                         ) : (
-                          <span className="text-slate-500">No client console errors recorded.</span>
+                          <span className="text-slate-400 font-normal">No client console errors recorded.</span>
                         )}
                       </div>
                     </div>
@@ -635,25 +654,25 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Network Error Inspector (Engineering & Support) */}
                   {(canViewTechnicalTelemetry || currentRole === 'support_agent') && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-mono uppercase text-slate-500 tracking-wider font-semibold flex items-center space-x-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
                         <span>Failed API Requests (4xx / 5xx)</span>
                       </h4>
                       
-                      <div className="bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 space-y-1.5">
+                      <div className="bg-slate-50/60 border border-slate-200/80 p-3 rounded-[12px] text-xs space-y-2">
                         {ticket.telemetry?.network_errors && ticket.telemetry.network_errors.length > 0 ? (
                           ticket.telemetry.network_errors.map((net, idx) => (
-                            <div key={idx} className="flex items-center space-x-3 p-1.5 bg-red-50 border border-red-200">
-                              <span className="px-1.5 py-0.5 bg-red-600 text-white text-[10px] font-bold">
+                            <div key={idx} className="flex items-center gap-3 p-2 bg-red-50/70 border border-red-200/70 rounded-[8px]">
+                              <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-medium rounded-[6px]">
                                 HTTP {net.status}
                               </span>
-                              <span className="text-red-800 font-mono text-xs flex-1">{net.url}</span>
+                              <span className="text-red-900 font-mono text-xs flex-1">{net.url}</span>
                               <span className="text-slate-400 text-[10px]">{net.timestamp}</span>
                             </div>
                           ))
                         ) : (
-                          <span className="text-slate-400">No failed network requests attached.</span>
+                          <span className="text-slate-400 font-normal">No failed network requests attached.</span>
                         )}
                       </div>
                     </div>
@@ -661,14 +680,14 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Bank-Grade Decrypted Payload (Engineering & Admin Only) */}
                   {canViewTechnicalTelemetry && ticket.telemetry?.encrypted_sensitive_data && (
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-1.5">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
                         <Shield className="w-3.5 h-3.5 text-emerald-600" />
-                        <h4 className="text-xs font-mono uppercase text-emerald-700 tracking-wider font-semibold">
+                        <h4 className="text-xs font-medium uppercase tracking-wider text-emerald-700">
                           AES-256-GCM Decrypted Diagnostic Context
                         </h4>
                       </div>
-                      <pre className="bg-emerald-50 border border-emerald-200 p-3 font-mono text-xs text-emerald-900 whitespace-pre-wrap break-all max-w-full">
+                      <pre className="bg-emerald-50/60 border border-emerald-200/80 p-3.5 font-mono text-xs text-emerald-950 whitespace-pre-wrap break-all max-w-full rounded-[12px]">
                         {ticket.telemetry.encrypted_sensitive_data}
                       </pre>
                     </div>
@@ -677,41 +696,41 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 </div>
               ) : (
                 /* Timeline & Quarantine View */
-                <div className="space-y-6">
+                <div className="space-y-5">
                   
                   {/* Timeline Stream */}
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-mono uppercase text-slate-500 tracking-wider font-semibold">
+                  <div className="space-y-2.5">
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400">
                       Audit Trail & Incident Timeline
                     </h4>
                     
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {events.filter(ev => !ev.is_internal_only || canViewInternalNotes).length === 0 ? (
-                        <p className="text-xs font-mono text-slate-400">No events recorded yet.</p>
+                        <p className="text-xs text-slate-400 font-normal">No events recorded yet.</p>
                       ) : (
                         events.filter(ev => !ev.is_internal_only || canViewInternalNotes).map((ev) => (
                           <div
                             key={ev.id}
-                            className={`p-3 border text-xs font-mono space-y-1 ${
+                            className={`p-3.5 border text-xs space-y-1.5 rounded-[12px] ${
                               ev.is_internal_only
-                                ? 'bg-amber-50 border-amber-200 text-amber-900'
-                                : 'bg-slate-50 border-slate-200 text-slate-800'
+                                ? 'bg-amber-50/60 border-amber-200/80 text-amber-900'
+                                : 'bg-slate-50/60 border-slate-200/80 text-slate-800'
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-bold flex items-center space-x-1.5">
-                                <span>{ev.author_name}</span>
-                                <span className="text-[10px] text-slate-500 font-normal">[{ev.author_role}]</span>
+                              <span className="font-medium flex items-center gap-2">
+                                <span className="text-slate-900">{ev.author_name}</span>
+                                <span className="text-[11px] text-slate-400 font-normal">({ev.author_role})</span>
                                 {ev.is_internal_only && (
-                                  <span className="px-1 py-0.2 bg-amber-100 text-amber-800 text-[9px] uppercase font-bold flex items-center space-x-1 border border-amber-200">
+                                  <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-medium flex items-center gap-1 border border-amber-200/80 rounded-[6px]">
                                     <Lock className="w-2.5 h-2.5" />
-                                    <span>INTERNAL DEV ONLY</span>
+                                    <span>Internal Note</span>
                                   </span>
                                 )}
                               </span>
-                              <span className="text-slate-400 text-[10px]">{new Date(ev.created_at).toLocaleTimeString()}</span>
+                              <span className="text-slate-400 text-[11px]">{new Date(ev.created_at).toLocaleTimeString()}</span>
                             </div>
-                            <p className="text-slate-700 font-sans">{ev.content}</p>
+                            <p className="text-slate-700 font-normal leading-relaxed">{ev.content}</p>
                           </div>
                         ))
                       )}
@@ -719,23 +738,23 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   </div>
 
                   {/* Add Event Form */}
-                  <form onSubmit={handleSendComment} className="space-y-3 pt-4 border-t border-slate-200">
+                  <form onSubmit={handleSendComment} className="space-y-3 pt-4 border-t border-slate-200/80">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono uppercase text-slate-500 font-semibold">Post Timeline Update</span>
+                      <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Post Timeline Update</span>
                       {canPostInternalNotes && (
-                        <label className="flex items-center space-x-2 text-xs font-mono text-slate-600 cursor-pointer">
+                        <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={isInternalNote}
                             onChange={(e) => setIsInternalNote(e.target.checked)}
-                            className="bg-white border-slate-300 text-purple-600 focus:ring-0"
+                            className="bg-white border-slate-300 text-blue-600 focus:ring-0 rounded-[6px]"
                           />
-                          <span>Internal Dev Note (Quarantined from Client)</span>
+                          <span className="font-normal">Internal Dev Note (Quarantined from Client)</span>
                         </label>
                       )}
                     </div>
 
-                    <div className="flex space-x-2">
+                    <div className="flex gap-2">
                       <input
                         type="text"
                         value={newComment}
@@ -747,15 +766,15 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                             ? 'Add internal developer investigation note...'
                             : 'Post update visible to enterprise client...'
                         }
-                        className="flex-1 bg-white border border-slate-300 text-xs font-mono p-2.5 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs"
+                        className="flex-1 bg-white border border-slate-200 text-xs p-2.5 text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs rounded-[8px] font-normal"
                       />
                       <button
                         type="submit"
                         disabled={isSubmitting || !newComment.trim()}
-                        className="px-4 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-mono font-medium flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+                        className="px-4 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs rounded-[8px] transition-colors"
                       >
                         <Send className="w-3.5 h-3.5" />
-                        <span>POST</span>
+                        <span>Post</span>
                       </button>
                     </div>
                   </form>

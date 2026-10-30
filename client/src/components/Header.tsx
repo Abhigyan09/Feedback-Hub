@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
           
           {/* Brand Square Logo */}
           <div className="flex items-center space-x-1.5 shrink-0">
-            <div className="w-8 h-8 bg-[#6366F1] flex items-center justify-center font-mono font-bold text-white text-xs tracking-wider shadow-sm">
+            <div className="w-8 h-8 bg-[#6366F1] flex items-center justify-center font-mono font-medium text-white text-xs tracking-wider shadow-sm">
               FH
             </div>
             <span className="text-slate-400 font-mono text-xs hidden sm:inline">›</span>
@@ -106,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
                 </select>
               ) : (
-                <span className="text-xs font-semibold text-slate-800 uppercase tracking-tight truncate max-w-[170px]">
+                <span className="text-xs font-medium text-slate-800 uppercase tracking-tight truncate max-w-[170px]">
                   {activeTenantName}
                 </span>
               )}
@@ -143,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* 100.00% SLA Healthy Square Badge */}
-          <div className="hidden 2xl:flex items-center space-x-1.5 px-2.5 py-1 bg-amber-50/90 border border-amber-200 text-amber-800 text-xs font-mono font-semibold shrink-0">
+          <div className="hidden 2xl:flex items-center space-x-1.5 px-2.5 py-1 bg-amber-50/90 border border-amber-200 text-amber-800 text-xs font-mono font-medium shrink-0">
             <Sun className="w-3.5 h-3.5 text-amber-600" />
             <span>100.00% SLA HEALTHY</span>
           </div>
@@ -165,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* + New Incident Button */}
           <button
             onClick={onNewIncidentClick || onOpenWidgetSimulator}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Incident</span>
@@ -182,11 +182,11 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* User Profile Info Badge */}
           <div className="flex items-center space-x-2 pl-1 border-l border-slate-200">
-            <div className="w-8 h-8 bg-purple-600 text-white font-bold font-mono text-xs flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="w-8 h-8 bg-purple-600 text-white font-medium font-mono text-xs flex items-center justify-center shrink-0 shadow-2xs">
               {displayInitials}
             </div>
             <div className="hidden lg:block leading-tight text-left max-w-[150px] xl:max-w-[200px]">
-              <span className="block text-xs font-bold text-slate-900 truncate">
+              <span className="block text-xs font-medium text-slate-900 truncate">
                 {displayName}
               </span>
               <span className="block text-[10px] text-purple-600 font-mono truncate uppercase">

@@ -46,14 +46,9 @@ export class MultiTenantStore {
     const loaded = this.loadFromDisk();
     if (!loaded) {
       this.seedInitialData();
-      this.seedRichLiveTickets();
       this.saveToDisk();
     } else {
       let changed = false;
-      if (!this.tickets.some(t => t.id === 'ticket-fb-1042') || !this.tickets.some(t => t.id === 'ticket-1041')) {
-        this.seedRichLiveTickets();
-        changed = true;
-      }
       if (!this.users.some(u => u.email === 'admin.priya@acme.com') || !this.users.some(u => u.id === 'member-1')) {
         this.seedInitialData();
         changed = true;

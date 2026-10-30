@@ -116,27 +116,27 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
 
   if (attentionItems.length === 0) {
     return (
-      <div className="bg-white border border-emerald-200/90 rounded-md p-3.5 px-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 transition-all card-subtle">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-7 h-7 rounded-md bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 flex-shrink-0">
-            <CheckCircle2 className="w-4 h-4" />
+      <div className="bg-white border border-slate-200/80 rounded-[12px] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all font-poppins">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-[8px] bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600 flex-shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-slate-800 tracking-tight">
+            <div className="flex items-center space-x-2.5">
+              <span className="text-sm font-medium text-slate-900 tracking-tight">
                 Needs Attention
               </span>
-              <span className="inline-flex items-center px-2 py-0.2 rounded-sm text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                 All Clear (0)
               </span>
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed font-normal">
               No incidents currently breach SLAs, urgent tickets are assigned, and no client blockers detected.
             </p>
           </div>
         </div>
-        <div className="text-[11px] text-emerald-700 font-medium flex items-center space-x-1 pl-9 sm:pl-0">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+        <div className="text-xs text-emerald-700 font-medium flex items-center space-x-1.5 pl-12 sm:pl-0">
+          <Sparkles className="w-4 h-4 text-emerald-500" />
           <span>SLA Health 100% Verified</span>
         </div>
       </div>
@@ -144,37 +144,37 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
   }
 
   return (
-    <div className="bg-[#fff8f8] border border-rose-200/90 rounded-md p-4 space-y-3 shadow-2xs transition-all animate-in fade-in duration-200 card-subtle">
+    <div className="bg-white border border-rose-200/80 rounded-[12px] p-5 sm:p-6 space-y-4 shadow-[0_2px_12px_rgba(244,63,94,0.04)] transition-all animate-in fade-in duration-200 font-poppins">
       
       {/* Header bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-rose-100">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-7 h-7 rounded-md bg-red-100 border border-red-200 flex items-center justify-center text-red-600 flex-shrink-0">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-rose-100/70">
+        <div className="flex items-center space-x-3">
+          <div className="w-7 h-7 rounded-[8px] bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600 flex-shrink-0">
+            <AlertTriangle className="w-4 h-4 text-rose-600" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+            <div className="flex items-center space-x-2.5">
+              <h2 className="text-xs font-medium text-slate-800 tracking-wider uppercase">
                 NEEDS ATTENTION
               </h2>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-semibold bg-red-600 text-white shadow-2xs">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] text-xs font-medium bg-rose-600 text-white shadow-2xs">
                 {attentionItems.length} {attentionItems.length === 1 ? 'Incident' : 'Incidents'} Require Action
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed font-normal">
               Urgent unassigned items, SLA threshold alerts, and tickets awaiting client response.
             </p>
           </div>
         </div>
 
-        <div className="text-xs text-slate-500 font-normal flex items-center space-x-1 cursor-pointer hover:text-red-600 transition-colors">
+        <div className="text-xs text-slate-500 font-medium flex items-center space-x-1 cursor-pointer hover:text-blue-600 transition-colors">
           <span>Click any item to inspect telemetry and triage</span>
-          <span className="text-red-500 font-bold ml-0.5">&rarr;</span>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors ml-0.5" />
         </div>
       </div>
 
       {/* Grid of Attention items */}
-      <div className={`grid gap-3 ${
+      <div className={`grid gap-3.5 ${
         attentionItems.length === 1
           ? 'grid-cols-1'
           : attentionItems.length === 2
@@ -200,68 +200,68 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
                   onSelectTicket(ticket);
                 }
               }}
-              className="bg-white hover:bg-rose-50/20 border border-rose-100 hover:border-rose-300 rounded-md p-3.5 shadow-2xs cursor-pointer transition-all duration-150 flex flex-col justify-between space-y-2.5 text-left group card-subtle"
+              className="bg-white hover:bg-slate-50/70 border border-slate-200/80 hover:border-blue-400 rounded-[12px] p-4 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between space-y-3 text-left group cursor-pointer"
               aria-label={`Needs attention: ${ticket.short_code} - ${ticket.title}`}
             >
-              {/* Top row: SLA Due Pill */}
+              {/* Top row: SLA Due Badge (Squarish 4-corner tag) */}
               <div className="flex items-center justify-between">
-                <div className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-sm text-[11px] font-semibold border ${
+                <div className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-[6px] text-[11px] font-medium border ${
                   isBreached 
-                    ? 'bg-rose-100 text-rose-800 border-rose-300 font-bold' 
+                    ? 'bg-rose-50 text-rose-700 border-rose-200' 
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
-                  <Clock className="w-3 h-3 text-amber-600" />
+                  <Clock className="w-3 h-3" />
                   <span>{slaLabel}</span>
                 </div>
               </div>
 
-              {/* Second row: Short Code, Severity Badge, Status Badge */}
+              {/* Second row: Short Code, Severity Badge, Status Badge (Squarish 4-corner tags) */}
               <div className="flex items-center space-x-2">
-                <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-sm">
+                <span className="font-mono text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-[6px]">
                   {ticket.short_code}
                 </span>
-                <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-sm border ${
+                <span className={`text-[10px] font-medium uppercase px-2 py-0.5 rounded-[6px] border ${
                   normSeverity === 'Urgent'
-                    ? 'bg-red-50 text-red-700 border-red-200'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
                   {normSeverity}
                 </span>
-                <span className="text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-sm">
+                <span className="text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-[6px]">
                   {normStatus}
                 </span>
               </div>
 
               {/* Third row: Title */}
-              <h3 className="text-sm font-bold text-slate-900 group-hover:text-red-700 transition-colors line-clamp-1 leading-snug">
+              <h3 className="text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 leading-snug tracking-tight">
                 {ticket.title}
               </h3>
 
               {/* Fourth row: Assignee on left, Waiting on right */}
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div className="flex items-center space-x-1.5">
+              <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center space-x-1.5 min-w-0">
                   <span className="text-xs text-slate-400">Assignee:</span>
                   {assignedMember ? (
-                    <span className="font-semibold text-slate-700 px-2 py-0.5 rounded-sm bg-slate-50 border border-slate-200 text-xs truncate max-w-[140px]" title={assignedMember.name}>
+                    <span className="font-medium text-slate-700 px-2 py-0.5 rounded-[6px] bg-slate-50 border border-slate-200 text-xs truncate max-w-[130px]" title={assignedMember.name}>
                       {assignedMember.name}
                     </span>
                   ) : ticket.assigned_to_name ? (
-                    <span className="font-semibold text-slate-700 px-2 py-0.5 rounded-sm bg-slate-50 border border-slate-200 text-xs truncate max-w-[140px]">
+                    <span className="font-medium text-slate-700 px-2 py-0.5 rounded-[6px] bg-slate-50 border border-slate-200 text-xs truncate max-w-[130px]">
                       {ticket.assigned_to_name}
                     </span>
                   ) : (
-                    <span className="font-semibold text-amber-700 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-sm text-xs">
+                    <span className="font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-[6px] text-xs">
                       Unassigned
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center space-x-1.5 text-slate-400 text-xs">
-                  <div className="flex items-center space-x-1 font-mono text-slate-500">
+                <div className="flex items-center space-x-1.5 text-slate-400 text-xs shrink-0">
+                  <div className="flex items-center space-x-1 font-mono text-slate-400">
                     <Clock className="w-3 h-3 text-slate-400" />
                     <span>Waiting {waitingDuration}</span>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-600 transition-colors" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
                 </div>
               </div>
 

@@ -904,11 +904,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <Shield className="w-6 h-6 text-amber-600" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-slate-900 font-mono uppercase tracking-tight">
+          <h3 className="text-base font-medium text-slate-900 font-mono uppercase tracking-tight">
             Restricted Enterprise Configuration
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
-            Platform settings, monitored product API keys, and tenant domain access controls are restricted to authorized administrators and developers. Your current active role is <span className="font-bold text-slate-800">[{currentRole}]</span>.
+            Platform settings, monitored product API keys, and tenant domain access controls are restricted to authorized administrators and developers. Your current active role is <span className="font-medium text-slate-800">[{currentRole}]</span>.
           </p>
         </div>
       </div>
@@ -931,14 +931,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-white border border-slate-200 p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
-            <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+            <h2 className="text-lg font-medium text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
               <Building className="w-5 h-5 text-indigo-600" />
               <span>PLATFORM SETTINGS & GOVERNANCE</span>
             </h2>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase bg-blue-50 text-blue-800 border border-blue-200">
+            <span className="px-2 py-0.5 text-[10px] font-mono font-medium uppercase bg-blue-50 text-blue-800 border border-blue-200">
               {ROLE_METADATA[currentRole]?.label || currentRole}
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <span className="px-2 py-0.5 text-[10px] font-mono font-medium uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">
               RLS ACTIVE
             </span>
           </div>
@@ -962,7 +962,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={() => handleSaveChanges()}
             disabled={isSaving || (!canSaveAnyTenantSettings && !hasUnsavedPerms)}
-            className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-mono font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-mono font-medium flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'SAVING...' : 'SAVE ALL CHANGES'}</span>
@@ -987,7 +987,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-2 flex items-center space-x-2 font-bold text-xs transition-all cursor-pointer border ${
+              className={`px-3.5 py-2 flex items-center space-x-2 font-medium text-xs transition-all cursor-pointer border ${
                 isActive
                   ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-2xs'
                   : 'border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -996,7 +996,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
-                <span className={`px-1.5 py-0.2 text-[10px] font-bold border ${
+                <span className={`px-1.5 py-0.2 text-[10px] font-medium border ${
                   isActive ? 'bg-indigo-100 text-indigo-800 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'
                 }`}>
                   {tab.badge}
@@ -1012,7 +1012,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200 shadow-2xs">
           <div className="flex items-center space-x-2.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="font-semibold">{saveSuccessMessage}</span>
+            <span className="font-medium">{saveSuccessMessage}</span>
           </div>
           <button onClick={() => setSaveSuccessMessage(null)} className="text-emerald-600 hover:text-emerald-900 cursor-pointer">
             <X className="w-4 h-4" />
@@ -1025,7 +1025,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="p-3.5 bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-mono flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200 shadow-2xs">
           <div className="flex items-center space-x-2.5">
             <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
-            <span className="font-semibold">{permsSuccessMessage}</span>
+            <span className="font-medium">{permsSuccessMessage}</span>
           </div>
           <button onClick={() => setPermsSuccessMessage(null)} className="text-indigo-600 hover:text-indigo-900 cursor-pointer">
             <X className="w-4 h-4" />
@@ -1038,7 +1038,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 text-xs font-mono flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200 shadow-2xs">
           <div className="flex items-center space-x-2.5">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-            <span className="font-semibold">{errorMessage}</span>
+            <span className="font-medium">{errorMessage}</span>
           </div>
           <button onClick={() => setErrorMessage(null)} className="text-red-600 hover:text-red-900 cursor-pointer">
             <X className="w-4 h-4" />
@@ -1052,12 +1052,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center space-x-2">
             <Shield className="w-4 h-4 text-indigo-600" />
-            <h3 className="text-xs font-mono uppercase font-bold text-slate-900 tracking-wider">
+            <h3 className="text-xs font-mono uppercase font-medium text-slate-900 tracking-wider">
               Active Tenant Profile
             </h3>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-[10px] font-mono text-emerald-700 font-semibold px-2 py-0.5 bg-emerald-50 border border-emerald-200">
+            <span className="text-[10px] font-mono text-emerald-700 font-medium px-2 py-0.5 bg-emerald-50 border border-emerald-200">
               {tenant?.isolation_standard || 'PostgreSQL 16 RLS (Bank-Grade)'}
             </span>
           </div>
@@ -1077,8 +1077,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           
           {/* Editable Organization Name */}
           <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
-            <label className="text-slate-500 uppercase text-[10px] font-bold block">
-              Organization Name {canEditTenantProfile ? <span className="text-indigo-600 font-bold">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
+            <label className="text-slate-500 uppercase text-[10px] font-medium block">
+              Organization Name {canEditTenantProfile ? <span className="text-indigo-600 font-medium">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
             </label>
             <input
               type="text"
@@ -1086,7 +1086,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => setOrgName(e.target.value)}
               disabled={!canEditTenantProfile || isSaving}
               placeholder="Enter organization name"
-              className={`w-full border px-2.5 py-1.5 font-bold text-xs focus:outline-none transition-colors ${
+              className={`w-full border px-2.5 py-1.5 font-medium text-xs focus:outline-none transition-colors ${
                 !canEditTenantProfile 
                   ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
                   : 'bg-white border-slate-300 focus:border-indigo-600 text-slate-900'
@@ -1096,9 +1096,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Tenant ID (Immutable UUID boundary) */}
           <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
-            <span className="text-slate-500 uppercase text-[10px] font-bold block">Tenant ID (UUID Boundary)</span>
+            <span className="text-slate-500 uppercase text-[10px] font-medium block">Tenant ID (UUID Boundary)</span>
             <div className="flex items-center justify-between">
-              <p className="text-indigo-700 truncate font-bold text-xs">{currentTenantId}</p>
+              <p className="text-indigo-700 truncate font-medium text-xs">{currentTenantId}</p>
               <button
                 type="button"
                 onClick={() => handleCopy(currentTenantId, 'tenantId')}
@@ -1112,14 +1112,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Plan Tier Selector */}
           <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
-            <label className="text-slate-500 uppercase text-[10px] font-bold block">
-              Enterprise Plan Tier {canEditTenantProfile ? <span className="text-indigo-600 font-bold">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
+            <label className="text-slate-500 uppercase text-[10px] font-medium block">
+              Enterprise Plan Tier {canEditTenantProfile ? <span className="text-indigo-600 font-medium">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
             </label>
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
               disabled={!canEditTenantProfile || isSaving}
-              className={`w-full border px-2.5 py-1.5 font-bold text-xs focus:outline-none ${
+              className={`w-full border px-2.5 py-1.5 font-medium text-xs focus:outline-none ${
                 !canEditTenantProfile 
                   ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
                   : 'bg-white border-slate-300 focus:border-indigo-600 text-emerald-700 cursor-pointer'
@@ -1133,7 +1133,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Alert Webhook URL */}
           <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5 md:col-span-2">
-            <label className="text-slate-500 uppercase text-[10px] font-bold flex items-center space-x-1.5">
+            <label className="text-slate-500 uppercase text-[10px] font-medium flex items-center space-x-1.5">
               <Webhook className="w-3 h-3 text-indigo-600" />
               <span>Incident Alert Webhook URL (Real-time Bridge)</span>
             </label>
@@ -1153,7 +1153,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Security Alert Email */}
           <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
-            <label className="text-slate-500 uppercase text-[10px] font-bold flex items-center space-x-1.5">
+            <label className="text-slate-500 uppercase text-[10px] font-medium flex items-center space-x-1.5">
               <Mail className="w-3 h-3 text-indigo-600" />
               <span>Escalation Email</span>
             </label>
@@ -1179,7 +1179,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={() => handleSaveChanges('Tenant profile updated and saved.')}
             disabled={isSaving || !canEditTenantProfile}
-            className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
             title={!canEditTenantProfile ? "Profile editing restricted to Admin and Lead Manager" : undefined}
           >
             <Save className="w-3.5 h-3.5" />
@@ -1195,7 +1195,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center space-x-2">
             <Key className="w-4 h-4 text-indigo-600" />
-            <h3 className="text-xs font-mono uppercase font-bold text-slate-900 tracking-wider">
+            <h3 className="text-xs font-mono uppercase font-medium text-slate-900 tracking-wider">
               MONITORED PRODUCTS & CLIENT INGESTION KEYS ({products.length})
             </h3>
           </div>
@@ -1204,7 +1204,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={() => setIsAddingProduct(true)}
-              className="px-3.5 py-1.5 text-xs font-mono bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 text-xs font-mono bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>ADD PRODUCT</span>
@@ -1226,7 +1226,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {isAddingProduct && (
           <form onSubmit={handleCreateProduct} className="p-4 bg-slate-50 border border-indigo-200 space-y-3 font-mono text-xs animate-in fade-in duration-150">
             <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
-              <span className="font-bold text-indigo-900 uppercase flex items-center space-x-1.5">
+              <span className="font-medium text-indigo-900 uppercase flex items-center space-x-1.5">
                 <Plus className="w-4 h-4 text-indigo-600" />
                 <span>Register New Product & Ingestion Key</span>
               </span>
@@ -1237,7 +1237,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2 space-y-1">
-                <label className="text-[10px] text-slate-600 uppercase font-bold">Product Name *</label>
+                <label className="text-[10px] text-slate-600 uppercase font-medium">Product Name *</label>
                 <input
                   type="text"
                   value={newProductName}
@@ -1249,7 +1249,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-600 uppercase font-bold">Environment</label>
+                <label className="text-[10px] text-slate-600 uppercase font-medium">Environment</label>
                 <select
                   value={newProductEnv}
                   onChange={(e) => setNewProductEnv(e.target.value as any)}
@@ -1262,7 +1262,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               <div className="sm:col-span-3 space-y-1">
-                <label className="text-[10px] text-slate-600 uppercase font-bold">Description (Optional)</label>
+                <label className="text-[10px] text-slate-600 uppercase font-medium">Description (Optional)</label>
                 <input
                   type="text"
                   value={newProductDesc}
@@ -1284,7 +1284,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Key className="w-3.5 h-3.5" />
                 <span>GENERATE & REGISTER PRODUCT KEY</span>
@@ -1319,7 +1319,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             type="text"
                             value={editProductName}
                             onChange={(e) => setEditProductName(e.target.value)}
-                            className="w-full bg-white border border-slate-300 px-2.5 py-1.5 text-slate-900 font-bold text-xs focus:outline-none focus:border-indigo-600"
+                            className="w-full bg-white border border-slate-300 px-2.5 py-1.5 text-slate-900 font-medium text-xs focus:outline-none focus:border-indigo-600"
                           />
                         </div>
                         <div className="space-y-1">
@@ -1357,7 +1357,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleSaveProductEdit(prod.id)}
-                          className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center space-x-1.5 cursor-pointer"
+                          className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center space-x-1.5 cursor-pointer"
                         >
                           <Save className="w-3.5 h-3.5" />
                           <span>SAVE PRODUCT</span>
@@ -1369,13 +1369,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="text-slate-900 font-bold text-sm tracking-wide truncate">{prod.name}</span>
-                          <span className={`px-2 py-0.5 text-[10px] uppercase font-bold border ${
+                          <span className="text-slate-900 font-medium text-sm tracking-wide truncate">{prod.name}</span>
+                          <span className={`px-2 py-0.5 text-[10px] uppercase font-medium border ${
                             prod.environment === 'production' 
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold' 
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-medium' 
                               : prod.environment === 'staging'
-                              ? 'bg-blue-50 text-blue-800 border-blue-300 font-semibold'
-                              : 'bg-amber-50 text-amber-800 border-amber-300 font-semibold'
+                              ? 'bg-blue-50 text-blue-800 border-blue-300 font-medium'
+                              : 'bg-amber-50 text-amber-800 border-amber-300 font-medium'
                           }`}>
                             {prod.environment}
                           </span>
@@ -1385,7 +1385,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         )}
                         <p className="text-slate-500 text-[11px] truncate flex items-center space-x-1.5">
                           <span className="text-slate-400 font-medium">Key:</span>
-                          <code className="text-indigo-700 font-semibold bg-white px-2 py-0.5 border border-slate-200">{currentKey}</code>
+                          <code className="text-indigo-700 font-medium bg-white px-2 py-0.5 border border-slate-200">{currentKey}</code>
                         </p>
                       </div>
 
@@ -1393,7 +1393,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleCopy(currentKey, prod.id)}
-                          className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-50 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-semibold"
+                          className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-50 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-medium"
                         >
                           {copiedKey === prod.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                           <span>{copiedKey === prod.id ? 'COPIED' : 'COPY KEY'}</span>
@@ -1404,7 +1404,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             type="button"
                             onClick={() => handleStartEditProduct(prod)}
                             title="Edit product details"
-                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-semibold"
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-medium"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">Edit</span>
@@ -1416,7 +1416,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             type="button"
                             onClick={() => handleRotateKey(prod.id, prod.name)}
                             title="Rotate API Key"
-                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-amber-300 text-slate-600 hover:text-amber-800 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-semibold"
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-amber-300 text-slate-600 hover:text-amber-800 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs font-medium"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">Rotate</span>
@@ -1451,11 +1451,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center space-x-2">
             <Globe className="w-4 h-4 text-indigo-600" />
-            <h3 className="text-xs font-mono uppercase font-bold text-slate-900 tracking-wider">
+            <h3 className="text-xs font-mono uppercase font-medium text-slate-900 tracking-wider">
               DOMAIN ORIGIN WHITELIST (ANTI-SPOOFING FIREWALL)
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 font-semibold">
+          <span className="text-[10px] font-mono text-slate-500 font-medium">
             {allowedDomains.length} DOMAINS PERMITTED
           </span>
         </div>
@@ -1485,12 +1485,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   className="px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-800 flex items-center space-x-2 group hover:border-slate-300 transition-colors shadow-2xs"
                 >
                   <Globe className="w-3 h-3 text-indigo-600" />
-                  <span className="font-semibold">{d}</span>
+                  <span className="font-medium">{d}</span>
                   {canManageDomains && (
                     <button
                       type="button"
                       onClick={() => handleRemoveDomain(d)}
-                      className="text-slate-400 hover:text-red-600 p-0.5 rounded-sm transition-colors cursor-pointer"
+                      className="text-slate-400 hover:text-red-600 p-0.5 rounded-[6px] transition-colors cursor-pointer"
                       title="Remove domain"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -1509,11 +1509,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={newDomain}
                 onChange={(e) => setNewDomain(e.target.value)}
                 placeholder="e.g. payments.acme.com or localhost:3000"
-                className="flex-1 bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder-slate-400 rounded-md focus:outline-none focus:border-indigo-600 transition-colors"
+                className="flex-1 bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder-slate-400 rounded-[8px] focus:outline-none focus:border-indigo-600 transition-colors"
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium flex items-center space-x-1.5 rounded-[8px] transition-colors cursor-pointer shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Domain</span>
@@ -1527,7 +1527,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               type="button"
               onClick={() => handleSaveChanges('Domain whitelist updated and saved.')}
               disabled={isSaving || !canManageDomains}
-              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-[8px] transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
               title={!canManageDomains ? "Domain management restricted to Admin and Lead Manager" : undefined}
             >
               <Save className="w-3.5 h-3.5" />
@@ -1540,20 +1540,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 4. Incident Routing & Telemetry Policies Card */}
       {activeTab === 'routing' && (
-      <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 space-y-4 shadow-2xs">
+      <div className="bg-white border border-slate-200 rounded-[12px] card-subtle p-5 space-y-4 shadow-2xs">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center space-x-2">
             <Sliders className="w-4 h-4 text-indigo-600" />
-            <h3 className="text-xs font-mono uppercase font-bold text-slate-900 tracking-wider">
+            <h3 className="text-xs font-mono uppercase font-medium text-slate-900 tracking-wider">
               INCIDENT ROUTING & TELEMETRY POLICIES
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 font-semibold">AUTOMATION & TRIAGE</span>
+          <span className="text-[10px] font-mono text-slate-500 font-medium">AUTOMATION & TRIAGE</span>
         </div>
 
         <div className="space-y-4 font-mono text-xs">
           {!canManagePolicies && (
-            <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center space-x-2.5 shadow-2xs rounded-md">
+            <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center space-x-2.5 shadow-2xs rounded-[8px]">
               <Lock className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
                 <strong>READ-ONLY POLICIES:</strong> Role <strong>{ROLE_METADATA[currentRole]?.label || currentRole}</strong> cannot modify telemetry and routing policies. Only <strong>Admin</strong> and <strong>Lead Manager</strong> can make changes.
@@ -1564,15 +1564,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* Default Squad Assignment */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1.5">
-              <label className="text-slate-600 uppercase text-[10px] font-bold block">
-                Default Squad Assignment {canManagePolicies ? <span className="text-indigo-600 font-bold">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-[12px] space-y-1.5">
+              <label className="text-slate-600 uppercase text-[10px] font-medium block">
+                Default Squad Assignment {canManagePolicies ? <span className="text-indigo-600 font-medium">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
               </label>
               <select
                 value={defaultSquad}
                 onChange={(e) => setDefaultSquad(e.target.value)}
                 disabled={!canManagePolicies || isSaving}
-                className={`w-full border px-2.5 py-1.5 font-bold text-xs rounded-md focus:outline-none ${
+                className={`w-full border px-2.5 py-1.5 font-medium text-xs rounded-[8px] focus:outline-none ${
                   !canManagePolicies 
                     ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
                     : 'bg-white border-slate-300 text-indigo-700 focus:border-indigo-600 cursor-pointer'
@@ -1587,9 +1587,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             {/* User Email Requirement */}
-            <div className={`p-3 border rounded-md flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
+            <div className={`p-3 border rounded-[12px] flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
               <div className="space-y-0.5">
-                <span className="text-slate-900 font-bold block text-xs">Require Reporter Email</span>
+                <span className="text-slate-900 font-medium block text-xs">Require Reporter Email</span>
                 <span className="text-[11px] text-slate-500 block">Enforces valid user email for ticket submission</span>
               </div>
               <input
@@ -1597,14 +1597,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 checked={requireEmail}
                 onChange={(e) => setRequireEmail(e.target.checked)}
                 disabled={!canManagePolicies || isSaving}
-                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-4 h-4 accent-indigo-600 rounded-[6px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             {/* Console Log Capture Toggle */}
-            <div className={`p-3 border rounded-md flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
+            <div className={`p-3 border rounded-[12px] flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
               <div className="space-y-0.5">
-                <span className="text-slate-900 font-bold block text-xs">Auto-Capture Browser Console Logs</span>
+                <span className="text-slate-900 font-medium block text-xs">Auto-Capture Browser Console Logs</span>
                 <span className="text-[11px] text-slate-500 block">Captures console errors and exceptions</span>
               </div>
               <input
@@ -1612,14 +1612,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 checked={autoCaptureTelemetry}
                 onChange={(e) => setAutoCaptureTelemetry(e.target.checked)}
                 disabled={!canManagePolicies || isSaving}
-                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-4 h-4 accent-indigo-600 rounded-[6px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             {/* Network API Failure Capture Toggle */}
-            <div className={`p-3 border rounded-md flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
+            <div className={`p-3 border rounded-[12px] flex items-center justify-between ${!canManagePolicies ? 'bg-slate-100/70 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
               <div className="space-y-0.5">
-                <span className="text-slate-900 font-bold block text-xs">Auto-Capture Network API Failures</span>
+                <span className="text-slate-900 font-medium block text-xs">Auto-Capture Network API Failures</span>
                 <span className="text-[11px] text-slate-500 block">Tracks 4xx/5xx HTTP failures for diagnostics</span>
               </div>
               <input
@@ -1627,7 +1627,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 checked={autoCaptureNetwork}
                 onChange={(e) => setAutoCaptureNetwork(e.target.checked)}
                 disabled={!canManagePolicies || isSaving}
-                className="w-4 h-4 accent-indigo-600 rounded-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-4 h-4 accent-indigo-600 rounded-[6px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
@@ -1639,7 +1639,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               type="button"
               onClick={() => handleSaveChanges('Incident routing and telemetry policies updated.')}
               disabled={isSaving || !canManagePolicies}
-              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-white border border-indigo-200 hover:border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
               title={!canManagePolicies ? "Policy configuration restricted to Admin and Lead Manager" : undefined}
             >
               <Save className="w-3.5 h-3.5" />
@@ -1662,10 +1662,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div>
               <div className="flex items-center flex-wrap gap-2.5">
-                <h3 className="text-sm font-bold text-slate-900 tracking-tight uppercase">
+                <h3 className="text-sm font-medium text-slate-900 tracking-tight uppercase">
                   ROLE-BASED ACCESS CONTROL (DYNAMIC RBAC MATRIX)
                 </h3>
-                <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 font-semibold px-2 py-0.5 uppercase">
+                <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 font-medium px-2 py-0.5 uppercase">
                   5 MODULES • 23 PERMISSIONS
                 </span>
               </div>
@@ -1683,7 +1683,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setPermMatrixView('cards')}
-                  className={`px-3 py-1.5 text-xs uppercase font-mono font-bold transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs uppercase font-mono font-medium transition-colors cursor-pointer ${
                     permMatrixView === 'cards' 
                       ? 'bg-white text-indigo-600 shadow-2xs border border-slate-200' 
                       : 'text-slate-600 hover:text-slate-900'
@@ -1722,7 +1722,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               type="button"
               onClick={handleSavePermissions}
               disabled={isSavingPerms || !canEditPermissions}
-              className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs ${
+              className={`px-4 py-2 text-xs font-mono font-medium uppercase tracking-wider flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs ${
                 hasUnsavedPerms
                   ? 'bg-[#0066FF] hover:bg-blue-600 text-white'
                   : 'bg-[#5046e5] hover:bg-indigo-700 text-white'
@@ -1792,15 +1792,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     {isSelected && (
                       <div className="w-2.5 h-2.5 bg-indigo-600 absolute top-3 right-3" />
                     )}
-                    <div className="text-[10px] font-mono text-slate-500 font-semibold tracking-wider uppercase mb-1">
+                    <div className="text-[10px] font-mono text-slate-500 font-medium tracking-wider uppercase mb-1">
                       {meta.badge}
                     </div>
-                    <div className="text-sm font-bold text-slate-900 mb-2 truncate">
+                    <div className="text-sm font-medium text-slate-900 mb-2 truncate">
                       {meta.label}
                     </div>
                     <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
                       <span>Granted:</span>
-                      <span className="font-bold text-slate-800 font-mono">
+                      <span className="font-medium text-slate-800 font-mono">
                         {rolePermCount} / {permissionDefinitions.length || 23}
                       </span>
                     </div>
@@ -1813,14 +1813,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="bg-white border border-slate-200 p-4 space-y-3">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="flex items-center flex-wrap gap-2">
-                  <h3 className="text-base font-bold text-slate-900">
+                  <h3 className="text-base font-medium text-slate-900">
                     {ROLE_METADATA[selectedRoleForPerms].label}
                   </h3>
-                  <span className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-indigo-700 bg-indigo-50 border border-indigo-200">
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-medium uppercase text-indigo-700 bg-indigo-50 border border-indigo-200">
                     {ROLE_METADATA[selectedRoleForPerms].badge}
                   </span>
                   {selectedRoleForPerms === currentRole && (
-                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-blue-700 bg-blue-100/70 border border-blue-300">
+                    <span className="px-2 py-0.5 text-[10px] font-mono font-medium uppercase text-blue-700 bg-blue-100/70 border border-blue-300">
                       YOUR ACTIVE ROLE
                     </span>
                   )}
@@ -1867,31 +1867,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex items-center flex-wrap gap-4 pt-1 text-xs font-mono">
                 <div className="flex items-center space-x-1.5">
                   <span className="text-slate-600 font-medium">Total Granted:</span>
-                  <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 font-mono font-bold text-slate-800">
+                  <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 font-mono font-medium text-slate-800">
                     {roleStats.granted} / {roleStats.total}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1.5">
                   <span className="text-rose-600 font-medium">Critical Risk:</span>
-                  <span className="px-2 py-0.5 bg-rose-50 border border-rose-300 font-mono font-bold text-rose-600">
+                  <span className="px-2 py-0.5 bg-rose-50 border border-rose-300 font-mono font-medium text-rose-600">
                     {roleStats.critical}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1.5">
                   <span className="text-amber-600 font-medium">High Risk:</span>
-                  <span className="px-2 py-0.5 bg-amber-50 border border-amber-300 font-mono font-bold text-amber-600">
+                  <span className="px-2 py-0.5 bg-amber-50 border border-amber-300 font-mono font-medium text-amber-600">
                     {roleStats.high}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1.5">
                   <span className="text-blue-600 font-medium">Medium Risk:</span>
-                  <span className="px-2 py-0.5 bg-blue-50 border border-blue-300 font-mono font-bold text-blue-600">
+                  <span className="px-2 py-0.5 bg-blue-50 border border-blue-300 font-mono font-medium text-blue-600">
                     {roleStats.medium}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1.5">
                   <span className="text-slate-600 font-medium">Low Risk:</span>
-                  <span className="px-2 py-0.5 bg-slate-50 border border-slate-300 font-mono font-bold text-slate-600">
+                  <span className="px-2 py-0.5 bg-slate-50 border border-slate-300 font-mono font-medium text-slate-600">
                     {roleStats.low}
                   </span>
                 </div>
@@ -1922,7 +1922,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               {/* Module Filter Pills */}
               <div className="flex items-center flex-wrap gap-1.5">
-                <span className="text-[11px] font-mono text-slate-500 font-semibold mr-1">MODULE:</span>
+                <span className="text-[11px] font-mono text-slate-500 font-medium mr-1">MODULE:</span>
                 {(['ALL', 'tickets', 'products', 'tenant', 'permissions', 'audit'] as const).map((modKey) => {
                   const isActive = permFilterModule === modKey;
                   return (
@@ -1932,7 +1932,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onClick={() => setPermFilterModule(modKey)}
                       className={`px-2.5 py-1 text-xs uppercase font-mono transition-colors cursor-pointer ${
                         isActive
-                          ? 'bg-black text-white font-bold'
+                          ? 'bg-black text-white font-medium'
                           : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
@@ -1944,7 +1944,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               {/* Risk Selector */}
               <div className="flex items-center space-x-1.5 shrink-0">
-                <span className="text-[11px] font-mono text-slate-500 font-semibold">RISK:</span>
+                <span className="text-[11px] font-mono text-slate-500 font-medium">RISK:</span>
                 <select
                   value={permFilterRisk}
                   onChange={(e) => setPermFilterRisk(e.target.value)}
@@ -1977,10 +1977,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2.5">
                           <ModIcon className="w-4 h-4 text-indigo-600 shrink-0" />
-                          <h4 className="font-bold text-slate-900 text-sm">
+                          <h4 className="font-medium text-slate-900 text-sm">
                             {modMeta.label}
                           </h4>
-                          <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                          <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 font-medium">
                             {grantedInMod} / {defs.length} Granted
                           </span>
                         </div>
@@ -2051,10 +2051,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             {/* Card Content: Title, Risk Badge, Description */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs font-bold text-slate-900 leading-tight">
+                                <span className="text-xs font-medium text-slate-900 leading-tight">
                                   {def.name}
                                 </span>
-                                <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 border ${
+                                <span className={`text-[9px] font-mono font-medium uppercase px-1.5 py-0.5 border ${
                                   def.riskLevel === 'CRITICAL'
                                     ? 'bg-rose-50 text-rose-700 border-rose-200'
                                     : def.riskLevel === 'HIGH'
@@ -2089,11 +2089,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <table className="w-full text-left border-collapse table-auto">
               <thead>
                 <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-wider">
-                  <th className="p-2.5 border-b border-slate-800 font-bold">
+                  <th className="p-2.5 border-b border-slate-800 font-medium">
                     MODULE & PERMISSION KEY
                   </th>
                   {ALL_SYSTEM_ROLES.map(role => (
-                    <th key={role} className="p-2 border-b border-slate-800 text-center font-bold">
+                    <th key={role} className="p-2 border-b border-slate-800 text-center font-medium">
                       <div className="truncate text-[11px]">{ROLE_METADATA[role].label}</div>
                       <div className="text-[8px] text-slate-400 font-normal">{ROLE_METADATA[role].badge}</div>
                     </th>
@@ -2108,7 +2108,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   return (
                     <React.Fragment key={modKey}>
                       {/* Module Sub-Header */}
-                      <tr className="bg-slate-100 font-bold text-slate-800">
+                      <tr className="bg-slate-100 font-medium text-slate-800">
                         <td colSpan={7} className="px-3 py-2 text-[11px] uppercase tracking-wide bg-slate-100 border-y border-slate-200">
                           <span className="text-indigo-700 mr-2">[{modKey.toUpperCase()}]</span>
                           {modMeta.label}
@@ -2118,12 +2118,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       {defs.map((def) => (
                         <tr key={def.key} className="hover:bg-slate-50 transition-colors">
                           <td className="p-3 align-middle">
-                            <div className="font-bold text-slate-900 text-xs">{def.name}</div>
+                            <div className="font-medium text-slate-900 text-xs">{def.name}</div>
                             <div className="flex items-center space-x-2 mt-0.5">
                               <code className="text-[10px] text-indigo-700 bg-slate-50 px-1 border border-slate-200 font-medium">
                                 {def.key}
                               </code>
-                              <span className={`px-1 text-[8px] uppercase font-bold border ${
+                              <span className={`px-1 text-[8px] uppercase font-medium border ${
                                 def.riskLevel === 'CRITICAL' ? 'bg-rose-50 text-rose-800 border-rose-300' :
                                 def.riskLevel === 'HIGH' ? 'bg-amber-50 text-amber-800 border-amber-300' :
                                 def.riskLevel === 'MEDIUM' ? 'bg-blue-50 text-blue-800 border-blue-300' :
@@ -2181,7 +2181,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
             <div className="flex items-center space-x-2">
               <Zap className="w-4 h-4 text-indigo-600" />
-              <span className="font-semibold text-slate-900 text-xs">
+              <span className="font-medium text-slate-900 text-xs">
                 Live Policy Evaluator & Permission Simulator
               </span>
             </div>
@@ -2193,7 +2193,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Test Role Picker */}
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-500 uppercase font-semibold block">
+              <label className="text-[10px] text-slate-500 uppercase font-medium block">
                 1. Test Subject Role
               </label>
               <select
@@ -2211,7 +2211,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {/* Test Permission Action Picker */}
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-500 uppercase font-semibold block">
+              <label className="text-[10px] text-slate-500 uppercase font-medium block">
                 2. Target Operation / Permission Key
               </label>
               <select
@@ -2247,7 +2247,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ) : (
                       <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
                     )}
-                    <span className="font-semibold text-xs">
+                    <span className="font-medium text-xs">
                       {isTestAuthorized ? 'ACCESS GRANTED (HTTP 200)' : 'ACCESS DENIED (HTTP 403 FORBIDDEN)'}
                     </span>
                   </div>
@@ -2292,7 +2292,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               type="button"
               onClick={handleSavePermissions}
               disabled={isSavingPerms}
-              className={`px-5 py-1.5 text-white font-semibold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 ${
+              className={`px-5 py-1.5 text-white font-medium flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 ${
                 hasUnsavedPerms ? 'bg-[#0066FF] hover:bg-blue-600' : 'bg-slate-900 hover:bg-slate-800'
               }`}
             >
@@ -2311,7 +2311,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div className="flex items-center space-x-2">
             <Terminal className="w-4 h-4 text-indigo-600" />
-            <h3 className="text-xs font-mono uppercase font-bold text-slate-900 tracking-wider">
+            <h3 className="text-xs font-mono uppercase font-medium text-slate-900 tracking-wider">
               CLIENT EMBED SCRIPT & LIVE VERIFICATION
             </h3>
           </div>
@@ -2364,7 +2364,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 setCopiedSnippet(true);
                 setTimeout(() => setCopiedSnippet(false), 2000);
               }}
-              className="absolute top-2.5 right-2.5 px-3 py-1.5 bg-[#152042] border border-[#23356D] hover:border-slate-500 text-slate-200 hover:text-white text-xs flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer font-semibold"
+              className="absolute top-2.5 right-2.5 px-3 py-1.5 bg-[#152042] border border-[#23356D] hover:border-slate-500 text-slate-200 hover:text-white text-xs flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer font-medium"
             >
               {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedSnippet ? 'COPIED' : 'COPY SCRIPT'}</span>
@@ -2381,21 +2381,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Server className="w-4 h-4 text-emerald-600" />
-                  <span className="font-bold">
+                  <span className="font-medium">
                     INGESTION BRIDGE STATUS: {pingStatus.online ? 'ONLINE & READY' : 'OFFLINE / UNREACHABLE'}
                   </span>
                 </div>
                 {pingStatus.latencyMs && (
-                  <span className="text-[11px] font-semibold text-emerald-700">
+                  <span className="text-[11px] font-medium text-emerald-700">
                     ROUNDTRIP: {pingStatus.latencyMs}ms
                   </span>
                 )}
               </div>
               {pingStatus.details && (
                 <div className="mt-2 text-[11px] text-slate-600 space-y-0.5">
-                  <p>• Verified Origin: <code className="text-slate-900 font-semibold">{pingStatus.details.client_origin}</code></p>
-                  <p>• Isolation Standard: <code className="text-emerald-700 font-semibold">{pingStatus.details.isolation}</code></p>
-                  <p>• Active Products Monitored: <code className="text-indigo-700 font-semibold">{pingStatus.details.total_products}</code></p>
+                  <p>• Verified Origin: <code className="text-slate-900 font-medium">{pingStatus.details.client_origin}</code></p>
+                  <p>• Isolation Standard: <code className="text-emerald-700 font-medium">{pingStatus.details.isolation}</code></p>
+                  <p>• Active Products Monitored: <code className="text-indigo-700 font-medium">{pingStatus.details.total_products}</code></p>
                 </div>
               )}
             </div>
@@ -2425,7 +2425,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={() => handleSaveChanges()}
             disabled={isSaving || (!canSaveAnyTenantSettings && !hasUnsavedPerms)}
-            className="px-6 py-2.5 bg-[#0066FF] hover:bg-blue-600 text-white font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 bg-[#0066FF] hover:bg-blue-600 text-white font-medium flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             title={!canSaveAnyTenantSettings && !hasUnsavedPerms ? "Settings modification restricted to Admin and Lead Manager" : undefined}
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

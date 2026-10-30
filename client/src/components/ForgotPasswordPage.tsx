@@ -53,17 +53,17 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackTo
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white text-neutral-900 rounded-lg p-8 sm:p-10 shadow-2xl border border-neutral-200/80">
+        <div className="bg-white text-neutral-900 rounded-[12px] p-8 sm:p-10 shadow-2xl border border-neutral-200/80">
           
           {/* Header in Card */}
           <div className="flex items-center space-x-3 pb-3 border-b border-neutral-100">
-            <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-mono font-medium text-xs shadow-sm">
+            <div className="w-8 h-8 bg-blue-600 rounded-[8px] flex items-center justify-center text-white font-mono font-medium text-xs shadow-sm">
               FH
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
-                <span className="font-semibold tracking-tight text-neutral-800 text-sm">FEEDBACK-HUB</span>
-                <span className="px-1.5 py-0.5 text-[9px] font-mono font-medium bg-blue-50 text-blue-700 rounded border border-blue-200">
+                <span className="font-medium tracking-tight text-neutral-800 text-sm">FEEDBACK-HUB</span>
+                <span className="px-1.5 py-0.5 text-[9px] font-mono font-medium bg-blue-50 text-blue-700 rounded-[6px] border border-blue-200">
                   RESET
                 </span>
               </div>
@@ -83,10 +83,10 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackTo
 
           {/* Success Banner */}
           {successMessage && (
-            <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-800 text-xs flex items-start space-x-2.5 animate-in fade-in duration-200">
+            <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-[8px] text-emerald-800 text-xs flex items-start space-x-2.5 animate-in fade-in duration-200">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-600" />
               <div className="space-y-1">
-                <span className="font-semibold block">Instructions Dispatched</span>
+                <span className="font-medium block">Instructions Dispatched</span>
                 <p className="text-emerald-700 leading-relaxed">{successMessage}</p>
                 <p className="text-[11px] text-emerald-600 font-mono pt-1">
                   The reset link remains active for 15 minutes.
@@ -97,7 +97,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackTo
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs flex items-start space-x-2 animate-in fade-in duration-200">
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-xs flex items-start space-x-2 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-500" />
               <div className="flex-1">
                 <span className="font-medium block">Error</span>
@@ -126,7 +126,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackTo
                     onChange={(e) => setTenantSlug(e.target.value)}
                     placeholder="e.g. acme-payments"
                     disabled={isSubmitting}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-[8px] text-neutral-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -149,7 +149,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackTo
                     disabled={isSubmitting}
                     required
                     autoFocus
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-[8px] text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -158,7 +158,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackTo
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
+                  className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-[8px] shadow-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
                 >
                   {isSubmitting ? (
                     <>
@@ -177,7 +177,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackTo
               <button
                 type="button"
                 onClick={onBackToLogin}
-                className="w-full py-2.5 px-4 bg-neutral-900 hover:bg-black text-white font-medium text-xs rounded-md shadow-sm transition-all flex items-center justify-center space-x-2"
+                className="w-full py-2.5 px-4 bg-neutral-900 hover:bg-black text-white font-medium text-xs rounded-[8px] shadow-sm transition-all flex items-center justify-center space-x-2"
               >
                 <span>Return to Sign In</span>
               </button>
