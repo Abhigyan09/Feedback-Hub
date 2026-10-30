@@ -750,7 +750,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-[#f4f6fb] text-slate-800 font-sans">
+    <div className="h-screen w-full flex overflow-hidden bg-[#f0f5fa] text-slate-800 font-sans">
       
       {/* Sleek Dark Left Sidebar - Fixed at left, independent vertical scroll */}
       <Sidebar
@@ -767,7 +767,7 @@ const Dashboard: React.FC = () => {
       />
 
       {/* Main App Column: Header fixed at top, independent scrollable content below */}
-      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-[#f4f6fb]">
+      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-[#f0f5fa]">
         
         {/* Dynamic Dashboard Header - Fixed at top of main area */}
         <DashboardHeader
@@ -789,6 +789,8 @@ const Dashboard: React.FC = () => {
           onOpenSimulator={() => setIsSimulatorOpen(true)}
           onSeedDemo={handleSeedDemo}
           onClearTickets={handleClearTickets}
+          onSelectTicket={(ticket) => setSelectedTicket(ticket)}
+          onSelectView={(view) => setCurrentView(view)}
         />
 
         {/* Real-time Incident Alert Banner */}
@@ -811,7 +813,7 @@ const Dashboard: React.FC = () => {
         <div 
           ref={scrollContainerRef}
           id="main-scroll-container"
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col bg-[#f4f6fb] main-content-scroll"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col bg-[#f0f5fa] main-content-scroll"
         >
 
         {/* VIEW 1: DASHBOARD (Edge-to-Edge Observability & Incident Workspace) */}

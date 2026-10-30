@@ -60,10 +60,10 @@ export const TicketList: React.FC<TicketListProps> = ({
     // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchTitle = t.title.toLowerCase().includes(q);
-      const matchCode = t.short_code.toLowerCase().includes(q);
-      const matchReporter = t.reporter_email.toLowerCase().includes(q);
-      const matchSquad = t.assigned_squad.toLowerCase().includes(q);
+      const matchTitle = (t.title || '').toLowerCase().includes(q);
+      const matchCode = (t.short_code || '').toLowerCase().includes(q);
+      const matchReporter = (t.reporter_email || '').toLowerCase().includes(q);
+      const matchSquad = (t.assigned_squad || '').toLowerCase().includes(q);
       const matchProduct = (t.product_name || '').toLowerCase().includes(q);
       if (!matchTitle && !matchCode && !matchReporter && !matchSquad && !matchProduct) return false;
     }
@@ -317,8 +317,14 @@ export const TicketList: React.FC<TicketListProps> = ({
         /* Modern, Clean Ticket Rows List */
         <div className="border border-slate-200 divide-y divide-slate-200 bg-white shadow-2xs rounded-md card-subtle overflow-hidden">
           {filteredTickets.map((ticket) => {
-            const domain = ticket.domain_origin || 
-              (ticket.telemetry?.page_url ? new URL(ticket.telemetry.page_url).hostname : 'client.app');
+            let domain = ticket.domain_origin || 'client.app';
+            if (!ticket.domain_origin && ticket.telemetry?.page_url) {
+              try {
+                domain = new URL(ticket.telemetry.page_url).hostname;
+              } catch {
+                domain = 'api.telemetry';
+              }
+            }
 
             return (
               <div

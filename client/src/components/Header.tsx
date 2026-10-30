@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { AuthenticatedUser, Tenant, UserRole } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { AuthenticatedUser, Tenant, UserRole, Ticket } from '../types';
+import { NotificationPanel } from './NotificationPanel';
 import { 
   Building2, 
   Shield, 
@@ -22,6 +23,9 @@ export interface HeaderProps {
   onOpenWidgetSimulator: () => void;
   onNewIncidentClick?: () => void;
   onLogout?: () => void;
+  tickets?: Ticket[];
+  onSelectTicket?: (ticket: Ticket) => void;
+  onSelectView?: (view: any) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,9 +38,60 @@ export const Header: React.FC<HeaderProps> = ({
   onRoleChange,
   onOpenWidgetSimulator,
   onNewIncidentClick,
-  onLogout
+  onLogout,
+  tickets = [],
+  onSelectTicket,
+  onSelectView
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('fb_read_notifications');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const handleMarkAsRead = (ticketId: string) => {
+    setReadNotificationIds(prev => {
+      const next = new Set(prev).add(ticketId);
+      try {
+        localStorage.setItem('fb_read_notifications', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleMarkAllAsRead = () => {
+    setReadNotificationIds(prev => {
+      const allIds = tickets.map(t => t.id);
+      const next = new Set([...prev, ...allIds]);
+      try {
+        localStorage.setItem('fb_read_notifications', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  const unreadCount = useMemo(() => {
+    return tickets.filter(
+      t => !readNotificationIds.has(t.id) && t.status !== 'RESOLVED' && t.status !== 'CLOSED'
+    ).length;
+  }, [tickets, readNotificationIds]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (notificationMenuRef.current && !notificationMenuRef.current.contains(e.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -171,14 +226,47 @@ export const Header: React.FC<HeaderProps> = ({
             <span>New Incident</span>
           </button>
 
-          {/* Notification Bell */}
-          <button 
-            type="button"
-            className="p-2 bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors cursor-pointer shadow-2xs"
-            title="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-          </button>
+          {/* Notification Bell with Dropdown Container */}
+          <div className="relative shrink-0" ref={notificationMenuRef}>
+            <button 
+              type="button"
+              onClick={() => setIsNotificationsOpen(prev => !prev)}
+              aria-label="Alerts and Notifications"
+              aria-expanded={isNotificationsOpen}
+              className={`p-2 border transition-colors cursor-pointer shadow-2xs relative ${
+                isNotificationsOpen
+                  ? 'bg-purple-50 border-purple-300 text-purple-700'
+                  : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-in zoom-in duration-150">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {isNotificationsOpen && (
+              <NotificationPanel
+                tickets={tickets}
+                unreadCount={unreadCount}
+                readNotificationIds={readNotificationIds}
+                onMarkAsRead={handleMarkAsRead}
+                onMarkAllAsRead={handleMarkAllAsRead}
+                onSelectTicket={(ticket) => {
+                  onSelectTicket?.(ticket);
+                  setIsNotificationsOpen(false);
+                }}
+                onViewAllTickets={() => {
+                  setIsNotificationsOpen(false);
+                  onSelectView?.('total-tickets');
+                }}
+                onClose={() => setIsNotificationsOpen(false)}
+              />
+            )}
+          </div>
 
           {/* User Profile Info Badge */}
           <div className="flex items-center space-x-2 pl-1 border-l border-slate-200">
