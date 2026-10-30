@@ -46,6 +46,32 @@ export const Header: React.FC<HeaderProps> = ({
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
+  const notificationCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleNotificationMouseEnter = () => {
+    if (notificationCloseTimerRef.current) {
+      clearTimeout(notificationCloseTimerRef.current);
+      notificationCloseTimerRef.current = null;
+    }
+    setIsNotificationsOpen(true);
+  };
+
+  const handleNotificationMouseLeave = () => {
+    if (notificationCloseTimerRef.current) {
+      clearTimeout(notificationCloseTimerRef.current);
+    }
+    notificationCloseTimerRef.current = setTimeout(() => {
+      setIsNotificationsOpen(false);
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (notificationCloseTimerRef.current) {
+        clearTimeout(notificationCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
     try {
@@ -227,10 +253,21 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Notification Bell with Dropdown Container */}
-          <div className="relative shrink-0" ref={notificationMenuRef}>
+          <div 
+            className="relative shrink-0" 
+            ref={notificationMenuRef}
+            onMouseEnter={handleNotificationMouseEnter}
+            onMouseLeave={handleNotificationMouseLeave}
+          >
             <button 
               type="button"
-              onClick={() => setIsNotificationsOpen(prev => !prev)}
+              onClick={() => {
+                if (notificationCloseTimerRef.current) {
+                  clearTimeout(notificationCloseTimerRef.current);
+                  notificationCloseTimerRef.current = null;
+                }
+                setIsNotificationsOpen(prev => !prev);
+              }}
               aria-label="Alerts and Notifications"
               aria-expanded={isNotificationsOpen}
               className={`p-2 border rounded-md transition-colors cursor-pointer shadow-2xs relative ${

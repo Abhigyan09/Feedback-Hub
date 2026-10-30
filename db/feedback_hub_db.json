@@ -1720,9 +1720,64 @@
       "tenant_id": "tenant-acme-corp-001",
       "token_hash": "c34b3ebc8f3dfcd1c2e28500f3586ccb1f3b49f28fb89e02c35de7f122c937cf",
       "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
-      "is_revoked": false,
+      "is_revoked": true,
       "expires_at": "2026-11-06T18:04:45.671Z",
       "created_at": "2026-10-30T18:04:45.711Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793383668178-3xnv03",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "012adb8e9f080af034702057632fdc06d630bcea0901c807c6374b7a68b04796",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:07:48.176Z",
+      "created_at": "2026-10-30T18:07:48.179Z",
+      "replaced_by_token_hash": "84fdb08ce0a4ab2da1e650c83d0b229b75cc89644316a2f0739d0ac487ffd2ed"
+    },
+    {
+      "id": "rt-1793384484427-m3uo1e",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "84fdb08ce0a4ab2da1e650c83d0b229b75cc89644316a2f0739d0ac487ffd2ed",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:21:24.387Z",
+      "created_at": "2026-10-30T18:21:24.428Z",
+      "replaced_by_token_hash": "e64c799862eb75699d2ebd21d6c7b0121c0337505607b610fd3deea29262c106"
+    },
+    {
+      "id": "rt-1793384579101-vd0gkv",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "e64c799862eb75699d2ebd21d6c7b0121c0337505607b610fd3deea29262c106",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:22:59.088Z",
+      "created_at": "2026-10-30T18:22:59.102Z",
+      "replaced_by_token_hash": "49727dffe4d7a58d7b4273ffc1b62272339875e8c61f9413170620e0fb17cc14"
+    },
+    {
+      "id": "rt-1793384593932-lwovf7",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "49727dffe4d7a58d7b4273ffc1b62272339875e8c61f9413170620e0fb17cc14",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:23:13.913Z",
+      "created_at": "2026-10-30T18:23:13.932Z",
+      "replaced_by_token_hash": "d2e67f5dd9b28aa08b40c6b8caff1a55bfc9ea00e78364bd58b1bfc63b45ef09"
+    },
+    {
+      "id": "rt-1793384676124-zhra2u",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "d2e67f5dd9b28aa08b40c6b8caff1a55bfc9ea00e78364bd58b1bfc63b45ef09",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": false,
+      "expires_at": "2026-11-06T18:24:36.090Z",
+      "created_at": "2026-10-30T18:24:36.124Z",
       "replaced_by_token_hash": null
     }
   ],
@@ -2033,5 +2088,5 @@
       }
     }
   },
-  "last_updated": "2026-10-30T18:04:45.711Z"
+  "last_updated": "2026-10-30T18:24:36.124Z"
 }

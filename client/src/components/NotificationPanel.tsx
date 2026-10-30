@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Bell, 
   X, 
@@ -181,30 +181,30 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
   return (
     <>
-      {/* Light Translucent Overlay with Subtle Background Blur */}
+      {/* Mobile backdrop only - on desktop (sm:), hover & mousedown handle close smoothly without an event-blocking overlay */}
       <div 
-        className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-50 transition-opacity animate-in fade-in duration-200"
+        className="sm:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-50 transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Main Notification Panel Container */}
       <div 
-        className="fixed sm:absolute top-16 sm:top-full left-3 right-3 sm:left-auto sm:right-0 sm:mt-2 w-auto sm:w-[420px] max-w-[440px] max-h-[82vh] sm:max-h-[580px] bg-white border border-slate-200 shadow-2xl z-[60] animate-in fade-in slide-in-from-top-2 duration-150 rounded-[2px] flex flex-col overflow-hidden text-left font-sans select-none"
+        className="fixed sm:absolute top-16 sm:top-full left-3 right-3 sm:left-auto sm:right-0 sm:mt-2 w-auto sm:w-[420px] max-w-[440px] max-h-[82vh] sm:max-h-[580px] bg-white border border-slate-200 shadow-2xl z-[60] animate-in fade-in slide-in-from-top-2 duration-150 rounded-xl flex flex-col overflow-hidden text-left font-sans select-none before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3"
         role="dialog"
         aria-label="Notifications panel"
       >
         {/* Panel Header */}
         <div className="px-4 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-[2px] bg-purple-100 text-purple-700 flex items-center justify-center border border-purple-200">
+            <div className="w-6 h-6 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center border border-purple-200">
               <Bell className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-900 tracking-tight flex items-center space-x-1.5">
+              <h3 className="text-xs font-semibold text-slate-900 tracking-tight flex items-center space-x-1.5">
                 <span>Alerts & Notifications</span>
                 {unreadCount > 0 && (
-                  <span className="px-1.5 py-0.2 bg-red-100 border border-red-200 text-red-700 text-[10px] font-mono font-bold rounded-full">
+                  <span className="px-1.5 py-0.2 bg-red-100 border border-red-200 text-red-700 text-[10px] font-mono font-medium rounded-full">
                     {unreadCount} new
                   </span>
                 )}
@@ -218,7 +218,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 type="button"
                 onClick={onMarkAllAsRead}
                 title="Mark all notifications as read"
-                className="text-[11px] text-purple-700 hover:text-purple-900 font-medium flex items-center space-x-1 px-2 py-1 rounded-[2px] hover:bg-purple-50 transition-colors cursor-pointer"
+                className="text-[11px] text-purple-700 hover:text-purple-900 font-medium flex items-center space-x-1 px-2.5 py-1 rounded-md hover:bg-purple-100/70 transition-colors cursor-pointer"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 <span>Mark all read</span>
@@ -228,7 +228,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close notifications panel"
-              className="p-1 rounded-[2px] text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -237,11 +237,11 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
         {/* Filter Navigation Tabs */}
         <div className="px-4 pt-2.5 pb-2 border-b border-slate-100 flex items-center justify-between text-xs font-medium shrink-0 bg-white">
-          <div className="flex items-center space-x-1 bg-slate-100/80 p-0.5 rounded-[2px] border border-slate-200/60">
+          <div className="flex items-center space-x-1 bg-slate-100/80 p-0.5 rounded-md border border-slate-200/60">
             <button
               type="button"
               onClick={() => setFilter('all')}
-              className={`px-3 py-1 text-xs font-semibold rounded-[2px] transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
                 filter === 'all'
                   ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
                   : 'text-slate-500 hover:text-slate-800'
@@ -252,7 +252,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
             <button
               type="button"
               onClick={() => setFilter('unread')}
-              className={`px-3 py-1 text-xs font-semibold rounded-[2px] transition-all cursor-pointer flex items-center space-x-1.5 ${
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center space-x-1.5 ${
                 filter === 'unread'
                   ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
                   : 'text-slate-500 hover:text-slate-800'
@@ -276,11 +276,11 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         <div className="flex-1 overflow-y-auto divide-y divide-slate-100 max-h-[380px] bg-[#fafbfd]">
           {filteredNotifications.length === 0 ? (
             <div className="py-12 px-6 text-center space-y-3 bg-white">
-              <div className="w-10 h-10 rounded-[2px] bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
                 <CheckCheck className="w-5 h-5 text-emerald-600" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wide">
+                <h4 className="text-xs font-semibold text-slate-900 uppercase font-mono tracking-wide">
                   {filter === 'unread' ? 'All Caught Up!' : 'No Notifications'}
                 </h4>
                 <p className="text-[11px] text-slate-500 max-w-[260px] mx-auto leading-relaxed">
@@ -313,7 +313,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   }`}
                 >
                   {/* Left Icon Badge */}
-                  <div className={`w-7 h-7 rounded-[2px] flex items-center justify-center shrink-0 border mt-0.5 shadow-2xs ${badgeClass}`}>
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border mt-0.5 shadow-2xs ${badgeClass}`}>
                     <Icon className="w-3.5 h-3.5" />
                   </div>
 
@@ -322,13 +322,13 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     {/* Header Row: Short Code, Badges, Time */}
                     <div className="flex items-center justify-between gap-1 flex-wrap">
                       <div className="flex items-center space-x-1.5 min-w-0">
-                        <span className="font-mono text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1 py-0.2 rounded-[2px]">
+                        <span className="font-mono text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-md">
                           {item.shortCode}
                         </span>
                         
-                        <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.2 rounded-[2px] border ${
+                        <span className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded-md border ${
                           item.severity === 'Urgent' 
-                            ? 'bg-red-50 text-red-700 border-red-200 font-bold' 
+                            ? 'bg-red-50 text-red-700 border-red-200 font-semibold' 
                             : item.severity === 'High' 
                             ? 'bg-amber-50 text-amber-700 border-amber-200' 
                             : 'bg-slate-50 text-slate-600 border-slate-200'
@@ -355,7 +355,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     </div>
 
                     {/* Title */}
-                    <h4 className="text-xs font-semibold text-slate-900 group-hover:text-purple-700 transition-colors line-clamp-1 leading-snug">
+                    <h4 className="text-xs font-medium text-slate-900 group-hover:text-purple-700 transition-colors line-clamp-1 leading-snug">
                       {item.title}
                     </h4>
 
@@ -381,7 +381,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                       </div>
 
                       {item.slaWarning && (
-                        <span className={`inline-flex items-center space-x-1 px-1.5 py-0.2 rounded-[2px] font-mono text-[10px] font-semibold border ${
+                        <span className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-md font-mono text-[10px] font-medium border ${
                           item.type === 'sla_breached' 
                             ? 'bg-rose-50 text-rose-700 border-rose-200' 
                             : 'bg-amber-50 text-amber-700 border-amber-200'
@@ -402,7 +402,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                         e.stopPropagation();
                         onMarkAsRead(item.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200/70 text-slate-400 hover:text-purple-700 rounded-[2px] transition-all cursor-pointer shrink-0"
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200/70 text-slate-400 hover:text-purple-700 rounded-md transition-all cursor-pointer shrink-0"
                     >
                       <Check className="w-3.5 h-3.5" />
                     </button>
@@ -425,7 +425,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 onViewAllTickets();
                 onClose();
               }}
-              className="text-[11px] text-purple-700 hover:text-purple-900 font-semibold flex items-center space-x-1 cursor-pointer transition-colors"
+              className="text-[11px] text-purple-700 hover:text-purple-900 font-medium flex items-center space-x-1 cursor-pointer transition-colors px-2 py-1 rounded-md hover:bg-purple-50"
             >
               <span>View Total Tickets</span>
               <ChevronRight className="w-3.5 h-3.5" />

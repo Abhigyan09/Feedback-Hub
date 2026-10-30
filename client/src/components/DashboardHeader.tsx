@@ -80,6 +80,32 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const tenantMenuRef = useRef<HTMLDivElement>(null);
   const roleMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
+  const notificationCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleNotificationMouseEnter = () => {
+    if (notificationCloseTimerRef.current) {
+      clearTimeout(notificationCloseTimerRef.current);
+      notificationCloseTimerRef.current = null;
+    }
+    setIsNotificationsOpen(true);
+  };
+
+  const handleNotificationMouseLeave = () => {
+    if (notificationCloseTimerRef.current) {
+      clearTimeout(notificationCloseTimerRef.current);
+    }
+    notificationCloseTimerRef.current = setTimeout(() => {
+      setIsNotificationsOpen(false);
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (notificationCloseTimerRef.current) {
+        clearTimeout(notificationCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   // Read notifications tracking with localStorage persistence
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
@@ -322,10 +348,21 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             )}
 
             {/* Notification Bell with Dropdown Container */}
-            <div className="relative shrink-0" ref={notificationMenuRef}>
+            <div 
+              className="relative shrink-0" 
+              ref={notificationMenuRef}
+              onMouseEnter={handleNotificationMouseEnter}
+              onMouseLeave={handleNotificationMouseLeave}
+            >
               <button
                 type="button"
-                onClick={() => setIsNotificationsOpen(prev => !prev)}
+                onClick={() => {
+                  if (notificationCloseTimerRef.current) {
+                    clearTimeout(notificationCloseTimerRef.current);
+                    notificationCloseTimerRef.current = null;
+                  }
+                  setIsNotificationsOpen(prev => !prev);
+                }}
                 title="Alerts and Notifications"
                 aria-label="Alerts and Notifications"
                 aria-expanded={isNotificationsOpen}
