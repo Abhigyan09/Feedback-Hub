@@ -75,7 +75,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
   };
 
   return (
-    <div className="min-h-screen w-full relative flex items-center justify-center p-4 sm:p-6 lg:p-10 overflow-x-hidden bg-[#0a0c10]">
+    <div className="min-h-screen w-full relative flex items-center justify-center p-3 sm:p-5 lg:p-6 overflow-y-auto bg-[#0a0c10]">
       {/* Background Ambience & Lighting */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Soft radial glow simulating executive dusk resort/tech atmosphere */}
@@ -94,39 +94,39 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
       </div>
 
       {/* Main Container: 2-Column Responsive Layout */}
-      <div className="relative z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      <div className="relative z-10 w-full max-w-5xl my-auto py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
         
         {/* ============================================================== */}
         {/* LEFT COLUMN: BRANDING & PLATFORM INTRO                         */}
         {/* ============================================================== */}
-        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-8 lg:pr-6">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center space-y-5 lg:pr-4">
           
           {/* Brand Header & Live Stream Status */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3.5">
-              <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-md flex items-center justify-center text-white font-mono font-medium text-base shadow-lg shadow-blue-500/30 border border-blue-400/30">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-md flex items-center justify-center text-white font-mono font-medium text-sm shadow-lg shadow-blue-500/30 border border-blue-400/30">
                 FH
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium tracking-tight text-white text-base">FEEDBACK-HUB</span>
-                  <span className="px-2 py-0.5 text-[10px] font-mono tracking-wider font-normal border border-blue-500/30 bg-blue-500/10 text-blue-300 rounded">
+                  <span className="font-medium tracking-tight text-white text-sm">FEEDBACK-HUB</span>
+                  <span className="px-1.5 py-0.5 text-[9px] font-mono tracking-wider font-normal border border-blue-500/30 bg-blue-500/10 text-blue-300 rounded">
                     ENTERPRISE
                   </span>
                 </div>
-                <p className="text-xs text-neutral-400 font-mono">Incident Bridge & Observability Platform</p>
+                <p className="text-[11px] text-neutral-400 font-mono">Incident Bridge & Observability Platform</p>
               </div>
             </div>
 
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+            <div className="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
               <span>Multi-Tenant RLS & Live Incident Stream</span>
             </div>
           </div>
 
           {/* Primary Hero Heading & Narrative */}
-          <div className="space-y-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-[1.18] min-h-[2.4em]">
+          <div className="space-y-3">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight text-white leading-[1.2] min-h-[2.2em]">
               {displayedPart1}
               {displayedPart1 === fullPart1 && ' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-200">
@@ -137,26 +137,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
               )}
             </h1>
 
-            <div className="flex space-x-3.5">
+            <div className="flex space-x-3">
               <div className="w-0.5 bg-gradient-to-b from-blue-500 via-indigo-500 to-transparent rounded-full flex-shrink-0" />
-              <p className="text-neutral-300/90 text-sm sm:text-base font-normal leading-relaxed max-w-xl">
+              <p className="text-neutral-300/90 text-xs sm:text-sm font-normal leading-relaxed max-w-lg">
                 Collect feedback, track issues, collaborate with your team, and turn insights into meaningful improvements.
               </p>
             </div>
           </div>
 
           {/* Feature Badges Footer */}
-          <div className="pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
               <span>Bank-Grade AES</span>
             </div>
             <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
-              <Layers className="w-4 h-4 text-blue-400 flex-shrink-0" />
+              <Layers className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
               <span>Tenant Isolation</span>
             </div>
             <div className="flex items-center space-x-2 text-xs font-mono text-neutral-300 font-normal">
-              <Zap className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+              <Zap className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
               <span>Real-Time Sync</span>
             </div>
           </div>
@@ -166,42 +166,42 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
         {/* ============================================================== */}
         {/* RIGHT COLUMN: LOGIN CARD                                       */}
         {/* ============================================================== */}
-        <div className="lg:col-span-6 xl:col-span-5">
+        <div className="lg:col-span-6 xl:col-span-5 w-full max-w-md mx-auto">
           
           {/* Main Login Card: Square with subtle rounding */}
-          <div className="bg-white text-neutral-900 rounded-lg p-8 sm:p-10 shadow-2xl border border-neutral-200/80">
+          <div className="bg-white text-neutral-900 rounded-lg p-5 sm:p-6 shadow-2xl border border-neutral-200/80">
             
             {/* Header in Card */}
-            <div className="flex items-center space-x-3 pb-3 border-b border-neutral-100">
-              <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-mono font-medium text-xs shadow-sm">
+            <div className="flex items-center space-x-2.5 pb-2.5 border-b border-neutral-100">
+              <div className="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-mono font-medium text-xs shadow-sm">
                 FH
               </div>
               <div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="font-semibold tracking-tight text-neutral-800 text-sm">FEEDBACK-HUB</span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-mono font-medium bg-blue-50 text-blue-700 rounded border border-blue-200">
+                  <span className="font-semibold tracking-tight text-neutral-800 text-xs">FEEDBACK-HUB</span>
+                  <span className="px-1 py-0.2 text-[9px] font-mono font-medium bg-blue-50 text-blue-700 rounded border border-blue-200">
                     ERP
                   </span>
                 </div>
-                <p className="text-[11px] text-neutral-500">Enterprise Incident Management</p>
+                <p className="text-[10px] text-neutral-500">Enterprise Incident Management</p>
               </div>
             </div>
 
             {/* Form Titles: Lighter font weight */}
-            <div className="pt-4 pb-1">
-              <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-neutral-900">
+            <div className="pt-2.5 pb-0.5">
+              <h2 className="text-lg sm:text-xl font-medium tracking-tight text-neutral-900">
                 Sign in to your account
               </h2>
-              <p className="text-xs text-neutral-500 mt-1">
+              <p className="text-xs text-neutral-500 mt-0.5">
                 Welcome back! Please enter your details to continue.
               </p>
             </div>
 
             {/* Error Message Alert */}
             {errorMessage && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs flex items-start space-x-2 animate-in fade-in duration-200">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-500" />
-                <div className="flex-1">
+              <div className="mt-2 p-2.5 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs flex items-start space-x-2 animate-in fade-in duration-200">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-500" />
+                <div className="flex-1 text-[11px]">
                   <span className="font-medium block">Authentication Failed</span>
                   <span>{errorMessage}</span>
                 </div>
@@ -209,12 +209,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
             )}
 
             {/* Login Form */}
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <form onSubmit={handleSubmit} className="mt-3.5 space-y-2.5">
               
               {/* Tenant Slug Input */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="tenantSlug" className="block text-xs font-medium text-neutral-600">
+                  <label htmlFor="tenantSlug" className="block text-[11px] font-medium text-neutral-600">
                     Organization / Tenant Slug
                   </label>
                   {/* Quick Seeded Tenant Switchers */}
@@ -256,8 +256,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                   </div>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                    <Building2 className="w-4 h-4" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Building2 className="w-3.5 h-3.5" />
                   </div>
                   <input
                     id="tenantSlug"
@@ -267,19 +267,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                     placeholder="e.g. acme-payments"
                     disabled={isSubmitting}
                     required
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                    className="w-full pl-9 pr-3 py-1.5 sm:py-2 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
 
               {/* Email Address Input */}
-              <div className="space-y-1.5">
-                <label htmlFor="email" className="block text-xs font-medium text-neutral-600">
+              <div className="space-y-1">
+                <label htmlFor="email" className="block text-[11px] font-medium text-neutral-600">
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                    <Mail className="w-4 h-4" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Mail className="w-3.5 h-3.5" />
                   </div>
                   <input
                     id="email"
@@ -289,30 +289,30 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                     placeholder="name@company.com"
                     disabled={isSubmitting}
                     required
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                    className="w-full pl-9 pr-3 py-1.5 sm:py-2 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
 
               {/* Password Input with Visibility Toggle */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="block text-xs font-medium text-neutral-600">
+                  <label htmlFor="password" className="block text-[11px] font-medium text-neutral-600">
                     Password
                   </label>
                   {onNavigateToForgotPassword && (
                     <button
                       type="button"
                       onClick={onNavigateToForgotPassword}
-                      className="text-xs font-medium text-blue-600 hover:text-blue-500 hover:underline transition-colors focus:outline-none"
+                      className="text-[11px] font-medium text-blue-600 hover:text-blue-500 hover:underline transition-colors focus:outline-none"
                     >
                       Forgot Password?
                     </button>
                   )}
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                    <Lock className="w-4 h-4" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Lock className="w-3.5 h-3.5" />
                   </div>
                   <input
                     id="password"
@@ -322,23 +322,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                     placeholder="••••••••"
                     disabled={isSubmitting}
                     required
-                    className="w-full pl-10 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                    className="w-full pl-9 pr-9 py-1.5 sm:py-2 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-1">
+                <div className="flex items-center justify-between text-[10px] text-neutral-400 mt-0.5">
                   <span>Demo Password: <span className="font-mono text-neutral-600 font-medium">TestPassword123!</span></span>
                   <button
                     type="button"
                     onClick={() => setPassword('TestPassword123!')}
-                    className="text-blue-600 hover:text-blue-500 font-medium hover:underline text-[11px]"
+                    className="text-blue-600 hover:text-blue-500 font-medium hover:underline text-[10px]"
                   >
                     Autofill
                   </button>
@@ -346,15 +346,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
               </div>
 
               {/* Primary Sign In Button */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
+                  className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Authenticating...</span>
                     </>
                   ) : (
@@ -364,11 +364,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
               </div>
 
               {/* Quick Demo Role Switcher */}
-              <div className="pt-4 border-t border-neutral-100">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block mb-2 font-medium">
+              <div className="pt-2.5 border-t border-neutral-100">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block mb-1 font-medium">
                   Quick Demo Accounts (1-Click Fill)
                 </span>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
                     onClick={() => {
@@ -377,10 +377,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                       setPassword('TestPassword123!');
                       setErrorMessage(null);
                     }}
-                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                    className="text-left px-2 py-1 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
                   >
-                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">Senior Dev</div>
-                    <div className="text-[10px] text-neutral-400 font-mono truncate">dev.rahul@acme.com</div>
+                    <div className="font-medium text-neutral-800 text-[10px] group-hover:text-blue-700">Senior Dev</div>
+                    <div className="text-[9px] text-neutral-400 font-mono truncate">dev.rahul@acme.com</div>
                   </button>
                   <button
                     type="button"
@@ -390,10 +390,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                       setPassword('TestPassword123!');
                       setErrorMessage(null);
                     }}
-                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                    className="text-left px-2 py-1 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
                   >
-                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">Tenant Admin</div>
-                    <div className="text-[10px] text-neutral-400 font-mono truncate">admin.priya@acme.com</div>
+                    <div className="font-medium text-neutral-800 text-[10px] group-hover:text-blue-700">Tenant Admin</div>
+                    <div className="text-[9px] text-neutral-400 font-mono truncate">admin.priya@acme.com</div>
                   </button>
                   <button
                     type="button"
@@ -403,10 +403,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                       setPassword('TestPassword123!');
                       setErrorMessage(null);
                     }}
-                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                    className="text-left px-2 py-1 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
                   >
-                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">Squad Lead</div>
-                    <div className="text-[10px] text-neutral-400 font-mono truncate">lead.dev@acme.com</div>
+                    <div className="font-medium text-neutral-800 text-[10px] group-hover:text-blue-700">Squad Lead</div>
+                    <div className="text-[9px] text-neutral-400 font-mono truncate">lead.dev@acme.com</div>
                   </button>
                   <button
                     type="button"
@@ -416,10 +416,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                       setPassword('TestPassword123!');
                       setErrorMessage(null);
                     }}
-                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                    className="text-left px-2 py-1 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
                   >
-                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">MedSync Dev</div>
-                    <div className="text-[10px] text-neutral-400 font-mono truncate">dev.elena@medsync.io</div>
+                    <div className="font-medium text-neutral-800 text-[10px] group-hover:text-blue-700">MedSync Dev</div>
+                    <div className="text-[9px] text-neutral-400 font-mono truncate">dev.elena@medsync.io</div>
                   </button>
                 </div>
               </div>
@@ -427,8 +427,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
             </form>
 
             {/* Card Footer */}
-            <div className="mt-6 pt-4 border-t border-neutral-100 text-center">
-              <p className="text-[11px] text-neutral-400 font-mono">
+            <div className="mt-2.5 pt-2 border-t border-neutral-100 text-center">
+              <p className="text-[10px] text-neutral-400 font-mono">
                 Feedback-Hub Enterprise System • Bank-Grade Security
               </p>
             </div>
