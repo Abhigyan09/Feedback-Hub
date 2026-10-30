@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { user, accessToken, logout } = useAuth();
+  const { user, accessToken, logout, authFetch } = useAuth();
 
   // Tenant & Role State (Multi-tenant dynamic isolation with localStorage persistence or verified user)
   const [currentTenantId, setCurrentTenantId] = useState<string>(() => {
@@ -57,6 +57,29 @@ const Dashboard: React.FC = () => {
       .toUpperCase(),
     email: user?.email || 'admin@acme.com'
   }));
+
+  // Synchronize dynamic user attributes when authenticated user is restored or changes
+  useEffect(() => {
+    if (user) {
+      setCurrentUser({
+        name: user.full_name || user.email,
+        role: user.role === 'squad_lead' ? 'Squad Lead & Arch' : user.role === 'developer' ? 'Senior Backend Dev' : user.role === 'tenant_admin' ? 'Tenant Administrator' : user.role === 'super_admin' ? 'Global Super Admin' : 'Tenant Administrator',
+        initials: (user.full_name || user.email)
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase(),
+        email: user.email
+      });
+      if (user.tenant_id) {
+        setCurrentTenantId(user.tenant_id);
+      }
+      if (user.role) {
+        setCurrentRole(user.role);
+      }
+    }
+  }, [user]);
 
   // Dynamic Data State (Loaded 100% from live backend API)
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -147,13 +170,9 @@ const Dashboard: React.FC = () => {
         'pragma': 'no-cache',
         'cache-control': 'no-cache'
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tickets?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers,
-        credentials: 'include'
+        headers
       });
       const elapsed = Math.round(performance.now() - start);
       setApiLatencyMs(elapsed);
@@ -167,22 +186,21 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
-  // 2. Fetch Available Tenants List
+  // 2. Fetch Available Tenants List (Restricted strictly to super_admin by RBAC specification)
   const fetchAllTenants = useCallback(async () => {
+    if (currentRole !== 'super_admin') {
+      return;
+    }
     try {
       const headers: Record<string, string> = {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tenants/all?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tenants/all?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         const data = await res.json();
@@ -193,7 +211,7 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.warn('Failed to fetch tenants list:', err);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
   // 3. Fetch Dynamic Tenant & Team Members from Backend
   const fetchTenantMetadata = useCallback(async () => {
@@ -202,16 +220,17 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tenants/current?_t=${Date.now()}`, {
-        headers,
-        credentials: 'include'
+      const res = await authFetch(`/api/v1/tenants/current?_t=${Date.now()}`, {
+        headers
       });
       if (res.ok) {
         const data = await res.json();
         
+        // For non-super_admin users, populate the active tenant so tenant switcher and header have valid data
+        if (data.tenant && currentRole !== 'super_admin') {
+          setTenants([data.tenant]);
+        }
+
         // Dynamic Authenticated User Context from API
         if (data.active_auth) {
           const auth = data.active_auth;
@@ -271,7 +290,7 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.warn('Tenant metadata fetch error:', err);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
   // 4. Fetch Role Permissions Matrix
   const loadTenantPermissions = useCallback(async () => {
@@ -282,13 +301,9 @@ const Dashboard: React.FC = () => {
         'pragma': 'no-cache',
         'cache-control': 'no-cache'
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tenants/permissions?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tenants/permissions?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         const data = await res.json();
@@ -299,7 +314,7 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to load permissions matrix:', err);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
   useEffect(() => {
     fetchTickets();
@@ -486,13 +501,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}/status`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}/status`, {
         method: 'PATCH',
         headers,
-        credentials: 'include',
         body: JSON.stringify({ status: newStatus, note })
       });
 
@@ -520,13 +531,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}/assignee`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}/assignee`, {
         method: 'PATCH',
         headers,
-        credentials: 'include',
         body: JSON.stringify({
           assigneeId: newAssigneeId,
           assigneeName: newAssigneeName
@@ -556,13 +563,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}`, {
         method: 'PUT',
         headers,
-        credentials: 'include',
         body: JSON.stringify(updatedFields)
       });
       if (!res.ok) {
@@ -586,13 +589,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}`, {
         method: 'DELETE',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -616,13 +615,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}/events`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}/events`, {
         method: 'POST',
         headers,
-        credentials: 'include',
         body: JSON.stringify({ content, is_internal_only: isInternalOnly })
       });
       if (res.ok) {
@@ -649,13 +644,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch('/api/v1/tickets', {
+      const res = await authFetch('/api/v1/tickets', {
         method: 'POST',
         headers,
-        credentials: 'include',
         body: JSON.stringify(ticketData)
       });
 
@@ -686,13 +677,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch('/api/v1/tickets/seed-demo', {
+      const res = await authFetch('/api/v1/tickets/seed-demo', {
         method: 'POST',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         fetchTickets();
@@ -717,13 +704,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch('/api/v1/tickets/clear', {
+      const res = await authFetch('/api/v1/tickets/clear', {
         method: 'DELETE',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         setTickets([]);
@@ -785,7 +768,7 @@ const Dashboard: React.FC = () => {
           urgentTickets={urgentCount}
           tickets={tickets}
           permissionsMatrix={permissionsMatrix}
-          onNewIncidentClick={() => setIsCreateModalOpen(true)}
+          onNewIncidentClick={() => setIsSimulatorOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
           onSeedDemo={handleSeedDemo}
           onClearTickets={handleClearTickets}
@@ -966,14 +949,14 @@ const Dashboard: React.FC = () => {
         {currentView === 'total-tickets' && (
           <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
             {/* Header Box */}
-            <div className="bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+            <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2.5">
                   <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
                     <Layers className="w-5 h-5 text-indigo-600" />
                     <span>Total Tickets Registry</span>
                   </h2>
-                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">
+                  <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-md">
                     {totalCount} Total
                   </span>
                 </div>
@@ -986,15 +969,15 @@ const Dashboard: React.FC = () => {
                 {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
                   <>
                     <button
-                      onClick={() => setIsCreateModalOpen(true)}
-                      className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+                      onClick={() => setIsSimulatorOpen(true)}
+                      className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>New Incident</span>
                     </button>
                     <button
                       onClick={() => setIsSimulatorOpen(true)}
-                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Simulate Ingest</span>
@@ -1004,7 +987,7 @@ const Dashboard: React.FC = () => {
                 <button
                   onClick={fetchTickets}
                   disabled={isLoading}
-                  className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -1030,14 +1013,14 @@ const Dashboard: React.FC = () => {
         {currentView === 'resolved-tickets' && (
           <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
             {/* Header Box */}
-            <div className="bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+            <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2.5">
                   <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                     <span>Resolved Incidents & SLA Compliance</span>
                   </h2>
-                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-emerald-50 border border-emerald-200 text-emerald-700">
+                  <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md">
                     {resolvedCount} Resolved
                   </span>
                 </div>
@@ -1050,7 +1033,7 @@ const Dashboard: React.FC = () => {
                 <button
                   onClick={fetchTickets}
                   disabled={isLoading}
-                  className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>

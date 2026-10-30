@@ -29,6 +29,7 @@ import {
 import { TeamMember, Ticket, TicketStatus, UserRole, RolePermissionsMatrix } from '../types';
 import { normalizeSeverity, normalizeStatus } from '../utils/formatters';
 import { hasRolePermission } from '../constants/permissions';
+import { useAuth } from '../context/AuthContext';
 
 interface StaffWorkloadViewProps {
   currentTenantId: string;
@@ -55,6 +56,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
   onRefresh,
   onStaffUpdated
 }) => {
+  const { authFetch } = useAuth();
   // Local staff list state for instant optimistic responsiveness
   const [staffList, setStaffList] = useState<TeamMember[]>(teamMembers);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
   // Direct fetch from /api/v1/tenants/staff to guarantee synchronization
   const fetchStaffData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/v1/tenants/staff?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tenants/staff?_t=${Date.now()}`, {
         headers: {
           'x-tenant-id': currentTenantId,
           'x-user-role': currentRole
@@ -265,7 +267,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     setIsRebalancing(true);
     setActionError(null);
     try {
-      const res = await fetch('/api/v1/tenants/staff/rebalance', {
+      const res = await authFetch('/api/v1/tenants/staff/rebalance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -314,7 +316,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     }));
 
     try {
-      const res = await fetch(`/api/v1/tenants/staff/${member.id}`, {
+      const res = await authFetch(`/api/v1/tenants/staff/${member.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -361,7 +363,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     }
 
     try {
-      const res = await fetch(`/api/v1/tenants/staff/${member.id}`, {
+      const res = await authFetch(`/api/v1/tenants/staff/${member.id}`, {
         method: 'DELETE',
         headers: {
           'x-tenant-id': currentTenantId,
@@ -399,7 +401,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     setIsSubmitting(true);
     setActionError(null);
     try {
-      const res = await fetch('/api/v1/tenants/staff', {
+      const res = await authFetch('/api/v1/tenants/staff', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -484,22 +486,22 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
       
       {/* 1. Header Box matching Total Tickets & Resolved Tickets style */}
-      <div className="bg-white border border-slate-200 p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs">
+      <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs">
         <div className="space-y-1">
           <div className="flex items-center flex-wrap gap-2.5">
             <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
-              <div className="w-6 h-6 bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200">
+              <div className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200">
                 <Users className="w-4 h-4" />
               </div>
               <span>Assigned Staff Members & Active Load</span>
             </h2>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-purple-50 border border-purple-200 text-purple-700">
+            <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-purple-50 border border-purple-200 text-purple-700 rounded-md">
               {staffList.length} Active Staff
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-slate-100 border border-slate-200 text-slate-700">
+            <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 border border-slate-200 text-slate-700 rounded-md">
               {totalOpenTickets} Open Tickets
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">
+            <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-md">
               {avgLoad} Avg Load
             </span>
           </div>
@@ -515,7 +517,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               type="button"
               id="add-staff-member-btn"
               onClick={() => setIsAddModalOpen(true)}
-              className="px-3.5 py-2 bg-[#6366F1] hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+              className="px-3.5 py-2 bg-[#6366F1] hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Staff Member</span>
@@ -523,7 +525,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           ) : (
             <div 
               title="Requires Squad Lead or Administrator role to add staff"
-              className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-400 text-xs font-mono font-medium flex items-center space-x-1.5 cursor-not-allowed select-none"
+              className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-400 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md cursor-not-allowed select-none"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Admin / Lead Only</span>
@@ -536,7 +538,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             onClick={handleRebalanceWorkload}
             disabled={isRebalancing || !isAdminOrLead}
             title={isAdminOrLead ? "Automatically distribute unassigned tickets across available engineers" : "Requires Squad Lead authority"}
-            className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-mono font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-mono font-semibold flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Zap className={`w-3.5 h-3.5 text-purple-600 ${isRebalancing ? 'animate-spin' : ''}`} />
             <span>{isRebalancing ? 'Balancing...' : 'Auto-Balance Load'}</span>
@@ -547,7 +549,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             id="refresh-staff-btn"
             onClick={handleManualRefresh}
             disabled={isRefreshing}
-            className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+            className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
@@ -557,7 +559,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
       {/* Notifications */}
       {actionSuccess && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center justify-between shadow-2xs animate-in fade-in">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center justify-between shadow-2xs animate-in fade-in rounded-md card-subtle">
           <div className="flex items-center space-x-2.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="font-semibold">{actionSuccess}</span>
@@ -573,7 +575,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       )}
 
       {actionError && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-center justify-between shadow-2xs animate-in fade-in">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-center justify-between shadow-2xs animate-in fade-in rounded-md card-subtle">
           <div className="flex items-center space-x-2.5">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span className="font-semibold">{actionError}</span>
@@ -592,7 +594,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
         {/* Metric 1: Total Staff */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1">
+        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
           <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
             <span className="uppercase font-semibold">Active Engineers</span>
             <Users className="w-4 h-4 text-purple-600" />
@@ -611,7 +613,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
         </div>
 
         {/* Metric 2: Open Workload */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1">
+        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
           <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
             <span className="uppercase font-semibold">Total Active Workload</span>
             <Layers className="w-4 h-4 text-indigo-600" />
@@ -630,7 +632,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
         </div>
 
         {/* Metric 3: On-Call Lead */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1">
+        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
           <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
             <span className="uppercase font-semibold">Primary On-Call</span>
             <PhoneCall className="w-4 h-4 text-amber-600" />
@@ -647,7 +649,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
         </div>
 
         {/* Metric 4: Unassigned Ingestion Queue */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1">
+        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
           <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
             <span className="uppercase font-semibold">Unassigned Ingestion</span>
             <AlertCircle className={`w-4 h-4 ${unassignedTickets.length > 0 ? 'text-amber-500' : 'text-slate-400'}`} />
@@ -668,7 +670,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       </div>
 
       {/* 3. Search & Filter Bar (Clean 2-tier Bank-Grade Layout) */}
-      <div className="bg-white border border-slate-200 p-3.5 shadow-2xs space-y-3">
+      <div className="bg-white border border-slate-200 p-3.5 shadow-2xs space-y-3 rounded-md card-subtle">
         
         {/* Row 1: Dedicated Search Box on left, Sort and Reset on right */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -683,7 +685,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search staff by name, email, role, or squad..."
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs pl-9 pr-8 py-2 rounded-[2px] placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all font-mono"
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs pl-9 pr-8 py-2 rounded-md placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all font-mono"
             />
             {searchQuery && (
               <button
@@ -703,7 +705,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-[2px] transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-md transition-colors cursor-pointer"
               >
                 Reset Filters
               </button>
@@ -715,7 +717,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 pl-8 pr-3 py-1.5 text-xs font-mono focus:outline-none focus:border-indigo-600 cursor-pointer rounded-[2px] transition-colors"
+                  className="border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 pl-8 pr-3 py-1.5 text-xs font-mono focus:outline-none focus:border-indigo-600 cursor-pointer rounded-md transition-colors"
                 >
                   <option value="LOAD_DESC">Active Load (High → Low)</option>
                   <option value="NAME_ASC">Alphabetical (A → Z)</option>
@@ -730,7 +732,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2.5 border-t border-slate-100">
           <div className="flex items-center space-x-2 overflow-x-auto scrollbar-none font-mono">
             <span className="text-[11px] text-slate-400 font-semibold uppercase shrink-0">Filter:</span>
-            <div className="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200/80 rounded-[2px] gap-0.5 shrink-0">
+            <div className="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200/80 rounded-md gap-0.5 shrink-0">
               {[
                 { id: 'ALL' as const, label: 'ALL', count: staffList.length },
                 { id: 'ACTIVE_LOAD' as const, label: 'ACTIVE LOAD (>0)', count: staffList.filter(m => (memberMetrics[m.id]?.openCount || 0) > 0).length },
@@ -741,7 +743,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   key={f.id}
                   type="button"
                   onClick={() => setFilterType(f.id)}
-                  className={`px-3 py-1 text-xs uppercase transition-all cursor-pointer whitespace-nowrap rounded-[2px] font-mono ${
+                  className={`px-3 py-1 text-xs uppercase transition-all cursor-pointer whitespace-nowrap rounded-md font-mono ${
                     filterType === f.id
                       ? 'bg-slate-900 text-white font-bold shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
@@ -781,7 +783,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             <div
               key={member.id}
               onClick={() => handleToggleMemberQueue(member.id)}
-              className={`bg-white border p-4 transition-all duration-150 cursor-pointer select-none flex flex-col justify-between space-y-3.5 shadow-2xs hover:shadow-md ${
+              className={`bg-white border p-4 transition-all duration-150 cursor-pointer select-none flex flex-col justify-between space-y-3.5 shadow-2xs hover:shadow-md rounded-md card-subtle ${
                 isSelected
                   ? 'border-indigo-600 ring-2 ring-indigo-500/20 bg-indigo-50/10'
                   : 'border-slate-200/90 hover:border-slate-300'
@@ -792,7 +794,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <div className="flex items-start space-x-3 min-w-0">
                   {/* Avatar Initials with Status Dot */}
                   <div className="relative shrink-0">
-                    <div className={`w-10 h-10 border flex items-center justify-center font-bold text-xs font-mono shadow-2xs ${member.color}`}>
+                    <div className={`w-10 h-10 border flex items-center justify-center font-bold text-xs font-mono shadow-2xs rounded-md ${member.color}`}>
                       {member.avatarInitials}
                     </div>
                     <span
@@ -814,7 +816,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         {member.name}
                       </h3>
                       {isOnCall && (
-                        <span className="text-[9px] font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-1 py-0.2 shrink-0">
+                        <span className="text-[9px] font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-1.5 py-0.5 rounded-md shrink-0">
                           ON-CALL
                         </span>
                       )}
@@ -832,12 +834,12 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <div className="flex flex-col items-end shrink-0">
                   <div className="flex items-center space-x-1 font-mono">
                     <span className="text-[11px] text-slate-400">Open:</span>
-                    <span className={`px-2 py-0.5 text-xs font-bold font-mono border ${loadBadgeColor}`}>
+                    <span className={`px-2 py-0.5 text-xs font-bold font-mono border rounded-md ${loadBadgeColor}`}>
                       {metrics.openCount}
                     </span>
                   </div>
                   {metrics.urgentCount > 0 && (
-                    <span className="text-[9px] font-mono font-bold text-rose-600 bg-rose-50 px-1 py-0.2 mt-1">
+                    <span className="text-[9px] font-mono font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md mt-1">
                       {metrics.urgentCount} Urgent
                     </span>
                   )}
@@ -850,9 +852,9 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <span>Capacity Stress</span>
                   <span>{metrics.openCount} / 6 max</span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 overflow-hidden">
+                <div className="w-full bg-slate-100 h-1.5 overflow-hidden rounded-full">
                   <div 
-                    className={`h-full transition-all duration-300 ${
+                    className={`h-full rounded-full transition-all duration-300 ${
                       metrics.openCount === 0 
                         ? 'bg-slate-300 w-0' 
                         : metrics.openCount <= 2 
@@ -879,7 +881,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         type="button"
                         onClick={() => handleToggleOnCall(member)}
                         title={isOnCall ? "Switch to standard online status" : "Designate as primary on-call lead"}
-                        className={`px-2 py-0.5 border text-[10px] cursor-pointer transition-colors ${
+                        className={`px-2 py-0.5 border text-[10px] cursor-pointer rounded-md transition-colors ${
                           isOnCall 
                             ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 font-bold'
                             : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
@@ -892,7 +894,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         type="button"
                         onClick={() => handleDeleteStaffMember(member)}
                         title="Remove member from squad registry"
-                        className="p-1 border border-slate-200 hover:border-rose-300 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        className="p-1 border border-slate-200 hover:border-rose-300 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-md transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -902,7 +904,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleToggleMemberQueue(member.id)}
-                    className="px-2 py-0.5 border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold cursor-pointer transition-colors"
+                    className="px-2 py-0.5 border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold cursor-pointer rounded-md transition-colors"
                   >
                     {isSelected ? 'Collapse' : `View Queue (${metrics.openCount})`}
                   </button>
@@ -919,11 +921,11 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
         <section 
           ref={queueSectionRef}
           aria-labelledby="member-workload-heading" 
-          className="bg-white border border-slate-200 p-5 space-y-4 shadow-2xs animate-in fade-in slide-in-from-top-1"
+          className="bg-white border border-slate-200 rounded-md card-subtle p-5 space-y-4 shadow-2xs animate-in fade-in slide-in-from-top-1"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-3">
-              <div className={`w-8 h-8 border flex items-center justify-center font-bold text-xs font-mono ${activeMember.color}`}>
+              <div className={`w-8 h-8 rounded-md border flex items-center justify-center font-bold text-xs font-mono ${activeMember.color}`}>
                 {activeMember.avatarInitials}
               </div>
               <div>
@@ -931,7 +933,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <h3 id="member-workload-heading" className="text-sm font-bold text-slate-900 font-mono">
                     Assigned Incident Queue: {activeMember.name}
                   </h3>
-                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">
                     {activeMemberTickets.length} Incidents Total
                   </span>
                 </div>
@@ -944,7 +946,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             <button
               type="button"
               onClick={() => setSelectedMemberId(null)}
-              className="text-xs text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer font-mono"
+              className="text-xs text-slate-500 hover:text-slate-800 rounded-md px-2 py-1 hover:bg-slate-100 flex items-center space-x-1 cursor-pointer font-mono"
             >
               <X className="w-3.5 h-3.5" />
               <span>Close Queue</span>
@@ -952,7 +954,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           </div>
 
           {activeMemberTickets.length === 0 ? (
-            <div className="p-8 text-center bg-slate-50 border border-slate-200 space-y-2">
+            <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-md card-subtle space-y-2">
               <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
               <p className="text-xs font-bold text-slate-800 font-mono">
                 {activeMember.name} is fully caught up with zero active backlog tickets!
@@ -962,7 +964,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               </p>
             </div>
           ) : (
-            <div className="border border-slate-200 overflow-x-auto">
+            <div className="border border-slate-200 rounded-md overflow-x-auto card-subtle">
               <table className="w-full text-left border-collapse text-xs font-mono">
                 <thead>
                   <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-wider">
@@ -987,12 +989,12 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         className="hover:bg-slate-50 transition-colors cursor-pointer"
                       >
                         <td className="p-2.5 whitespace-nowrap">
-                          <span className="font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 border border-indigo-200">
+                          <span className="font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md border border-indigo-200">
                             {t.short_code || t.id.slice(0, 8)}
                           </span>
                         </td>
                         <td className="p-2.5 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 text-[10px] font-bold uppercase border ${
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${
                             normSeverity === 'Urgent' ? 'bg-rose-50 text-rose-700 border-rose-300' :
                             normSeverity === 'High' ? 'bg-amber-50 text-amber-700 border-amber-300' :
                             normSeverity === 'Medium' ? 'bg-blue-50 text-blue-700 border-blue-300' :
@@ -1008,7 +1010,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                           {t.title}
                         </td>
                         <td className="p-2.5 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 text-[10px] font-bold border ${
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                             normStatus === 'Resolved' 
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
                               : 'bg-indigo-50 text-indigo-700 border-indigo-200'
@@ -1021,7 +1023,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                             <select
                               value={t.assigned_to || ''}
                               onChange={(e) => handleQuickAssign(t.id, e.target.value)}
-                              className="text-[11px] font-mono border border-slate-200 bg-white px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
+                              className="text-[11px] font-mono border border-slate-200 rounded-md bg-white px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
                             >
                               <option value="">-- Reassign --</option>
                               {staffList.map(sm => (
@@ -1040,7 +1042,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleQuickResolve(t.id, t.short_code)}
-                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold cursor-pointer transition-colors shadow-2xs"
+                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold cursor-pointer transition-colors shadow-2xs"
                               >
                                 Mark Resolved
                               </button>
@@ -1048,7 +1050,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                             <button
                               type="button"
                               onClick={() => onSelectTicket(t)}
-                              className="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-[10px] text-slate-700 cursor-pointer transition-colors"
+                              className="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-[10px] text-slate-700 cursor-pointer transition-colors"
                             >
                               Inspect Details
                             </button>
@@ -1066,7 +1068,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
       {/* 6. Unassigned Ingestion Backlog Section if any tickets exist */}
       {unassignedTickets.length > 0 && (
-        <section aria-labelledby="unassigned-heading" className="bg-white border border-amber-200 p-5 space-y-3 shadow-2xs">
+        <section aria-labelledby="unassigned-heading" className="bg-white border border-amber-200 rounded-md card-subtle p-5 space-y-3 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 text-amber-600" />
@@ -1080,7 +1082,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 type="button"
                 onClick={handleRebalanceWorkload}
                 disabled={isRebalancing}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-mono font-bold cursor-pointer transition-colors shadow-xs flex items-center space-x-1.5"
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-xs font-mono font-bold cursor-pointer transition-colors shadow-xs flex items-center space-x-1.5"
               >
                 <Zap className="w-3.5 h-3.5" />
                 <span>Auto-Assign All Unassigned</span>
@@ -1092,13 +1094,13 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             {unassignedTickets.slice(0, 6).map((ticket) => (
               <div 
                 key={ticket.id}
-                className="p-3 border border-amber-200/80 bg-amber-50/20 hover:bg-amber-50/40 transition-colors space-y-2 select-none"
+                className="p-3 border border-amber-200/80 bg-amber-50/20 hover:bg-amber-50/40 rounded-md transition-colors space-y-2 select-none"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 border border-amber-300">
+                  <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 rounded-md border border-amber-300">
                     {ticket.short_code || ticket.id.slice(0, 8)}
                   </span>
-                  <span className="text-[9px] font-mono font-bold text-rose-700 uppercase bg-rose-50 border border-rose-200 px-1 py-0.2">
+                  <span className="text-[9px] font-mono font-bold text-rose-700 uppercase bg-rose-50 border border-rose-200 px-1 py-0.2 rounded-md">
                     {ticket.severity}
                   </span>
                 </div>
@@ -1121,7 +1123,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                           e.target.value = '';
                         }
                       }}
-                      className="text-[10px] font-mono border border-amber-300 bg-white text-slate-800 px-1 py-0.5 cursor-pointer focus:outline-none"
+                      className="text-[10px] font-mono border border-amber-300 bg-white text-slate-800 px-1 py-0.5 rounded-md cursor-pointer focus:outline-none"
                     >
                       <option value="">+ Assign...</option>
                       {staffList.map(sm => (
@@ -1134,7 +1136,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onSelectTicket(ticket)}
-                      className="text-amber-700 font-medium hover:underline cursor-pointer"
+                      className="text-amber-700 font-medium hover:underline cursor-pointer rounded-md px-1"
                     >
                       Inspect
                     </button>
@@ -1149,10 +1151,10 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       {/* 7. Modal: Add New Staff Member */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-150">
+          <div className="bg-white border border-slate-200 rounded-md card-subtle shadow-xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
-                <div className="w-7 h-7 bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200">
+                <div className="w-7 h-7 bg-purple-50 text-purple-600 flex items-center justify-center rounded-md border border-purple-200">
                   <UserPlus className="w-4 h-4" />
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 font-mono uppercase tracking-wide">
@@ -1162,7 +1164,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-md hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1179,7 +1181,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffName}
                   onChange={(e) => setNewStaffName(e.target.value)}
                   placeholder="e.g. Alex Zhang (Senior Systems Engineer)"
-                  className="w-full border border-slate-300 p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
                 />
               </div>
 
@@ -1193,7 +1195,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffEmail}
                   onChange={(e) => setNewStaffEmail(e.target.value)}
                   placeholder="e.g. alex.zhang@feedbackhub.io"
-                  className="w-full border border-slate-300 p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
                 />
               </div>
 
@@ -1205,7 +1207,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <select
                     value={newStaffRole}
                     onChange={(e) => setNewStaffRole(e.target.value as UserRole)}
-                    className="w-full border border-slate-300 p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer"
+                    className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer"
                   >
                     <option value="developer">Developer</option>
                     <option value="squad_lead">Squad Lead</option>
@@ -1221,7 +1223,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <select
                     value={newStaffStatus}
                     onChange={(e) => setNewStaffStatus(e.target.value as any)}
-                    className="w-full border border-slate-300 p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer"
+                    className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer"
                   >
                     <option value="ONLINE">ONLINE</option>
                     <option value="ON_CALL">ON-CALL</option>
@@ -1239,7 +1241,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffSquad}
                   onChange={(e) => setNewStaffSquad(e.target.value)}
                   placeholder="e.g. Core Platform & API Squad"
-                  className="w-full border border-slate-300 p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
                 />
               </div>
 
@@ -1247,14 +1249,14 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-[#6366F1] hover:bg-indigo-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-2 bg-[#6366F1] hover:bg-indigo-700 text-white rounded-md text-xs font-bold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isSubmitting ? 'Registering...' : 'Add Squad Member'}
                 </button>

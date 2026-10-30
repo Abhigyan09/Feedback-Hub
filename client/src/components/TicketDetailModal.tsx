@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix } from '../types';
 import { hasRolePermission } from '../constants/permissions';
+import { useAuth } from '../context/AuthContext';
 import { 
   X, 
   Terminal, 
@@ -53,6 +54,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   permissionsMatrix,
   teamMembers
 }) => {
+  const { authFetch } = useAuth();
   const activeRoster = React.useMemo(() => {
     if (teamMembers && teamMembers.length > 0) {
       return [
@@ -88,11 +90,6 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   useEffect(() => {
     if (!ticket) return;
 
-    const headers: Record<string, string> = {};
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
     // Initialize edit fields
     setEditTitle(ticket.title);
     setEditDescription(ticket.description);
@@ -105,10 +102,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     setIsEditing(false);
     setIsConfirmingDelete(false);
 
-    fetch(`/api/v1/tickets/${ticket.id}`, {
-      headers,
-      credentials: 'include'
-    })
+    authFetch(`/api/v1/tickets/${ticket.id}`)
       .then(res => res.json())
       .then(data => {
         if (data.events) {
@@ -116,7 +110,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         }
       })
       .catch(err => console.error('Failed to load events:', err));
-  }, [ticket, currentRole, accessToken]);
+  }, [ticket, currentRole, authFetch]);
 
   if (!ticket) return null;
 
@@ -214,26 +208,26 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         <div className="p-5 border-b border-slate-200 flex items-start justify-between bg-slate-50">
           <div className="space-y-1.5 flex-1 pr-4">
             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-              <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-sm">
+              <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md">
                 {ticket.short_code}
               </span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-purple-200 bg-purple-50/50 text-purple-800 rounded-sm">
+              <span className="text-xs font-mono px-2 py-0.5 border border-purple-200 bg-purple-50/50 text-purple-800 rounded-md">
                 {ticket.category}
                 {ticket.category === 'RATING' && ticket.rating && ` (${ticket.rating}★)`}
               </span>
               <span className="text-xs font-mono text-slate-500">[{ticket.product_name || 'Product'}]</span>
               {ticket.domain_origin && (
-                <span className="text-xs font-mono text-slate-600 flex items-center space-x-1 border border-slate-200 bg-white px-1.5 py-0.5 rounded-sm">
+                <span className="text-xs font-mono text-slate-600 flex items-center space-x-1 border border-slate-200 bg-white px-1.5 py-0.5 rounded-md">
                   <Globe className="w-3 h-3 text-slate-400" />
                   <span>{ticket.domain_origin}</span>
                 </span>
               )}
-              <span className="text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-sm">[{ticket.assigned_squad}]</span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-blue-200 bg-blue-50 text-blue-700 flex items-center space-x-1 rounded-sm">
+              <span className="text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md">[{ticket.assigned_squad}]</span>
+              <span className="text-xs font-mono px-2 py-0.5 border border-blue-200 bg-blue-50 text-blue-700 flex items-center space-x-1 rounded-md">
                 <User className="w-3 h-3 text-blue-500" />
                 <span>{ticket.assigned_to_name ? ticket.assigned_to_name.split(' (')[0] : 'Unassigned'}</span>
               </span>
-              <span className="text-xs font-mono px-2 py-0.5 border border-slate-300 bg-slate-100 text-slate-800 font-semibold rounded-sm">
+              <span className="text-xs font-mono px-2 py-0.5 border border-slate-300 bg-slate-100 text-slate-800 font-semibold rounded-md">
                 STATUS: {ticket.status}
               </span>
             </div>
@@ -502,7 +496,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(ticket.id, 'TRIAGED', 'Status changed to TRIAGED.')}
-                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
+                        className={`px-2 py-0.5 text-xs font-mono border rounded-md transition-colors cursor-pointer shadow-2xs font-semibold ${
                           ticket.status === 'TRIAGED' ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                         }`}
                       >
@@ -511,7 +505,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(ticket.id, 'IN_DEV', 'Dev squad started active investigation.')}
-                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
+                        className={`px-2 py-0.5 text-xs font-mono border rounded-md transition-colors cursor-pointer shadow-2xs font-semibold ${
                           ticket.status === 'IN_DEV' ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
                         }`}
                       >
@@ -520,7 +514,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       <button
                         type="button"
                         onClick={() => onUpdateStatus(ticket.id, 'RESOLVED', 'Incident resolved and verified.')}
-                        className={`px-2 py-0.5 text-xs font-mono border transition-colors cursor-pointer shadow-2xs font-semibold ${
+                        className={`px-2 py-0.5 text-xs font-mono border rounded-md transition-colors cursor-pointer shadow-2xs font-semibold ${
                           ticket.status === 'RESOLVED' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                         }`}
                       >
@@ -540,14 +534,14 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   {/* Description */}
                   <div className="space-y-2">
                     <h4 className="text-xs font-mono uppercase text-slate-500 tracking-wider font-semibold">Report Details</h4>
-                    <p className="text-sm text-slate-800 bg-slate-50 p-4 border border-slate-200 leading-relaxed">
+                    <p className="text-sm text-slate-800 bg-slate-50 p-4 border border-slate-200 rounded-md leading-relaxed">
                       {ticket.description}
                     </p>
                   </div>
 
                   {/* Rating Display if RATING Category */}
                   {ticket.rating && (
-                    <div className="p-4 border border-amber-200 bg-amber-50 flex items-center space-x-3">
+                    <div className="p-4 border border-amber-200 bg-amber-50 rounded-md flex items-center space-x-3">
                       <div className="flex items-center space-x-1 text-amber-500">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <span key={s} className={`text-lg ${s <= ticket.rating! ? 'opacity-100' : 'opacity-30'}`}>★</span>
@@ -565,11 +559,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       <h4 className="text-xs font-mono uppercase text-slate-500 tracking-wider font-semibold flex items-center space-x-2">
                         <span>Attached User Screenshot</span>
                       </h4>
-                      <div className="border border-slate-200 bg-slate-50 p-3">
+                      <div className="border border-slate-200 bg-slate-50 p-3 rounded-md">
                         <img 
                           src={ticket.screenshot_url || ticket.telemetry?.screenshot_url} 
                           alt="Client attached screenshot" 
-                          className="max-h-72 object-contain border border-slate-300"
+                          className="max-h-72 object-contain border border-slate-300 rounded-md"
                         />
                       </div>
                     </div>
@@ -577,13 +571,13 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Environment Information (Safe for all roles) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-3 border border-slate-200 bg-slate-50 space-y-1">
+                    <div className="p-3 border border-slate-200 bg-slate-50 rounded-md space-y-1">
                       <span className="text-[11px] font-mono text-slate-500 uppercase font-semibold">Page URL</span>
                       <p className="text-xs font-mono text-slate-800 truncate">
                         {ticket.telemetry?.page_url || 'https://client-app.com/dashboard'}
                       </p>
                     </div>
-                    <div className="p-3 border border-slate-200 bg-slate-50 space-y-1">
+                    <div className="p-3 border border-slate-200 bg-slate-50 rounded-md space-y-1">
                       <span className="text-[11px] font-mono text-slate-500 uppercase font-semibold">User Agent & Viewport</span>
                       <p className="text-xs font-mono text-slate-800 truncate">
                         {ticket.telemetry?.viewport_dimensions || '1920x1080'} • {ticket.telemetry?.app_version || 'v1.0.0'}
@@ -593,7 +587,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
                   {/* Client User Quarantine Notice */}
                   {!canViewTechnicalTelemetry && (
-                    <div className="p-4 border border-indigo-200 bg-indigo-50/50 flex items-start space-x-3 text-xs font-mono text-slate-700">
+                    <div className="p-4 border border-indigo-200 bg-indigo-50/50 rounded-md flex items-start space-x-3 text-xs font-mono text-slate-700">
                       <Shield className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                       <div className="space-y-1">
                         <p className="font-bold text-slate-900 uppercase">Protected Client Scope</p>
@@ -615,7 +609,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                         <span className="text-[10px] font-mono text-slate-400">AUTO-EXTRACTED BY SDK</span>
                       </div>
                       
-                      <div className="bg-[#0f172a] border border-slate-700 p-3 font-mono text-xs text-slate-200 space-y-1.5 max-h-40 overflow-y-auto">
+                      <div className="bg-[#0f172a] border border-slate-700 rounded-md p-3 font-mono text-xs text-slate-200 space-y-1.5 max-h-40 overflow-y-auto">
                         {ticket.telemetry?.console_logs && ticket.telemetry.console_logs.length > 0 ? (
                           ticket.telemetry.console_logs.map((log, idx) => (
                             <div key={idx} className="flex items-start space-x-2">
@@ -641,11 +635,11 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                         <span>Failed API Requests (4xx / 5xx)</span>
                       </h4>
                       
-                      <div className="bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 space-y-1.5">
+                      <div className="bg-slate-50 border border-slate-200 rounded-md p-3 font-mono text-xs text-slate-800 space-y-1.5">
                         {ticket.telemetry?.network_errors && ticket.telemetry.network_errors.length > 0 ? (
                           ticket.telemetry.network_errors.map((net, idx) => (
-                            <div key={idx} className="flex items-center space-x-3 p-1.5 bg-red-50 border border-red-200">
-                              <span className="px-1.5 py-0.5 bg-red-600 text-white text-[10px] font-bold">
+                            <div key={idx} className="flex items-center space-x-3 p-1.5 bg-red-50 border border-red-200 rounded-md">
+                              <span className="px-1.5 py-0.5 bg-red-600 text-white rounded-md text-[10px] font-bold">
                                 HTTP {net.status}
                               </span>
                               <span className="text-red-800 font-mono text-xs flex-1">{net.url}</span>
@@ -668,7 +662,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                           AES-256-GCM Decrypted Diagnostic Context
                         </h4>
                       </div>
-                      <pre className="bg-emerald-50 border border-emerald-200 p-3 font-mono text-xs text-emerald-900 whitespace-pre-wrap break-all max-w-full">
+                      <pre className="bg-emerald-50 border border-emerald-200 rounded-md p-3 font-mono text-xs text-emerald-900 whitespace-pre-wrap break-all max-w-full">
                         {ticket.telemetry.encrypted_sensitive_data}
                       </pre>
                     </div>
@@ -692,7 +686,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                         events.filter(ev => !ev.is_internal_only || canViewInternalNotes).map((ev) => (
                           <div
                             key={ev.id}
-                            className={`p-3 border text-xs font-mono space-y-1 ${
+                            className={`p-3 border rounded-md text-xs font-mono space-y-1 ${
                               ev.is_internal_only
                                 ? 'bg-amber-50 border-amber-200 text-amber-900'
                                 : 'bg-slate-50 border-slate-200 text-slate-800'
@@ -703,7 +697,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                                 <span>{ev.author_name}</span>
                                 <span className="text-[10px] text-slate-500 font-normal">[{ev.author_role}]</span>
                                 {ev.is_internal_only && (
-                                  <span className="px-1 py-0.2 bg-amber-100 text-amber-800 text-[9px] uppercase font-bold flex items-center space-x-1 border border-amber-200">
+                                  <span className="px-1 py-0.2 bg-amber-100 text-amber-800 text-[9px] uppercase font-bold flex items-center space-x-1 border border-amber-200 rounded-md">
                                     <Lock className="w-2.5 h-2.5" />
                                     <span>INTERNAL DEV ONLY</span>
                                   </span>
@@ -728,7 +722,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                             type="checkbox"
                             checked={isInternalNote}
                             onChange={(e) => setIsInternalNote(e.target.checked)}
-                            className="bg-white border-slate-300 text-purple-600 focus:ring-0"
+                            className="bg-white border-slate-300 text-purple-600 focus:ring-0 rounded-sm"
                           />
                           <span>Internal Dev Note (Quarantined from Client)</span>
                         </label>
@@ -747,12 +741,12 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                             ? 'Add internal developer investigation note...'
                             : 'Post update visible to enterprise client...'
                         }
-                        className="flex-1 bg-white border border-slate-300 text-xs font-mono p-2.5 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs"
+                        className="flex-1 bg-white border border-slate-300 rounded-md text-xs font-mono p-2.5 text-slate-900 focus:outline-none focus:border-indigo-500 shadow-2xs"
                       />
                       <button
                         type="submit"
                         disabled={isSubmitting || !newComment.trim()}
-                        className="px-4 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-mono font-medium flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+                        className="px-4 py-2 bg-[#0066FF] hover:bg-blue-600 text-white rounded-md text-xs font-mono font-medium flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
                       >
                         <Send className="w-3.5 h-3.5" />
                         <span>POST</span>

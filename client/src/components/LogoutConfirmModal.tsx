@@ -45,12 +45,12 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
     >
       <div
         id="logout-confirmation-card"
-        className="bg-[#121215] border border-[#27272a] w-full max-w-md shadow-2xl flex flex-col rounded-none animate-in fade-in zoom-in-95 duration-150"
+        className="bg-[#121215] border border-[#27272a] w-full max-w-md shadow-2xl flex flex-col rounded-md animate-in fade-in zoom-in-95 duration-150 overflow-hidden"
       >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-[#27272a] flex items-center justify-between bg-[#09090b]">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-red-950/60 border border-red-800/80 flex items-center justify-center text-red-400">
+            <div className="w-8 h-8 rounded-md bg-red-950/60 border border-red-800/80 flex items-center justify-center text-red-400">
               <LogOut className="w-4 h-4" />
             </div>
             <h2 id="logout-dialog-title" className="text-sm sm:text-base font-bold text-white tracking-tight">
@@ -64,7 +64,7 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
             onClick={onCancel}
             disabled={isLoggingOut}
             aria-label="Close dialog"
-            className="p-1.5 text-neutral-400 hover:text-white border border-transparent hover:border-[#27272a] transition-colors disabled:opacity-50 cursor-pointer"
+            className="p-1.5 text-neutral-400 hover:text-white rounded-md border border-transparent hover:border-[#27272a] transition-colors disabled:opacity-50 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -84,7 +84,7 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
             id="logout-cancel-btn"
             onClick={onCancel}
             disabled={isLoggingOut}
-            className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#27272a] text-xs font-mono font-medium transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#27272a] rounded-md text-xs font-mono font-medium transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
             Cancel
           </button>
@@ -94,7 +94,7 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
             id="logout-confirm-btn"
             onClick={onConfirm}
             disabled={isLoggingOut}
-            className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-500 text-white border border-red-500 text-xs font-mono font-semibold transition-all shadow-sm active:scale-[0.98] flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-500 text-white border border-red-500 rounded-md text-xs font-mono font-semibold transition-all shadow-sm active:scale-[0.98] flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
           >
             {isLoggingOut ? (
               <>

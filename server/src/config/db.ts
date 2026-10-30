@@ -75,6 +75,8 @@ export class MultiTenantStore {
         products: this.products,
         tickets: this.tickets,
         events: this.events,
+        refreshTokens: this.refreshTokens,
+        passwordResetTokens: this.passwordResetTokens,
         permissionsMatrix: this.permissionsMatrix,
         last_updated: new Date().toISOString()
       };
@@ -106,8 +108,23 @@ export class MultiTenantStore {
           this.products = Array.isArray(data.products) ? data.products : [];
           this.tickets = Array.isArray(data.tickets) ? data.tickets : [];
           this.events = Array.isArray(data.events) ? data.events : [];
+          this.refreshTokens = Array.isArray(data.refreshTokens)
+            ? data.refreshTokens.map((r: any) => ({
+                ...r,
+                expires_at: new Date(r.expires_at),
+                created_at: new Date(r.created_at)
+              }))
+            : [];
+          this.passwordResetTokens = Array.isArray(data.passwordResetTokens)
+            ? data.passwordResetTokens.map((p: any) => ({
+                ...p,
+                expires_at: new Date(p.expires_at),
+                created_at: new Date(p.created_at),
+                used_at: p.used_at ? new Date(p.used_at) : null
+              }))
+            : [];
           this.permissionsMatrix = data.permissionsMatrix || {};
-          console.log(`[Database] Loaded persistent data: ${this.tickets.length} tickets, ${this.products.length} products, ${this.tenants.length} tenants.`);
+          console.log(`[Database] Loaded persistent data: ${this.tickets.length} tickets, ${this.products.length} products, ${this.tenants.length} tenants, ${this.refreshTokens.length} active sessions.`);
           return true;
         }
       }
