@@ -822,7 +822,7 @@ export class MultiTenantStore {
    * Initializes development-only password hashes for mock users.
    * Clearly identified for development/testing only; never used in production.
    */
-  public async ensureDevSeedCredentials(hashFn: (password: string) => Promise<string>, devPassword = 'DevPassword123!') {
+  public async ensureDevSeedCredentials(hashFn: (password: string) => Promise<string>, devPassword = 'TestPassword123!') {
     const devHash = await hashFn(devPassword);
     for (const user of this.users) {
       if (!user.password_hash) {

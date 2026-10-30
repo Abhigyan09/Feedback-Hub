@@ -11,7 +11,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
 
   const [tenantSlug, setTenantSlug] = useState<string>('acme-payments');
   const [email, setEmail] = useState<string>('dev.rahul@acme.com');
-  const [password, setPassword] = useState<string>('');
+  const [password, setPassword] = useState<string>('TestPassword123!');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -224,6 +224,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                       onClick={() => {
                         setTenantSlug('acme-payments');
                         setEmail('dev.rahul@acme.com');
+                        setPassword('TestPassword123!');
                         setErrorMessage(null);
                       }}
                       className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
@@ -240,6 +241,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                       onClick={() => {
                         setTenantSlug('medsync');
                         setEmail('dev.elena@medsync.io');
+                        setPassword('TestPassword123!');
                         setErrorMessage(null);
                       }}
                       className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
@@ -331,6 +333,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-1">
+                  <span>Demo Password: <span className="font-mono text-neutral-600 font-medium">TestPassword123!</span></span>
+                  <button
+                    type="button"
+                    onClick={() => setPassword('TestPassword123!')}
+                    className="text-blue-600 hover:text-blue-500 font-medium hover:underline text-[11px]"
+                  >
+                    Autofill
+                  </button>
+                </div>
               </div>
 
               {/* Primary Sign In Button */}
@@ -349,6 +361,67 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToForgotPassword
                     <span>Sign in</span>
                   )}
                 </button>
+              </div>
+
+              {/* Quick Demo Role Switcher */}
+              <div className="pt-4 border-t border-neutral-100">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block mb-2 font-medium">
+                  Quick Demo Accounts (1-Click Fill)
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTenantSlug('acme-payments');
+                      setEmail('dev.rahul@acme.com');
+                      setPassword('TestPassword123!');
+                      setErrorMessage(null);
+                    }}
+                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                  >
+                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">Senior Dev</div>
+                    <div className="text-[10px] text-neutral-400 font-mono truncate">dev.rahul@acme.com</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTenantSlug('acme-payments');
+                      setEmail('admin.priya@acme.com');
+                      setPassword('TestPassword123!');
+                      setErrorMessage(null);
+                    }}
+                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                  >
+                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">Tenant Admin</div>
+                    <div className="text-[10px] text-neutral-400 font-mono truncate">admin.priya@acme.com</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTenantSlug('acme-payments');
+                      setEmail('lead.dev@acme.com');
+                      setPassword('TestPassword123!');
+                      setErrorMessage(null);
+                    }}
+                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                  >
+                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">Squad Lead</div>
+                    <div className="text-[10px] text-neutral-400 font-mono truncate">lead.dev@acme.com</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTenantSlug('medsync');
+                      setEmail('dev.elena@medsync.io');
+                      setPassword('TestPassword123!');
+                      setErrorMessage(null);
+                    }}
+                    className="text-left p-2 rounded border border-neutral-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-xs group"
+                  >
+                    <div className="font-medium text-neutral-800 text-[11px] group-hover:text-blue-700">MedSync Dev</div>
+                    <div className="text-[10px] text-neutral-400 font-mono truncate">dev.elena@medsync.io</div>
+                  </button>
+                </div>
               </div>
 
             </form>

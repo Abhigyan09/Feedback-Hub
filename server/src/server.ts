@@ -91,7 +91,7 @@ async function startServer() {
   // Initialize development mock-user password hashes before accepting requests
   if (ENV.NODE_ENV !== 'production' && !isPostgresConnected) {
     try {
-      await tenantStore.ensureDevSeedCredentials(hashPassword, 'DevPassword123!');
+      await tenantStore.ensureDevSeedCredentials(hashPassword, 'TestPassword123!');
       console.log('[Dev Auth] In-memory development credentials initialized.');
     } catch (err: any) {
       console.error('[Dev Auth] Failed to initialize development credentials:', err?.message || err);
