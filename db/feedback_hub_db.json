@@ -1687,9 +1687,42 @@
       "tenant_id": "tenant-acme-corp-001",
       "token_hash": "ada5ea09880325ee3097b3c68d42e1ed0fbadc573fb13711416cb79d26e0078a",
       "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
-      "is_revoked": false,
+      "is_revoked": true,
       "expires_at": "2026-11-06T18:00:17.337Z",
       "created_at": "2026-10-30T18:00:17.472Z",
+      "replaced_by_token_hash": "67f5f299ddd80497232ef49917fc04191822df8c94936f02416c0dcf0ee8f44c"
+    },
+    {
+      "id": "rt-1793383286297-kq73zm",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "67f5f299ddd80497232ef49917fc04191822df8c94936f02416c0dcf0ee8f44c",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:01:26.251Z",
+      "created_at": "2026-10-30T18:01:26.297Z",
+      "replaced_by_token_hash": "fe5ebf1bc497cc9f6b9264f3b4cd8678fe07e28f30222e0bd00d2be68b286c97"
+    },
+    {
+      "id": "rt-1793383357191-mtm4za",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "fe5ebf1bc497cc9f6b9264f3b4cd8678fe07e28f30222e0bd00d2be68b286c97",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:02:37.180Z",
+      "created_at": "2026-10-30T18:02:37.191Z",
+      "replaced_by_token_hash": "c34b3ebc8f3dfcd1c2e28500f3586ccb1f3b49f28fb89e02c35de7f122c937cf"
+    },
+    {
+      "id": "rt-1793383485711-4eteze",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "c34b3ebc8f3dfcd1c2e28500f3586ccb1f3b49f28fb89e02c35de7f122c937cf",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": false,
+      "expires_at": "2026-11-06T18:04:45.671Z",
+      "created_at": "2026-10-30T18:04:45.711Z",
       "replaced_by_token_hash": null
     }
   ],
@@ -2000,5 +2033,5 @@
       }
     }
   },
-  "last_updated": "2026-10-30T18:00:17.472Z"
+  "last_updated": "2026-10-30T18:04:45.711Z"
 }
