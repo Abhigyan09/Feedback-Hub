@@ -48,7 +48,8 @@
       "full_name": "Alex Vance (Global Super Admin)",
       "role": "super_admin",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-admin-01",
@@ -57,7 +58,8 @@
       "full_name": "Priya Sharma (Acme Admin)",
       "role": "tenant_admin",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-lead-01",
@@ -66,7 +68,8 @@
       "full_name": "Vikram Mehta (API Squad Lead)",
       "role": "squad_lead",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-dev-01",
@@ -75,7 +78,8 @@
       "full_name": "Rahul Sharma (Senior Backend Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-support-01",
@@ -84,7 +88,8 @@
       "full_name": "Amit Patel (Support Agent)",
       "role": "support_agent",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-client-01",
@@ -93,7 +98,8 @@
       "full_name": "John Client (Partner Merchant)",
       "role": "client_user",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "member-1",
@@ -102,7 +108,8 @@
       "full_name": "Elena Rostova",
       "role": "squad_lead",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "member-2",
@@ -111,7 +118,8 @@
       "full_name": "Marcus Chen",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-dev-02",
@@ -120,7 +128,8 @@
       "full_name": "Priya Nair (Frontend Platform Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-dev-03",
@@ -129,7 +138,8 @@
       "full_name": "Amit Patel (Full-Stack Reliability Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "member-3",
@@ -138,7 +148,8 @@
       "full_name": "Sarah Jenkins",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     },
     {
       "id": "user-medsync-dev-01",
@@ -147,7 +158,8 @@
       "full_name": "Elena Rostova (MedSync Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-30T18:43:06.903Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
     }
   ],
   "products": [
@@ -187,7 +199,30 @@
   ],
   "tickets": [],
   "events": [],
-  "refreshTokens": [],
+  "refreshTokens": [
+    {
+      "id": "rt-1793453720549-uhsp3w",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "87d78c4c1afddf29d1b5d562d66859aa701e2be0b9ad1fef3734ee56f48aeb53",
+      "family_id": "de8cbfd0-1bb0-4e79-b208-ab75ed69326e",
+      "is_revoked": false,
+      "expires_at": "2026-11-07T13:35:20.548Z",
+      "created_at": "2026-10-31T13:35:20.549Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793453737445-1j75ts",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "47fc4ca6ed6361f072e24e6ecf3dfededd99d172677865f54b03e598b41114b0",
+      "family_id": "00ca2e20-8b74-4f5f-9ead-bf0540bdde33",
+      "is_revoked": false,
+      "expires_at": "2026-11-07T13:35:37.445Z",
+      "created_at": "2026-10-31T13:35:37.445Z",
+      "replaced_by_token_hash": null
+    }
+  ],
   "passwordResetTokens": [],
   "permissionsMatrix": {
     "tenant-acme-corp-001": {
@@ -495,5 +530,5 @@
       }
     }
   },
-  "last_updated": "2026-10-30T18:43:06.904Z"
+  "last_updated": "2026-10-31T13:35:37.445Z"
 }
