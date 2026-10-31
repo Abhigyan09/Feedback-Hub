@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CustomSelect } from './CustomSelect';
 import { TeamMember, TicketCategory, TicketSeverity } from '../types';
 import { X, Plus, AlertCircle, Cpu, Bug, Layout, ShieldAlert } from 'lucide-react';
 
@@ -67,45 +68,48 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-[2px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-modal-title"
     >
-      <div className="bg-white border border-slate-200/80 rounded-[12px] w-full max-w-lg shadow-2xl overflow-hidden font-poppins">
+      <div className="bg-white border border-slate-200/90 rounded-[16px] w-full max-w-lg shadow-2xl overflow-hidden font-poppins relative animate-in fade-in zoom-in-95 duration-150">
         
-        {/* Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-[8px] bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200/80">
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-            </div>
-            <div>
-              <h2 id="create-modal-title" className="text-base font-medium text-slate-900">
-                Create Live Incident
-              </h2>
-              <p className="text-xs text-slate-500 font-normal">
-                Record new bug or telemetry event directly to the live backend API.
-              </p>
-            </div>
+        {/* Subtle top-right dismiss button */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close dialog"
+          className="absolute top-4 right-4 z-10 p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-[8px] transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* Top Hero Section (Reference: Soft Gray Inset Rounded Card) */}
+        <div className="m-3 p-5 sm:p-6 bg-[#f4f4f5] rounded-[12px] flex flex-col space-y-3 text-left">
+          {/* Top Icon Badge */}
+          <div className="w-9 h-9 rounded-full bg-white border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-2xs">
+            <Plus className="w-4 h-4 text-slate-700 stroke-[2.2]" />
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-[8px] transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {/* Heading and Description */}
+          <div className="space-y-1">
+            <h2 id="create-modal-title" className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight leading-snug">
+              Create incident
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed">
+              Record a new bug, telemetry failure, or operational event to the live backend API.
+            </p>
+          </div>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 pt-1 space-y-4 text-xs">
           
           {/* Title */}
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-700">
-              Incident Title <span className="text-red-500">*</span>
+          <div className="space-y-1.5 text-left">
+            <label className="text-slate-700 font-medium text-xs">
+              Incident Title <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -113,13 +117,13 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Memory leak in WebSocket telemetry relay"
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all font-normal"
+              className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all font-normal shadow-2xs"
             />
           </div>
 
           {/* Description */}
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-700">
+          <div className="space-y-1.5 text-left">
+            <label className="text-slate-700 font-medium text-xs">
               Technical Description
             </label>
             <textarea
@@ -127,66 +131,70 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe reproducing steps, observed errors, and impact..."
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs p-3 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all resize-none font-normal"
+              className="w-full bg-white border border-slate-200 text-slate-800 text-xs p-3 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all resize-none font-normal shadow-2xs"
             />
           </div>
 
           {/* Category & Severity Row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-700">
+          <div className="grid grid-cols-2 gap-3 text-left">
+            <div className="space-y-1.5">
+              <label className="text-slate-700 font-medium text-xs">
                 Category
               </label>
-              <select
+              <CustomSelect
+                fullWidth
                 value={category}
-                onChange={(e) => setCategory(e.target.value as TicketCategory)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
-              >
-                <option value="BUG">Bug</option>
-                <option value="API_FAILURE">API Failure</option>
-                <option value="PERFORMANCE">Performance</option>
-                <option value="UI_GLITCH">UI Glitch</option>
-                <option value="SECURITY">Security</option>
-              </select>
+                onChange={(val: string) => setCategory(val as TicketCategory)}
+                options={[
+                  { value: 'BUG', label: 'Bug' },
+                  { value: 'API_FAILURE', label: 'API Failure' },
+                  { value: 'PERFORMANCE', label: 'Performance' },
+                  { value: 'UI_GLITCH', label: 'UI Glitch' },
+                  { value: 'SECURITY', label: 'Security' }
+                ]}
+                buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
+              />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-700">
+            <div className="space-y-1.5">
+              <label className="text-slate-700 font-medium text-xs">
                 Severity / Priority
               </label>
-              <select
+              <CustomSelect
+                fullWidth
                 value={severity}
-                onChange={(e) => setSeverity(e.target.value as TicketSeverity)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
-              >
-                <option value="CRITICAL">Critical (Urgent P0)</option>
-                <option value="HIGH">High (P1)</option>
-                <option value="MEDIUM">Medium (P2)</option>
-                <option value="LOW">Low (P3)</option>
-              </select>
+                onChange={(val: string) => setSeverity(val as TicketSeverity)}
+                options={[
+                  { value: 'CRITICAL', label: 'Critical (Urgent P0)' },
+                  { value: 'HIGH', label: 'High (P1)' },
+                  { value: 'MEDIUM', label: 'Medium (P2)' },
+                  { value: 'LOW', label: 'Low (P3)' }
+                ]}
+                buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
+              />
             </div>
           </div>
 
           {/* Assignee & Reporter Email Row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-700">
+          <div className="grid grid-cols-2 gap-3 text-left">
+            <div className="space-y-1.5">
+              <label className="text-slate-700 font-medium text-xs">
                 Assignee
               </label>
-              <select
+              <CustomSelect
+                fullWidth
                 value={assigneeId}
-                onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
-              >
-                <option value="UNASSIGNED">-- Unassigned --</option>
-                {teamMembers.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
+                onChange={(val: string) => setAssigneeId(val)}
+                options={[
+                  { value: 'UNASSIGNED', label: '-- Unassigned --' },
+                  ...teamMembers.map((m) => ({ value: m.id, label: m.name }))
+                ]}
+                buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
+              />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-700">
+            <div className="space-y-1.5">
+              <label className="text-slate-700 font-medium text-xs">
                 Reporter Email
               </label>
               <input
@@ -194,26 +202,26 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
                 value={reporterEmail}
                 onChange={(e) => setReporterEmail(e.target.value)}
                 placeholder="dev-lead@acme.com"
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all font-normal"
+                className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-[8px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all font-normal shadow-2xs"
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="pt-3.5 border-t border-slate-100 flex items-center justify-end space-x-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-[8px] transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
+          <div className="pt-2 space-y-2">
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="px-4.5 py-2 text-xs font-medium bg-[#0b1b36] hover:bg-[#12284c] text-white rounded-[8px] shadow-2xs disabled:opacity-50 transition-all cursor-pointer"
+              className="w-full py-3 px-4 bg-[#242426] hover:bg-[#18181b] text-white text-xs font-semibold rounded-[8px] shadow-2xs disabled:opacity-50 transition-all cursor-pointer uppercase tracking-wider"
             >
-              {isSubmitting ? 'Creating...' : 'Create Incident'}
+              {isSubmitting ? 'Creating Incident...' : 'CREATE INCIDENT'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-1.5 text-xs text-slate-500 hover:text-slate-800 font-normal transition-colors cursor-pointer text-center"
+            >
+              Cancel and stay on dashboard
             </button>
           </div>
 

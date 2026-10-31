@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix } from '../types';
 import { hasRolePermission } from '../constants/permissions';
 import { useAuth } from '../context/AuthContext';
+import { CustomSelect } from './CustomSelect';
 import { 
   X, 
   Terminal, 
@@ -333,89 +334,91 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <label className="text-slate-600 font-medium text-xs">Category</label>
-                <select
+                <CustomSelect
+                  fullWidth
                   value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value as any)}
-                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
-                >
-                  <option value="BUG">BUG</option>
-                  <option value="IDEA">IDEA</option>
-                  <option value="HELP">HELP</option>
-                  <option value="RATING">RATING</option>
-                  <option value="API_FAILURE">API FAILURE</option>
-                  <option value="UI_GLITCH">UI GLITCH</option>
-                </select>
+                  onChange={(val: string) => setEditCategory(val as any)}
+                  options={[
+                    { value: 'BUG', label: 'BUG' },
+                    { value: 'IDEA', label: 'IDEA' },
+                    { value: 'HELP', label: 'HELP' },
+                    { value: 'RATING', label: 'RATING' },
+                    { value: 'API_FAILURE', label: 'API FAILURE' },
+                    { value: 'UI_GLITCH', label: 'UI GLITCH' }
+                  ]}
+                  buttonClassName="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] shadow-2xs text-xs"
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-slate-600 font-medium text-xs">Severity</label>
-                <select
+                <CustomSelect
+                  fullWidth
                   value={editSeverity}
-                  onChange={(e) => setEditSeverity(e.target.value as any)}
-                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
-                >
-                  <option value="LOW">LOW</option>
-                  <option value="MEDIUM">MEDIUM</option>
-                  <option value="HIGH">HIGH</option>
-                  <option value="URGENT">URGENT (P0)</option>
-                  <option value="CRITICAL">CRITICAL</option>
-                </select>
+                  onChange={(val: string) => setEditSeverity(val as any)}
+                  options={[
+                    { value: 'LOW', label: 'LOW' },
+                    { value: 'MEDIUM', label: 'MEDIUM' },
+                    { value: 'HIGH', label: 'HIGH' },
+                    { value: 'URGENT', label: 'URGENT (P0)' },
+                    { value: 'CRITICAL', label: 'CRITICAL' }
+                  ]}
+                  buttonClassName="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] shadow-2xs text-xs"
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-slate-600 font-medium text-xs">Status</label>
-                <select
+                <CustomSelect
+                  fullWidth
                   value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value as any)}
-                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
-                >
-                  <option value="OPEN">OPEN</option>
-                  <option value="TRIAGED">TRIAGED</option>
-                  <option value="IN_DEV">IN_DEV</option>
-                  <option value="IN_QA">IN_QA</option>
-                  <option value="RESOLVED">RESOLVED</option>
-                  <option value="CLOSED">CLOSED</option>
-                </select>
+                  onChange={(val: string) => setEditStatus(val as any)}
+                  options={[
+                    { value: 'OPEN', label: 'OPEN' },
+                    { value: 'TRIAGED', label: 'TRIAGED' },
+                    { value: 'IN_DEV', label: 'IN_DEV' },
+                    { value: 'IN_QA', label: 'IN_QA' },
+                    { value: 'RESOLVED', label: 'RESOLVED' },
+                    { value: 'CLOSED', label: 'CLOSED' }
+                  ]}
+                  buttonClassName="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] shadow-2xs text-xs"
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-slate-600 font-medium text-xs">Assigned Squad</label>
-                <select
+                <CustomSelect
+                  fullWidth
                   value={editSquad}
-                  onChange={(e) => setEditSquad(e.target.value)}
-                  className="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer text-xs"
-                >
-                  <option value="CORE_ENGINEERING_SQUAD">Core Engineering Squad</option>
-                  <option value="PAYMENT_CORE_API">Payment Core API</option>
-                  <option value="FRONTEND_PORTAL">Frontend Portal</option>
-                  <option value="PRODUCT_DESIGN_SQUAD">Product Design Squad</option>
-                  <option value="CLIENT_SUPPORT_SQUAD">Client Support Squad</option>
-                  <option value="CUSTOMER_SUCCESS_SQUAD">Customer Success Squad</option>
-                </select>
+                  onChange={(val: string) => setEditSquad(val)}
+                  options={[
+                    { value: 'CORE_ENGINEERING_SQUAD', label: 'Core Engineering Squad' },
+                    { value: 'PAYMENT_CORE_API', label: 'Payment Core API' },
+                    { value: 'FRONTEND_PORTAL', label: 'Frontend Portal' },
+                    { value: 'PRODUCT_DESIGN_SQUAD', label: 'Product Design Squad' },
+                    { value: 'CLIENT_SUPPORT_SQUAD', label: 'Client Support Squad' },
+                    { value: 'CUSTOMER_SUCCESS_SQUAD', label: 'Customer Success Squad' }
+                  ]}
+                  buttonClassName="w-full bg-white border border-slate-200 p-2 text-slate-900 rounded-[8px] shadow-2xs text-xs"
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-slate-600 font-medium text-xs">Assigned Developer</label>
-                <select
+                <CustomSelect
+                  fullWidth
                   value={editAssignedTo}
-                  onChange={(e) => {
-                    const selectedId = e.target.value;
-                    const dev = activeRoster.find(d => d.id === selectedId);
-                    setEditAssignedTo(selectedId);
+                  onChange={(val: string) => {
+                    const dev = activeRoster.find(d => d.id === val);
+                    setEditAssignedTo(val);
                     setEditAssignedToName(dev && dev.id ? dev.name : '');
                   }}
-                  className="w-full bg-white border border-slate-200 p-2 text-blue-700 font-medium rounded-[8px] focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs text-xs"
-                >
-                  {activeRoster.map(dev => (
-                    <option key={dev.id} value={dev.id} className="bg-white text-slate-900">
-                      {dev.name}
-                    </option>
-                  ))}
-                </select>
+                  options={activeRoster.map(dev => ({ value: dev.id, label: dev.name }))}
+                  buttonClassName="w-full bg-white border border-slate-200 p-2 text-blue-700 font-medium rounded-[8px] shadow-2xs text-xs"
+                />
               </div>
             </div>
-
-            <div className="space-y-1">
+<div className="space-y-1">
               <label className="text-slate-600 font-medium text-xs">Report Description / Details</label>
               <textarea
                 value={editDescription}
@@ -481,31 +484,23 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   
                   {/* Developer Assignment Dropdown */}
                   {canAssign && (
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-200/80 px-2.5 py-1 rounded-[8px] shadow-2xs">
-                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="text-[11px] text-slate-400 font-medium">Assign:</span>
-                      <select
-                        value={ticket.assigned_to || ''}
-                        onChange={async (e) => {
-                          const selectedId = e.target.value;
-                          const dev = activeRoster.find(d => d.id === selectedId);
-                          if (onUpdateTicket) {
-                            await onUpdateTicket(ticket.id, {
-                              assigned_to: selectedId || undefined,
-                              assigned_to_name: dev && dev.id ? dev.name : undefined,
-                              status: ticket.status === 'OPEN' && selectedId ? 'IN_DEV' : ticket.status
-                            });
-                          }
-                        }}
-                        className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer"
-                      >
-                        {activeRoster.map(dev => (
-                          <option key={dev.id} value={dev.id} className="bg-white text-slate-900">
-                            {dev.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <CustomSelect
+                      icon={<UserCheck className="w-3.5 h-3.5 text-blue-600" />}
+                      label="Assign"
+                      value={ticket.assigned_to || ''}
+                      onChange={async (selectedId) => {
+                        const dev = activeRoster.find(d => d.id === selectedId);
+                        if (onUpdateTicket) {
+                          await onUpdateTicket(ticket.id, {
+                            assigned_to: selectedId || undefined,
+                            assigned_to_name: dev && dev.id ? dev.name : undefined,
+                            status: ticket.status === 'OPEN' && selectedId ? 'IN_DEV' : ticket.status
+                          });
+                        }
+                      }}
+                      options={activeRoster.map(dev => ({ value: dev.id, label: dev.name }))}
+                      buttonClassName="bg-white hover:bg-slate-50 border-slate-200/80 px-2.5 py-1 shadow-2xs"
+                    />
                   )}
 
                   {/* Status Advancement Buttons */}

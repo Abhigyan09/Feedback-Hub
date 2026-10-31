@@ -416,18 +416,19 @@ export const TicketList: React.FC<TicketListProps> = ({
 
                   {/* Status Dropdown / Badge */}
                   {onUpdateStatus && canChangeStatus ? (
-                    <select
+                    <CustomSelect
                       value={ticket.status}
-                      onChange={(e) => onUpdateStatus(ticket.id, e.target.value)}
-                      className={`text-xs px-2.5 py-1 border rounded-[8px] cursor-pointer focus:outline-none font-medium ${getStatusBadge(ticket.status)}`}
-                    >
-                      <option value="OPEN">OPEN</option>
-                      <option value="TRIAGED">TRIAGED</option>
-                      <option value="IN_DEV">IN_DEV</option>
-                      <option value="IN_QA">IN_QA</option>
-                      <option value="RESOLVED">RESOLVED</option>
-                      <option value="CLOSED">CLOSED</option>
-                    </select>
+                      onChange={(newStatus) => onUpdateStatus(ticket.id, newStatus)}
+                      options={[
+                        { value: 'OPEN', label: 'OPEN' },
+                        { value: 'TRIAGED', label: 'TRIAGED' },
+                        { value: 'IN_DEV', label: 'IN_DEV' },
+                        { value: 'IN_QA', label: 'IN_QA' },
+                        { value: 'RESOLVED', label: 'RESOLVED' },
+                        { value: 'CLOSED', label: 'CLOSED' }
+                      ]}
+                      buttonClassName={`text-xs px-2.5 py-1 border rounded-[8px] cursor-pointer font-medium ${getStatusBadge(ticket.status)}`}
+                    />
                   ) : (
                     <span className={`text-xs font-mono px-2.5 py-1 border font-medium rounded-[6px] ${getStatusBadge(ticket.status)}`}>
                       {ticket.status}

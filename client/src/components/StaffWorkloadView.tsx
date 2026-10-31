@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { CustomSelect } from './CustomSelect';
 import { 
   Users, 
   Shield, 
@@ -718,21 +719,17 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 Reset Filters
               </button>
             )}
-            <div className="flex items-center space-x-1.5">
-              <span className="text-[11px] text-slate-400 font-medium uppercase">Sort:</span>
-              <div className="relative flex items-center">
-                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 pl-8 pr-3 py-1.5 text-xs font-mono focus:outline-none focus:border-indigo-600 cursor-pointer rounded-[6px] transition-colors"
-                >
-                  <option value="LOAD_DESC">Active Load (High → Low)</option>
-                  <option value="NAME_ASC">Alphabetical (A → Z)</option>
-                  <option value="ROLE">Role Hierarchy</option>
-                </select>
-              </div>
-            </div>
+            <CustomSelect
+              label="Sort"
+              value={sortBy}
+              onChange={(val: string) => setSortBy(val as any)}
+              options={[
+                { value: 'LOAD_DESC', label: 'Active Load (High → Low)' },
+                { value: 'NAME_ASC', label: 'Alphabetical (A → Z)' },
+                { value: 'ROLE', label: 'Role Hierarchy' }
+              ]}
+              buttonClassName="border-slate-200 bg-slate-50 hover:bg-white text-slate-800 py-1.5 text-xs rounded-[8px]"
+            />
           </div>
         </div>
 
@@ -1028,18 +1025,16 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         </td>
                         <td className="p-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           {canAssign ? (
-                            <select
+                            <CustomSelect
                               value={t.assigned_to || ''}
-                              onChange={(e) => handleQuickAssign(t.id, e.target.value)}
-                              className="text-[11px] font-mono border border-slate-200 rounded-md bg-white px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
-                            >
-                              <option value="">-- Reassign --</option>
-                              {staffList.map(sm => (
-                                <option key={sm.id} value={sm.id}>
-                                  {sm.name}
-                                </option>
-                              ))}
-                            </select>
+                              onChange={(val: string) => handleQuickAssign(t.id, val)}
+                              placeholder="-- Reassign --"
+                              options={[
+                                { value: '', label: '-- Reassign --' },
+                                ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
+                              ]}
+                              buttonClassName="text-[11px] font-mono border-slate-200 bg-white px-2 py-1 text-slate-700 rounded-[8px]"
+                            />
                           ) : (
                             <span className="text-[11px] text-slate-400 font-mono">-</span>
                           )}
@@ -1123,23 +1118,20 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1.5 border-t border-amber-100 gap-2">
                   <span className="truncate">{ticket.category}</span>
                   {canAssign ? (
-                    <select
-                      defaultValue=""
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          handleQuickAssign(ticket.id, e.target.value);
-                          e.target.value = '';
+                    <CustomSelect
+                      value=""
+                      onChange={(val: string) => {
+                        if (val) {
+                          handleQuickAssign(ticket.id, val);
                         }
                       }}
-                      className="text-[10px] font-mono border border-amber-300 bg-white text-slate-800 px-1 py-0.5 rounded-[8px] cursor-pointer focus:outline-none"
-                    >
-                      <option value="">+ Assign...</option>
-                      {staffList.map(sm => (
-                        <option key={sm.id} value={sm.id}>
-                          {sm.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="+ Assign..."
+                      options={[
+                        { value: '', label: '+ Assign...' },
+                        ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
+                      ]}
+                      buttonClassName="text-[10px] font-mono border-amber-300 bg-white text-slate-800 px-2 py-0.5 rounded-[8px]"
+                    />
                   ) : (
                     <button
                       type="button"
@@ -1158,30 +1150,42 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
       {/* 7. Modal: Add New Staff Member */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-5 rounded-[12px] animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-7 h-7 bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200 rounded-[8px]">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-                <h3 className="text-sm font-medium text-slate-900 font-mono uppercase tracking-wide">
-                  Register New Squad Member
-                </h3>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 backdrop-blur-[2px] p-4 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white border border-slate-200/90 shadow-2xl max-w-md w-full rounded-[16px] overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-poppins relative">
+            
+            {/* Top-right dismiss button */}
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute top-4 right-4 z-10 p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-[8px] transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Top Hero Section */}
+            <div className="m-3 p-5 sm:p-6 bg-[#f4f4f5] rounded-[12px] flex flex-col space-y-3 text-left">
+              <div className="w-9 h-9 rounded-full bg-white border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-2xs">
+                <UserPlus className="w-4 h-4 text-slate-700 stroke-[2.2]" />
               </div>
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-[8px]"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="space-y-1">
+                <h3 className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight leading-snug">
+                  Add squad member
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed">
+                  Register a new engineer, lead, or support specialist to the active on-call roster.
+                </p>
+              </div>
             </div>
 
-            <form onSubmit={handleAddStaffMember} className="space-y-4 text-xs font-mono">
-              <div className="space-y-1.5">
-                <label className="text-slate-700 font-medium block uppercase text-[10px]">
-                  Full Name & Title <span className="text-red-500">*</span>
+            {/* Form */}
+            <form onSubmit={handleAddStaffMember} className="p-5 sm:p-6 pt-1 space-y-4 text-xs">
+              <div className="space-y-1.5 text-left">
+                <label className="text-slate-700 font-medium text-xs">
+                  Full Name & Title <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1189,13 +1193,13 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffName}
                   onChange={(e) => setNewStaffName(e.target.value)}
                   placeholder="e.g. Alex Zhang (Senior Systems Engineer)"
-                  className="w-full border border-slate-300 p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none rounded-[8px]"
+                  className="w-full bg-white border border-slate-200 p-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none rounded-[8px] shadow-2xs"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-slate-700 font-medium block uppercase text-[10px]">
-                  Corporate Email <span className="text-red-500">*</span>
+              <div className="space-y-1.5 text-left">
+                <label className="text-slate-700 font-medium text-xs">
+                  Corporate Email <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -1203,45 +1207,49 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffEmail}
                   onChange={(e) => setNewStaffEmail(e.target.value)}
                   placeholder="e.g. alex.zhang@feedbackhub.io"
-                  className="w-full border border-slate-300 p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none rounded-[8px]"
+                  className="w-full bg-white border border-slate-200 p-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none rounded-[8px] shadow-2xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 text-left">
                 <div className="space-y-1.5">
-                  <label className="text-slate-700 font-medium block uppercase text-[10px]">
+                  <label className="text-slate-700 font-medium text-xs">
                     Role Hierarchy
                   </label>
-                  <select
+                  <CustomSelect
+                    fullWidth
                     value={newStaffRole}
-                    onChange={(e) => setNewStaffRole(e.target.value as UserRole)}
-                    className="w-full border border-slate-300 p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer rounded-[8px]"
-                  >
-                    <option value="developer">Developer</option>
-                    <option value="squad_lead">Squad Lead</option>
-                    <option value="tenant_admin">Tenant Admin</option>
-                    <option value="support_agent">Support Agent</option>
-                  </select>
+                    onChange={(val: string) => setNewStaffRole(val as UserRole)}
+                    options={[
+                      { value: 'developer', label: 'Developer' },
+                      { value: 'squad_lead', label: 'Squad Lead' },
+                      { value: 'tenant_admin', label: 'Tenant Admin' },
+                      { value: 'support_agent', label: 'Support Agent' }
+                    ]}
+                    buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-slate-700 font-medium block uppercase text-[10px]">
+                  <label className="text-slate-700 font-medium text-xs">
                     Initial Status
                   </label>
-                  <select
+                  <CustomSelect
+                    fullWidth
                     value={newStaffStatus}
-                    onChange={(e) => setNewStaffStatus(e.target.value as any)}
-                    className="w-full border border-slate-300 p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer rounded-[8px]"
-                  >
-                    <option value="ONLINE">ONLINE</option>
-                    <option value="ON_CALL">ON-CALL</option>
-                    <option value="AWAY">AWAY</option>
-                  </select>
+                    onChange={(val: string) => setNewStaffStatus(val as any)}
+                    options={[
+                      { value: 'ONLINE', label: 'ONLINE' },
+                      { value: 'ON_CALL', label: 'ON-CALL' },
+                      { value: 'AWAY', label: 'AWAY' }
+                    ]}
+                    buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-slate-700 font-medium block uppercase text-[10px]">
+              <div className="space-y-1.5 text-left">
+                <label className="text-slate-700 font-medium text-xs">
                   Assigned Engineering Squad
                 </label>
                 <input
@@ -1249,31 +1257,30 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffSquad}
                   onChange={(e) => setNewStaffSquad(e.target.value)}
                   placeholder="e.g. Core Platform & API Squad"
-                  className="w-full border border-slate-300 p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none rounded-[8px]"
+                  className="w-full bg-white border border-slate-200 p-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none rounded-[8px] shadow-2xs"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition-colors cursor-pointer rounded-[8px]"
-                >
-                  Cancel
-                </button>
+              <div className="pt-2 space-y-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-[#6366F1] hover:bg-indigo-700 text-white text-xs font-medium transition-colors cursor-pointer shadow-xs disabled:opacity-50 rounded-[8px]"
+                  className="w-full py-3 px-4 bg-[#242426] hover:bg-[#18181b] text-white text-xs font-semibold rounded-[8px] shadow-2xs disabled:opacity-50 transition-all cursor-pointer uppercase tracking-wider"
                 >
-                  {isSubmitting ? 'Registering...' : 'Add Squad Member'}
+                  {isSubmitting ? 'Registering...' : 'REGISTER SQUAD MEMBER'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="w-full py-1.5 text-xs text-slate-500 hover:text-slate-800 font-normal transition-colors cursor-pointer text-center"
+                >
+                  Cancel and discard
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-    </main>
+</main>
   );
 };

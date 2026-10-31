@@ -1,4 +1,5 @@
 import React from 'react';
+import { CustomSelect } from './CustomSelect';
 import { Ticket, TeamMember } from '../types';
 import { normalizeSeverity, normalizeStatus, formatTimeAgo } from '../utils/formatters';
 import { X, Terminal, Cpu, Bug, ShieldAlert, CheckCircle2, User, Clock, AlertTriangle, ExternalLink } from 'lucide-react';
@@ -103,22 +104,19 @@ export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
               <span className="text-xs font-medium text-slate-700">
                 Assigned Squad Engineer:
               </span>
-              <select
+              <CustomSelect
+                fullWidth
                 value={ticket.assigned_to || 'UNASSIGNED'}
-                onChange={(e) => {
-                  const val = e.target.value;
+                onChange={(val: string) => {
                   const member = teamMembers.find(m => m.id === val);
                   onUpdateAssignee(ticket.id, val === 'UNASSIGNED' ? null : val, member ? member.name : null);
                 }}
-                className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-1.5 rounded-[8px] font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
-              >
-                <option value="UNASSIGNED">-- Unassigned --</option>
-                {teamMembers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.role.split(' ')[0]})
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: 'UNASSIGNED', label: '-- Unassigned --' },
+                  ...teamMembers.map(m => ({ value: m.id, label: `${m.name} (${m.role.split(' ')[0]})` }))
+                ]}
+                buttonClassName="bg-white border-slate-200 text-slate-800 text-xs px-3 py-1.5 rounded-[8px]"
+              />
             </div>
 
           </div>

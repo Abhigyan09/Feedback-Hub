@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { CustomSelect } from './CustomSelect';
 import { 
   X, 
   Send, 
@@ -453,15 +454,17 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                   <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
                     Simulate Client Product & Domain Origin:
                   </label>
-                  <select
+                  <CustomSelect
+                    fullWidth
                     value={simulatedProduct}
-                    onChange={(e) => setSimulatedProduct(e.target.value as any)}
-                    className="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-[8px] p-2 text-slate-800 focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="checkout">Acme Payments (checkout.acme.com)</option>
-                    <option value="merchant">Acme Payments (merchant.acme.com)</option>
-                    <option value="medsync">MedSync Healthcare (portal.medsync.io)</option>
-                  </select>
+                    onChange={(val: string) => setSimulatedProduct(val as any)}
+                    options={[
+                      { value: 'checkout', label: 'Acme Payments (checkout.acme.com)' },
+                      { value: 'merchant', label: 'Acme Payments (merchant.acme.com)' },
+                      { value: 'medsync', label: 'MedSync Healthcare (portal.medsync.io)' }
+                    ]}
+                    buttonClassName="bg-slate-50 border-slate-200 rounded-[8px] p-2 font-mono text-xs"
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-600 bg-slate-50 p-2.5 rounded-[8px] border border-slate-100">

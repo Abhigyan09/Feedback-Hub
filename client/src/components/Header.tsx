@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AuthenticatedUser, Tenant, UserRole, Ticket } from '../types';
 import { NotificationPanel } from './NotificationPanel';
+import { CustomSelect } from './CustomSelect';
 import { 
   Building2, 
   Shield, 
@@ -167,53 +168,30 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Tenant Switcher Dropdown */}
           <div className="relative shrink min-w-0">
-            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 rounded-md text-xs text-slate-800 font-medium transition-colors shadow-2xs">
-              <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-              {onTenantChange ? (
-                <select
-                  value={currentTenantId}
-                  onChange={(e) => onTenantChange(e.target.value)}
-                  className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[170px] md:max-w-[210px] truncate"
-                >
-                  {tenants && tenants.length > 0 ? (
-                    tenants.map(t => (
-                      <option key={t.id} value={t.id} className="bg-white text-slate-900">{t.name}</option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="tenant-acme-corp-001" className="bg-white text-slate-900">Acme Payments Inc.</option>
-                      <option value="tenant-medsync-002" className="bg-white text-slate-900">MedSync Healthcare</option>
-                    </>
-                  )}
-                </select>
-              ) : (
-                <span className="text-xs font-medium text-slate-800 uppercase tracking-tight truncate max-w-[170px]">
-                  {activeTenantName}
-                </span>
-              )}
-            </div>
+            {onTenantChange ? (
+              <CustomSelect
+                icon={<Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />}
+                value={currentTenantId}
+                onChange={onTenantChange}
+                options={
+                  tenants && tenants.length > 0
+                    ? tenants.map(t => ({ value: t.id, label: t.name }))
+                    : [
+                        { value: 'tenant-acme-corp-001', label: 'Acme Payments Inc.' },
+                        { value: 'tenant-medsync-002', label: 'MedSync Healthcare' }
+                      ]
+                }
+                buttonClassName="bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 px-2.5 py-1.5 shadow-2xs rounded-[8px]"
+              />
+            ) : (
+              <div className="flex items-center space-x-1.5 bg-white border border-slate-200 px-2.5 py-1.5 rounded-[8px] text-xs text-slate-800 font-medium shadow-2xs">
+                <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span className="truncate max-w-[170px] uppercase tracking-tight">{activeTenantName}</span>
+              </div>
+            )}
           </div>
 
-          {/* Role Switcher Dropdown */}
-          {onRoleChange && (
-            <div className="relative shrink min-w-0">
-              <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 rounded-md text-xs text-slate-800 font-medium transition-colors shadow-2xs">
-                <Shield className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                <select
-                  value={currentRole}
-                  onChange={(e) => onRoleChange(e.target.value as UserRole)}
-                  className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[160px] md:max-w-[200px] truncate"
-                >
-                  <option value="developer" className="bg-white text-slate-900">Developer (Rahul Sharma)</option>
-                  <option value="squad_lead" className="bg-white text-slate-900">Squad Lead (Vikram Mehta)</option>
-                  <option value="tenant_admin" className="bg-white text-slate-900">Tenant Admin (Elena Rostova)</option>
-                  <option value="support_agent" className="bg-white text-slate-900">Support Agent (Marcus Chen)</option>
-                  <option value="client_user" className="bg-white text-slate-900">Client User (Sarah Jenkins)</option>
-                  <option value="super_admin" className="bg-white text-slate-900">Super Admin (Alex Turner)</option>
-                </select>
-              </div>
-            </div>
-          )}
+          
 
           {/* WebSocket Status Indicator */}
           {isConnected !== undefined && (

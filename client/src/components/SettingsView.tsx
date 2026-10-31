@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { CustomSelect } from './CustomSelect';
 import { 
   Key, 
   Shield, 
@@ -1117,20 +1118,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <label className="text-slate-500 uppercase text-[10px] font-medium block">
               Enterprise Plan Tier {canEditTenantProfile ? <span className="text-indigo-600 font-medium">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
             </label>
-            <select
+            <CustomSelect
+              fullWidth
               value={plan}
-              onChange={(e) => setPlan(e.target.value)}
+              onChange={setPlan}
               disabled={!canEditTenantProfile || isSaving}
-              className={`w-full border px-2.5 py-1.5 font-medium text-xs rounded-md focus:outline-none ${
+              options={[
+                { value: 'ENTERPRISE', label: 'ENTERPRISE (SOC2 + AES-256)' },
+                { value: 'PRO', label: 'PRO (SLA 99.9%)' },
+                { value: 'SCALE', label: 'SCALE (High Concurrency)' }
+              ]}
+              buttonClassName={`px-2.5 py-1.5 font-medium text-xs rounded-[8px] ${
                 !canEditTenantProfile 
                   ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
-                  : 'bg-white border-slate-300 focus:border-indigo-600 text-emerald-700 cursor-pointer'
+                  : 'bg-white border-slate-300 text-emerald-700'
               }`}
-            >
-              <option value="ENTERPRISE">ENTERPRISE (SOC2 + AES-256)</option>
-              <option value="PRO">PRO (SLA 99.9%)</option>
-              <option value="SCALE">SCALE (High Concurrency)</option>
-            </select>
+            />
           </div>
 
           {/* Alert Webhook URL */}
@@ -1252,15 +1255,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               <div className="space-y-1">
                 <label className="text-[10px] text-slate-600 uppercase font-medium">Environment</label>
-                <select
+                <CustomSelect
+                  fullWidth
                   value={newProductEnv}
-                  onChange={(e) => setNewProductEnv(e.target.value as any)}
-                  className="w-full bg-white border border-slate-300 focus:border-indigo-600 p-2 text-slate-900 focus:outline-none cursor-pointer rounded-md"
-                >
-                  <option value="production">Production</option>
-                  <option value="staging">Staging</option>
-                  <option value="development">Development</option>
-                </select>
+                  onChange={(val: string) => setNewProductEnv(val as any)}
+                  options={[
+                    { value: 'production', label: 'Production' },
+                    { value: 'staging', label: 'Staging' },
+                    { value: 'development', label: 'Development' }
+                  ]}
+                  buttonClassName="bg-white border-slate-300 p-2 text-slate-900 rounded-[8px]"
+                />
               </div>
 
               <div className="sm:col-span-3 space-y-1">
@@ -1326,15 +1331,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] text-slate-600 uppercase">Environment</label>
-                          <select
+                          <CustomSelect
+                            fullWidth
                             value={editProductEnv}
-                            onChange={(e) => setEditProductEnv(e.target.value as any)}
-                            className="w-full bg-white border border-slate-300 px-2.5 py-1.5 text-slate-900 text-xs focus:outline-none focus:border-indigo-600 cursor-pointer rounded-md"
-                          >
-                            <option value="production">Production</option>
-                            <option value="staging">Staging</option>
-                            <option value="development">Development</option>
-                          </select>
+                            onChange={(val: string) => setEditProductEnv(val as any)}
+                            options={[
+                              { value: 'production', label: 'Production' },
+                              { value: 'staging', label: 'Staging' },
+                              { value: 'development', label: 'Development' }
+                            ]}
+                            buttonClassName="w-full bg-white border border-slate-300 px-2.5 py-1.5 text-slate-900 text-xs rounded-[8px]"
+                          />
                         </div>
                         <div className="sm:col-span-3 space-y-1">
                           <label className="text-[10px] text-slate-600 uppercase">Description</label>
@@ -1570,22 +1577,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <label className="text-slate-600 uppercase text-[10px] font-medium block">
                 Default Squad Assignment {canManagePolicies ? <span className="text-indigo-600 font-medium">(Editable)</span> : <span className="text-slate-400 font-normal">(Read-Only)</span>}
               </label>
-              <select
+              <CustomSelect
+                fullWidth
                 value={defaultSquad}
-                onChange={(e) => setDefaultSquad(e.target.value)}
+                onChange={(val: string) => setDefaultSquad(val)}
                 disabled={!canManagePolicies || isSaving}
-                className={`w-full border px-2.5 py-1.5 font-medium text-xs rounded-[8px] focus:outline-none ${
+                options={[
+                  { value: 'Core Platform & API Squad', label: 'Core Platform & API Squad' },
+                  { value: 'Checkout & Billing Squad', label: 'Checkout & Billing Squad' },
+                  { value: 'Merchant Admin Portal Squad', label: 'Merchant Admin Portal Squad' },
+                  { value: 'Frontend & Mobile Squad', label: 'Frontend & Mobile Squad' },
+                  { value: 'DevOps & Reliability Squad', label: 'DevOps & Reliability Squad' }
+                ]}
+                buttonClassName={`px-2.5 py-1.5 font-medium text-xs rounded-[8px] ${
                   !canManagePolicies 
                     ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
-                    : 'bg-white border-slate-300 text-indigo-700 focus:border-indigo-600 cursor-pointer'
+                    : 'bg-white border-slate-300 text-indigo-700'
                 }`}
-              >
-                <option value="Core Platform & API Squad">Core Platform & API Squad</option>
-                <option value="Checkout & Billing Squad">Checkout & Billing Squad</option>
-                <option value="Merchant Admin Portal Squad">Merchant Admin Portal Squad</option>
-                <option value="Frontend & Mobile Squad">Frontend & Mobile Squad</option>
-                <option value="DevOps & Reliability Squad">DevOps & Reliability Squad</option>
-              </select>
+              />
             </div>
 
             {/* User Email Requirement */}
@@ -1831,15 +1840,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {/* Right: Clone from and Reset Role */}
                 <div className="flex items-center space-x-2 shrink-0">
                   <span className="text-xs text-slate-500 font-medium">Clone from:</span>
-                  <select
+                  <CustomSelect
                     value={copySourceRole}
-                    onChange={(e) => setCopySourceRole(e.target.value as UserRole)}
-                    className="bg-white border border-slate-200 text-slate-800 text-xs px-2.5 py-1 focus:outline-none cursor-pointer rounded-md"
-                  >
-                    {ALL_SYSTEM_ROLES.filter(r => r !== selectedRoleForPerms).map(r => (
-                      <option key={r} value={r}>{ROLE_METADATA[r].label}</option>
-                    ))}
-                  </select>
+                    onChange={(val: string) => setCopySourceRole(val as UserRole)}
+                    options={ALL_SYSTEM_ROLES.filter(r => r !== selectedRoleForPerms).map(r => ({
+                      value: r,
+                      label: ROLE_METADATA[r].label
+                    }))}
+                    buttonClassName="bg-white border border-slate-200 text-slate-800 text-xs px-2.5 py-1 rounded-[8px]"
+                  />
                   <button
                     type="button"
                     onClick={() => handleCopyPermissions(copySourceRole, selectedRoleForPerms)}
@@ -1947,17 +1956,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {/* Risk Selector */}
               <div className="flex items-center space-x-1.5 shrink-0">
                 <span className="text-[11px] font-mono text-slate-500 font-medium">RISK:</span>
-                <select
+                <CustomSelect
                   value={permFilterRisk}
-                  onChange={(e) => setPermFilterRisk(e.target.value)}
-                  className="border border-slate-200 bg-white text-slate-800 px-2 py-1 text-xs uppercase font-mono focus:outline-none cursor-pointer rounded-md"
-                >
-                  <option value="ALL">ALL RISKS</option>
-                  <option value="CRITICAL">CRITICAL</option>
-                  <option value="HIGH">HIGH</option>
-                  <option value="MEDIUM">MEDIUM</option>
-                  <option value="LOW">LOW</option>
-                </select>
+                  onChange={(val: string) => setPermFilterRisk(val)}
+                  options={[
+                    { value: 'ALL', label: 'ALL RISKS' },
+                    { value: 'CRITICAL', label: 'CRITICAL' },
+                    { value: 'HIGH', label: 'HIGH' },
+                    { value: 'MEDIUM', label: 'MEDIUM' },
+                    { value: 'LOW', label: 'LOW' }
+                  ]}
+                  buttonClassName="border border-slate-200 bg-white text-slate-800 px-2 py-1 text-xs uppercase font-mono rounded-[8px]"
+                />
               </div>
             </div>
 
@@ -2198,17 +2208,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <label className="text-[10px] text-slate-500 uppercase font-medium block">
                 1. Test Subject Role
               </label>
-              <select
+              <CustomSelect
+                fullWidth
                 value={testRoleKey}
-                onChange={(e) => setTestRoleKey(e.target.value as UserRole)}
-                className="w-full bg-white border border-slate-200 text-slate-900 px-3 py-2 text-xs focus:outline-none focus:border-indigo-600 cursor-pointer rounded-md"
-              >
-                {ALL_SYSTEM_ROLES.map(r => (
-                  <option key={r} value={r}>
-                    {ROLE_METADATA[r].label} ({ROLE_METADATA[r].badge})
-                  </option>
-                ))}
-              </select>
+                onChange={(val: string) => setTestRoleKey(val as UserRole)}
+                options={ALL_SYSTEM_ROLES.map(r => ({
+                  value: r,
+                  label: `${ROLE_METADATA[r].label} (${ROLE_METADATA[r].badge})`
+                }))}
+                buttonClassName="w-full bg-white border border-slate-200 text-slate-900 px-3 py-2 text-xs rounded-[8px]"
+              />
             </div>
 
             {/* Test Permission Action Picker */}
@@ -2216,17 +2225,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <label className="text-[10px] text-slate-500 uppercase font-medium block">
                 2. Target Operation / Permission Key
               </label>
-              <select
+              <CustomSelect
+                fullWidth
                 value={testActionKey}
-                onChange={(e) => setTestActionKey(e.target.value as PermissionKey)}
-                className="w-full bg-white border border-slate-200 text-slate-900 px-3 py-2 text-xs focus:outline-none focus:border-indigo-600 cursor-pointer rounded-md"
-              >
-                {permissionDefinitions.map(p => (
-                  <option key={p.key} value={p.key}>
-                    [{p.module.toUpperCase()}] {p.name} ({p.key})
-                  </option>
-                ))}
-              </select>
+                onChange={(val: string) => setTestActionKey(val as PermissionKey)}
+                options={permissionDefinitions.map(p => ({
+                  value: p.key,
+                  label: `[${p.module.toUpperCase()}] ${p.name} (${p.key})`
+                }))}
+                buttonClassName="w-full bg-white border border-slate-200 text-slate-900 px-3 py-2 text-xs rounded-[8px]"
+              />
             </div>
           </div>
 
@@ -2323,15 +2331,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {products.length > 1 && (
               <div className="flex items-center space-x-1.5">
                 <span className="text-slate-500 text-[11px]">Product:</span>
-                <select
+                <CustomSelect
                   value={selectedProductForSnippet}
-                  onChange={(e) => setSelectedProductForSnippet(e.target.value)}
-                  className="bg-white border border-slate-300 text-indigo-700 px-2 py-1 focus:outline-none focus:border-indigo-600 cursor-pointer rounded-md"
-                >
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                  onChange={(val: string) => setSelectedProductForSnippet(val)}
+                  options={products.map((p) => ({
+                    value: p.id,
+                    label: p.name
+                  }))}
+                  buttonClassName="bg-white border border-slate-300 text-indigo-700 px-2 py-1 rounded-[8px]"
+                />
               </div>
             )}
 
