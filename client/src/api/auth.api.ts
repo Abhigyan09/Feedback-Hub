@@ -48,29 +48,44 @@ export async function loginApi(payload: LoginRequestDTO): Promise<LoginResponseD
   return data as LoginResponseDTO;
 }
 
+let inFlightRefreshPromise: Promise<RefreshResponseDTO> | null = null;
+
 /**
  * Silently renews the in-memory access token using the HttpOnly refresh cookie.
+ * Deduplicates concurrent in-flight calls to prevent single-use token rotation race conditions.
  */
 export async function refreshSessionApi(): Promise<RefreshResponseDTO> {
-  const response = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    credentials: 'include'
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new AuthError(
-      data.message || data.error || 'Session expired. Please sign in again.',
-      response.status,
-      data.code
-    );
+  if (inFlightRefreshPromise) {
+    return inFlightRefreshPromise;
   }
 
-  return data as RefreshResponseDTO;
+  inFlightRefreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new AuthError(
+          data.message || data.error || 'Session expired. Please sign in again.',
+          response.status,
+          data.code
+        );
+      }
+
+      return data as RefreshResponseDTO;
+    } finally {
+      inFlightRefreshPromise = null;
+    }
+  })();
+
+  return inFlightRefreshPromise;
 }
 
 /**

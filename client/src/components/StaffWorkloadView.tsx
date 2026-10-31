@@ -29,6 +29,7 @@ import {
 import { TeamMember, Ticket, TicketStatus, UserRole, RolePermissionsMatrix } from '../types';
 import { normalizeSeverity, normalizeStatus } from '../utils/formatters';
 import { hasRolePermission } from '../constants/permissions';
+import { useAuth } from '../context/AuthContext';
 
 interface StaffWorkloadViewProps {
   currentTenantId: string;
@@ -55,6 +56,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
   onRefresh,
   onStaffUpdated
 }) => {
+  const { authFetch } = useAuth();
   // Local staff list state for instant optimistic responsiveness
   const [staffList, setStaffList] = useState<TeamMember[]>(teamMembers);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
   // Direct fetch from /api/v1/tenants/staff to guarantee synchronization
   const fetchStaffData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/v1/tenants/staff?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tenants/staff?_t=${Date.now()}`, {
         headers: {
           'x-tenant-id': currentTenantId,
           'x-user-role': currentRole
@@ -265,7 +267,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     setIsRebalancing(true);
     setActionError(null);
     try {
-      const res = await fetch('/api/v1/tenants/staff/rebalance', {
+      const res = await authFetch('/api/v1/tenants/staff/rebalance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -314,7 +316,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     }));
 
     try {
-      const res = await fetch(`/api/v1/tenants/staff/${member.id}`, {
+      const res = await authFetch(`/api/v1/tenants/staff/${member.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -361,7 +363,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     }
 
     try {
-      const res = await fetch(`/api/v1/tenants/staff/${member.id}`, {
+      const res = await authFetch(`/api/v1/tenants/staff/${member.id}`, {
         method: 'DELETE',
         headers: {
           'x-tenant-id': currentTenantId,
@@ -399,7 +401,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     setIsSubmitting(true);
     setActionError(null);
     try {
-      const res = await fetch('/api/v1/tenants/staff', {
+      const res = await authFetch('/api/v1/tenants/staff', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -676,7 +678,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       </div>
 
       {/* 3. Search & Filter Bar (Clean 2-tier Bank-Grade Layout) */}
-      <div className="bg-white border border-slate-200 p-3.5 shadow-2xs space-y-3">
+      <div className="bg-white border border-slate-200 p-3.5 shadow-2xs space-y-3 rounded-md card-subtle">
         
         {/* Row 1: Dedicated Search Box on left, Sort and Reset on right */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -860,7 +862,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 </div>
                 <div className="w-full bg-slate-100 h-1.5 rounded-[6px] overflow-hidden">
                   <div 
-                    className={`h-full transition-all duration-300 ${
+                    className={`h-full rounded-full transition-all duration-300 ${
                       metrics.openCount === 0 
                         ? 'bg-slate-300 w-0' 
                         : metrics.openCount <= 2 
@@ -927,7 +929,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
         <section 
           ref={queueSectionRef}
           aria-labelledby="member-workload-heading" 
-          className="bg-white border border-slate-200 p-5 space-y-4 shadow-2xs animate-in fade-in slide-in-from-top-1"
+          className="bg-white border border-slate-200 rounded-md card-subtle p-5 space-y-4 shadow-2xs animate-in fade-in slide-in-from-top-1"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-3">
@@ -952,7 +954,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             <button
               type="button"
               onClick={() => setSelectedMemberId(null)}
-              className="text-xs text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer font-mono"
+              className="text-xs text-slate-500 hover:text-slate-800 rounded-md px-2 py-1 hover:bg-slate-100 flex items-center space-x-1 cursor-pointer font-mono"
             >
               <X className="w-3.5 h-3.5" />
               <span>Close Queue</span>
@@ -960,7 +962,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           </div>
 
           {activeMemberTickets.length === 0 ? (
-            <div className="p-8 text-center bg-slate-50 border border-slate-200 space-y-2">
+            <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-md card-subtle space-y-2">
               <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
               <p className="text-xs font-medium text-slate-800 font-mono">
                 {activeMember.name} is fully caught up with zero active backlog tickets!
@@ -970,7 +972,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               </p>
             </div>
           ) : (
-            <div className="border border-slate-200 overflow-x-auto">
+            <div className="border border-slate-200 rounded-md overflow-x-auto card-subtle">
               <table className="w-full text-left border-collapse text-xs font-mono">
                 <thead>
                   <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-wider">
@@ -1029,7 +1031,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                             <select
                               value={t.assigned_to || ''}
                               onChange={(e) => handleQuickAssign(t.id, e.target.value)}
-                              className="text-[11px] font-mono border border-slate-200 bg-white px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
+                              className="text-[11px] font-mono border border-slate-200 rounded-md bg-white px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
                             >
                               <option value="">-- Reassign --</option>
                               {staffList.map(sm => (
@@ -1056,7 +1058,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                             <button
                               type="button"
                               onClick={() => onSelectTicket(t)}
-                              className="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-[10px] text-slate-700 cursor-pointer transition-colors"
+                              className="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-[10px] text-slate-700 cursor-pointer transition-colors"
                             >
                               Inspect Details
                             </button>
@@ -1074,7 +1076,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
       {/* 6. Unassigned Ingestion Backlog Section if any tickets exist */}
       {unassignedTickets.length > 0 && (
-        <section aria-labelledby="unassigned-heading" className="bg-white border border-amber-200 p-5 space-y-3 shadow-2xs">
+        <section aria-labelledby="unassigned-heading" className="bg-white border border-amber-200 rounded-md card-subtle p-5 space-y-3 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 text-amber-600" />
@@ -1142,7 +1144,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onSelectTicket(ticket)}
-                      className="text-amber-700 font-medium hover:underline cursor-pointer"
+                      className="text-amber-700 font-medium hover:underline cursor-pointer rounded-md px-1"
                     >
                       Inspect
                     </button>

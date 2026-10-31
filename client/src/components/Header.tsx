@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { AuthenticatedUser, Tenant, UserRole } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { AuthenticatedUser, Tenant, UserRole, Ticket } from '../types';
+import { NotificationPanel } from './NotificationPanel';
 import { 
   Building2, 
   Shield, 
@@ -22,6 +23,9 @@ export interface HeaderProps {
   onOpenWidgetSimulator: () => void;
   onNewIncidentClick?: () => void;
   onLogout?: () => void;
+  tickets?: Ticket[];
+  onSelectTicket?: (ticket: Ticket) => void;
+  onSelectView?: (view: any) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,9 +38,86 @@ export const Header: React.FC<HeaderProps> = ({
   onRoleChange,
   onOpenWidgetSimulator,
   onNewIncidentClick,
-  onLogout
+  onLogout,
+  tickets = [],
+  onSelectTicket,
+  onSelectView
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+  const notificationCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleNotificationMouseEnter = () => {
+    if (notificationCloseTimerRef.current) {
+      clearTimeout(notificationCloseTimerRef.current);
+      notificationCloseTimerRef.current = null;
+    }
+    setIsNotificationsOpen(true);
+  };
+
+  const handleNotificationMouseLeave = () => {
+    if (notificationCloseTimerRef.current) {
+      clearTimeout(notificationCloseTimerRef.current);
+    }
+    notificationCloseTimerRef.current = setTimeout(() => {
+      setIsNotificationsOpen(false);
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (notificationCloseTimerRef.current) {
+        clearTimeout(notificationCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('fb_read_notifications');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const handleMarkAsRead = (ticketId: string) => {
+    setReadNotificationIds(prev => {
+      const next = new Set(prev).add(ticketId);
+      try {
+        localStorage.setItem('fb_read_notifications', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleMarkAllAsRead = () => {
+    setReadNotificationIds(prev => {
+      const allIds = tickets.map(t => t.id);
+      const next = new Set([...prev, ...allIds]);
+      try {
+        localStorage.setItem('fb_read_notifications', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  const unreadCount = useMemo(() => {
+    return tickets.filter(
+      t => !readNotificationIds.has(t.id) && t.status !== 'RESOLVED' && t.status !== 'CLOSED'
+    ).length;
+  }, [tickets, readNotificationIds]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (notificationMenuRef.current && !notificationMenuRef.current.contains(e.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -86,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Tenant Switcher Dropdown */}
           <div className="relative shrink min-w-0">
-            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 text-xs text-slate-800 font-medium transition-colors shadow-2xs">
+            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 rounded-md text-xs text-slate-800 font-medium transition-colors shadow-2xs">
               <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
               {onTenantChange ? (
                 <select
@@ -116,7 +197,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Role Switcher Dropdown */}
           {onRoleChange && (
             <div className="relative shrink min-w-0">
-              <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 text-xs text-slate-800 font-medium transition-colors shadow-2xs">
+              <div className="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 rounded-md text-xs text-slate-800 font-medium transition-colors shadow-2xs">
                 <Shield className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                 <select
                   value={currentRole}
@@ -136,7 +217,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* WebSocket Status Indicator */}
           {isConnected !== undefined && (
-            <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 border border-slate-200 bg-slate-50 text-[11px] font-mono">
+            <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 border border-slate-200 bg-slate-50 rounded-md text-[11px] font-mono">
               <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-amber-500'} animate-pulse`} />
               <span className="text-slate-600">{isConnected ? 'SOCKET LIVE' : 'CONNECTING'}</span>
             </div>
@@ -156,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Simulate Telemetry Button */}
           <button
             onClick={onOpenWidgetSimulator}
-            className="hidden xl:flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200 text-xs font-medium transition-colors shadow-2xs cursor-pointer"
+            className="hidden xl:flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200 rounded-md text-xs font-medium transition-colors shadow-2xs cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-purple-600" />
             <span>Simulate Telemetry</span>
@@ -171,14 +252,58 @@ export const Header: React.FC<HeaderProps> = ({
             <span>New Incident</span>
           </button>
 
-          {/* Notification Bell */}
-          <button 
-            type="button"
-            className="p-2 bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors cursor-pointer shadow-2xs"
-            title="Notifications"
+          {/* Notification Bell with Dropdown Container */}
+          <div 
+            className="relative shrink-0" 
+            ref={notificationMenuRef}
+            onMouseEnter={handleNotificationMouseEnter}
+            onMouseLeave={handleNotificationMouseLeave}
           >
-            <Bell className="w-4 h-4" />
-          </button>
+            <button 
+              type="button"
+              onClick={() => {
+                if (notificationCloseTimerRef.current) {
+                  clearTimeout(notificationCloseTimerRef.current);
+                  notificationCloseTimerRef.current = null;
+                }
+                setIsNotificationsOpen(prev => !prev);
+              }}
+              aria-label="Alerts and Notifications"
+              aria-expanded={isNotificationsOpen}
+              className={`p-2 border rounded-md transition-colors cursor-pointer shadow-2xs relative ${
+                isNotificationsOpen
+                  ? 'bg-purple-50 border-purple-300 text-purple-700'
+                  : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-in zoom-in duration-150">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {isNotificationsOpen && (
+              <NotificationPanel
+                tickets={tickets}
+                unreadCount={unreadCount}
+                readNotificationIds={readNotificationIds}
+                onMarkAsRead={handleMarkAsRead}
+                onMarkAllAsRead={handleMarkAllAsRead}
+                onSelectTicket={(ticket) => {
+                  onSelectTicket?.(ticket);
+                  setIsNotificationsOpen(false);
+                }}
+                onViewAllTickets={() => {
+                  setIsNotificationsOpen(false);
+                  onSelectView?.('total-tickets');
+                }}
+                onClose={() => setIsNotificationsOpen(false)}
+              />
+            )}
+          </div>
 
           {/* User Profile Info Badge */}
           <div className="flex items-center space-x-2 pl-1 border-l border-slate-200">
@@ -201,7 +326,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="header-logout-btn"
               onClick={onLogout}
               title="Sign out of your session"
-              className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-mono font-medium transition-colors shadow-2xs cursor-pointer active:scale-[0.98]"
+              className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-md text-xs font-mono font-medium transition-colors shadow-2xs cursor-pointer active:scale-[0.98]"
             >
               <LogOut className="w-3.5 h-3.5 text-red-600" />
               <span className="hidden sm:inline">Sign Out</span>

@@ -8,9 +8,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
-        poppins: ['Poppins', 'Plus Jakarta Sans', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+        sans: ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
+        mono: ['Poppins', 'JetBrains Mono', 'Menlo', 'monospace'],
       },
       borderRadius: {
         none: '0',
@@ -36,11 +36,11 @@ export default {
         extralight: '200',
         light: '300',
         normal: '400',
-        medium: '500',
+        medium: '450',
         semibold: '500',
         bold: '500',
-        extrabold: '600',
-        black: '600',
+        extrabold: '500',
+        black: '500',
       },
       colors: {
         navy: {

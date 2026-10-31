@@ -2,24 +2,23 @@
   "tenants": [
     {
       "id": "tenant-acme-corp-001",
-      "name": "Acme Payments Global Inc.",
+      "name": "Acme Payments Inc.",
       "slug": "acme-payments",
       "plan": "ENTERPRISE",
       "isolation_standard": "PostgreSQL 16 RLS (Bank-Grade)",
       "allowed_domains": [
         "payments.acme.com",
         "checkout.acme.com",
-        "localhost:3000",
-        "newdomain.io"
+        "merchant.acme.com",
+        "localhost:3000"
       ],
       "webhook_url": "https://api.acme.com/v1/webhooks/incident-bridge",
       "notification_email": "security-alerts@acme.com",
       "auto_capture_telemetry": true,
       "auto_capture_network": true,
-      "require_email": true,
-      "default_squad": "Checkout & Billing Squad",
-      "created_at": "2026-09-27T16:48:10.141Z",
-      "updated_at": "2026-10-29T15:33:33.361Z"
+      "require_email": false,
+      "default_squad": "Core Platform & API Squad",
+      "created_at": "2026-09-30T18:43:06.893Z"
     },
     {
       "id": "tenant-medsync-002",
@@ -38,65 +37,10 @@
       "auto_capture_network": false,
       "require_email": true,
       "default_squad": "Clinical Telehealth Squad",
-      "created_at": "2026-10-12T16:48:10.153Z"
+      "created_at": "2026-10-15T18:43:06.903Z"
     }
   ],
   "users": [
-    {
-      "id": "user-lead-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "lead.dev@acme.com",
-      "full_name": "Vikram Mehta (API Squad Lead)",
-      "role": "squad_lead",
-      "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z",
-      "status": "ONLINE",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
-    },
-    {
-      "id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "dev.rahul@acme.com",
-      "full_name": "Rahul Sharma (Senior Backend Dev)",
-      "role": "developer",
-      "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z",
-      "status": "ONLINE",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
-    },
-    {
-      "id": "user-dev-03",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "amit.patel@acme.com",
-      "full_name": "Amit Patel (Full-Stack Reliability Dev)",
-      "role": "developer",
-      "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
-    },
-    {
-      "id": "user-client-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "operations@partner-client.com",
-      "full_name": "Sarah Jenkins (Client Ops Director)",
-      "role": "client_user",
-      "is_active": true,
-      "created_at": "2026-10-27T16:48:10.153Z",
-      "status": "ONLINE",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
-    },
-    {
-      "id": "user-1793291757929-931",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "alex@gmail.com",
-      "full_name": "Alex",
-      "role": "developer",
-      "is_active": true,
-      "status": "ONLINE",
-      "squad": "Core Platform & API Squad",
-      "created_at": "2026-10-29T16:35:57.931Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
-    },
     {
       "id": "user-super-01",
       "tenant_id": "tenant-acme-corp-001",
@@ -104,8 +48,7 @@
       "full_name": "Alex Vance (Global Super Admin)",
       "role": "super_admin",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "user-admin-01",
@@ -114,8 +57,25 @@
       "full_name": "Priya Sharma (Acme Admin)",
       "role": "tenant_admin",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
+    },
+    {
+      "id": "user-lead-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "lead.dev@acme.com",
+      "full_name": "Vikram Mehta (API Squad Lead)",
+      "role": "squad_lead",
+      "is_active": true,
+      "created_at": "2026-10-30T18:43:06.903Z"
+    },
+    {
+      "id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "dev.rahul@acme.com",
+      "full_name": "Rahul Sharma (Senior Backend Dev)",
+      "role": "developer",
+      "is_active": true,
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "user-support-01",
@@ -124,8 +84,16 @@
       "full_name": "Amit Patel (Support Agent)",
       "role": "support_agent",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
+    },
+    {
+      "id": "user-client-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "client.john@partner.com",
+      "full_name": "John Client (Partner Merchant)",
+      "role": "client_user",
+      "is_active": true,
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "member-1",
@@ -134,8 +102,7 @@
       "full_name": "Elena Rostova",
       "role": "squad_lead",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "member-2",
@@ -144,8 +111,7 @@
       "full_name": "Marcus Chen",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "user-dev-02",
@@ -154,8 +120,16 @@
       "full_name": "Priya Nair (Frontend Platform Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
+    },
+    {
+      "id": "user-dev-03",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "amit.patel@acme.com",
+      "full_name": "Amit Patel (Full-Stack Reliability Dev)",
+      "role": "developer",
+      "is_active": true,
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "member-3",
@@ -164,8 +138,7 @@
       "full_name": "Sarah Jenkins",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "user-medsync-dev-01",
@@ -174,8 +147,7 @@
       "full_name": "Elena Rostova (MedSync Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-29T18:28:06.712Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+      "created_at": "2026-10-30T18:43:06.903Z"
     }
   ],
   "products": [
@@ -188,7 +160,7 @@
       "api_key_hash": "hash_prod_live_checkout_key",
       "raw_api_key": "fb_live_acme_checkout_key_998",
       "environment": "production",
-      "created_at": "2026-10-27T16:48:10.153Z"
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "prod-dashboard",
@@ -199,7 +171,7 @@
       "api_key_hash": "hash_prod_live_portal_key",
       "raw_api_key": "hash_prod_live_portal_key",
       "environment": "staging",
-      "created_at": "2026-10-27T16:48:10.153Z"
+      "created_at": "2026-10-30T18:43:06.903Z"
     },
     {
       "id": "prod-telehealth-portal",
@@ -210,11 +182,13 @@
       "api_key_hash": "hash_prod_live_medsync_key",
       "raw_api_key": "fb_live_medsync_key_771",
       "environment": "production",
-      "created_at": "2026-10-27T16:48:10.153Z"
+      "created_at": "2026-10-30T18:43:06.903Z"
     }
   ],
   "tickets": [],
   "events": [],
+  "refreshTokens": [],
+  "passwordResetTokens": [],
   "permissionsMatrix": {
     "tenant-acme-corp-001": {
       "super_admin": {
@@ -521,5 +495,5 @@
       }
     }
   },
-  "last_updated": "2026-10-30T17:44:00.207Z"
+  "last_updated": "2026-10-30T18:43:06.904Z"
 }

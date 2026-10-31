@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix } from '../types';
 import { hasRolePermission } from '../constants/permissions';
+import { useAuth } from '../context/AuthContext';
 import { 
   X, 
   Terminal, 
@@ -53,6 +54,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   permissionsMatrix,
   teamMembers
 }) => {
+  const { authFetch } = useAuth();
   const activeRoster = React.useMemo(() => {
     if (teamMembers && teamMembers.length > 0) {
       return [
@@ -88,11 +90,6 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   useEffect(() => {
     if (!ticket) return;
 
-    const headers: Record<string, string> = {};
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
     // Initialize edit fields
     setEditTitle(ticket.title);
     setEditDescription(ticket.description);
@@ -105,10 +102,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     setIsEditing(false);
     setIsConfirmingDelete(false);
 
-    fetch(`/api/v1/tickets/${ticket.id}`, {
-      headers,
-      credentials: 'include'
-    })
+    authFetch(`/api/v1/tickets/${ticket.id}`)
       .then(res => res.json())
       .then(data => {
         if (data.events) {
@@ -116,7 +110,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         }
       })
       .catch(err => console.error('Failed to load events:', err));
-  }, [ticket, currentRole, accessToken]);
+  }, [ticket, currentRole, authFetch]);
 
   if (!ticket) return null;
 

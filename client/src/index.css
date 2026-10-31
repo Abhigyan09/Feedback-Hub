@@ -4,8 +4,8 @@
 
 :root {
   color-scheme: light;
-  --font-primary: 'Poppins', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', Menlo, Monaco, Courier New, monospace;
+  --font-primary: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Poppins', 'JetBrains Mono', Menlo, monospace;
 
   /* Blackbat.ai Design System (measured 8px radius matching "Book a Demo" button) */
   --radius-xs: 4px;
@@ -22,48 +22,77 @@
   --radius-modal: 12px;
 }
 
-/* PRIMARY TYPOGRAPHY: Soft Poppins Design System (Eliminates heavy boldness) */
+/* SOFT POPPINS TYPOGRAPHY: Soft, clean geometric Poppins across all interface elements */
+*, *::before, *::after {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 html, body, button, input, select, textarea, optgroup {
   font-family: var(--font-primary);
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .font-poppins {
-  font-family: var(--font-primary) !important;
+  font-family: 'Poppins', sans-serif !important;
 }
 
-/* Headings: Clean, soft Poppins (gentle weight 500 instead of harsh heavy 600/700) */
+/* Soft Poppins for UI numbers, badges, buttons, and telemetry metrics (tabular numerals, soft curves) */
+.font-mono {
+  font-family: 'Poppins', sans-serif !important;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.01em;
+}
+
+/* UNIVERSAL DE-BOLDING: Soft, refined weights across the entire website */
+html, body {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings: Soft, modern Poppins with crisp optical tracking */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-primary);
+  font-family: 'Poppins', sans-serif;
   font-weight: 500;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   color: #0f172a;
 }
 
 strong, b, th {
+  font-family: 'Poppins', sans-serif;
   font-weight: 500;
   color: #0f172a;
 }
 
-/* Global Soft Poppins utility overrides */
+/* Override utility classes so any font-bold or font-semibold renders soft, light and modern */
 .font-bold,
-.font-semibold {
+.font-extrabold,
+.font-black {
+  font-family: 'Poppins', sans-serif;
   font-weight: 500 !important;
 }
 
-.font-extrabold,
-.font-black {
-  font-weight: 600 !important;
+.font-semibold {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500 !important;
+}
+
+.font-medium {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 450 !important;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #f4f6fb;
+  background-color: #f0f5fa;
   color: #1e293b;
 }
 
@@ -73,7 +102,7 @@ html, body {
   overflow: hidden;
   margin: 0;
   padding: 0;
-  background-color: #f4f6fb;
+  background-color: #f0f5fa;
   color: #1e293b;
 }
 
@@ -84,21 +113,20 @@ html, body {
   margin: 0;
   padding: 0;
   display: flex;
+  background-color: #f0f5fa;
 }
 
-/* CARD ROUNDNESS & ELEVATION DESIGN SYSTEM (from Image 2) */
+/* CARD ROUNDNESS & ELEVATION DESIGN SYSTEM */
 .card-subtle,
 [data-card] {
   border-radius: var(--radius-card);
 }
 
-.modal-subtle,
-[role="dialog"] {
+.modal-subtle {
   border-radius: var(--radius-modal);
 }
 
-
-/* Natural, Fluid Floating Scrollbars - Transparent track, floating pill thumb */
+/* Custom Scrollbars in clean style - clearly visible & easily draggable */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
@@ -152,7 +180,7 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Code and telemetry styling */
-code, pre, .font-mono {
-  font-family: var(--font-mono);
+/* Code and raw telemetry logs styling */
+code, pre, kbd, samp, .telemetry-code {
+  font-family: 'JetBrains Mono', Menlo, Monaco, Courier New, monospace !important;
 }

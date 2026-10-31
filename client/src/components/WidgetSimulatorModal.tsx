@@ -111,7 +111,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
 
   const getDetailsPlaceholder = () => {
     if (category === 'BUG') return 'What happened? What were you trying to do?';
-    return 'Tell us how we can improve your experience...';
+    return 'Tell us how we can improve your Blackbat experience...';
   };
 
   const getRatingLabel = (score: number) => {
@@ -202,7 +202,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
       <div className="bg-white text-slate-800 w-full max-w-[540px] max-h-[90vh] flex flex-col rounded-[12px] shadow-2xl border border-slate-300 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 modal-subtle">
         
         {/* Modal Header - Fixed at top */}
-        <div className="px-6 py-4 flex items-start justify-between border-b border-slate-100 bg-slate-50 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">
           <div className="flex items-center space-x-3.5">
             <div className="w-10 h-10 rounded-[8px] bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shadow-2xs shrink-0">
               <MessageSquarePlus className="w-5 h-5" />
@@ -211,7 +211,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <h3 className="text-base font-medium text-slate-900 leading-tight">
                 Share Feedback with Engineering
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Report bugs, suggest improvements, or ask for help
               </p>
             </div>
@@ -247,7 +247,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                <Bug className="w-5 h-5 mb-1 text-inherit" />
+                <Bug className="w-5 h-5 mb-1.5 text-inherit" />
                 <span>Bug</span>
               </button>
 
@@ -261,7 +261,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                <Lightbulb className="w-5 h-5 mb-1 text-inherit" />
+                <Lightbulb className="w-5 h-5 mb-1.5 text-inherit" />
                 <span>Idea</span>
               </button>
 
@@ -275,7 +275,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                <HelpCircle className="w-5 h-5 mb-1 text-inherit" />
+                <HelpCircle className="w-5 h-5 mb-1.5 text-inherit" />
                 <span>Help</span>
               </button>
 
@@ -289,7 +289,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                <Star className="w-5 h-5 mb-1 text-inherit" />
+                <Star className="w-5 h-5 mb-1.5 text-inherit" />
                 <span>Rating</span>
               </button>
 
@@ -308,7 +308,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                     onClick={() => setSeverity(level)}
                     className={`py-2 text-xs rounded-[8px] font-medium border transition-all text-center cursor-pointer ${
                       severity === level
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                        ? 'bg-[#1e293b] text-white border-[#1e293b] shadow-2xs'
                         : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
@@ -380,10 +380,10 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-slate-700 flex items-center space-x-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-purple-600" />
+                <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
                 <span>Attach Screenshot <span className="text-slate-400 font-normal">(Optional)</span></span>
               </span>
-              <span className="text-purple-600 text-[11px] font-medium">
+              <span className="text-blue-600 text-[11px] font-medium">
                 or paste with ⌘V / Ctrl+V
               </span>
             </div>
@@ -433,11 +433,11 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
             <button
               type="button"
               onClick={() => setIsTelemetryOpen(!isTelemetryOpen)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 flex items-center justify-between text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="w-full px-4 py-3 bg-white flex items-center justify-between text-slate-600 hover:bg-slate-50/50 transition-colors cursor-pointer"
             >
               <div className="flex items-center space-x-2">
-                <Monitor className="w-4 h-4 text-purple-600" />
-                <span className="font-medium">Auto-Captured System Telemetry</span>
+                <Monitor className="w-4 h-4 text-blue-600" />
+                <span className="font-medium text-xs">Auto-Captured System Telemetry</span>
               </div>
               {isTelemetryOpen ? (
                 <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -485,7 +485,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
           </div>
 
           {/* Modal Footer - Fixed at bottom */}
-          <div className="px-6 py-3.5 flex items-center justify-end space-x-2.5 border-t border-slate-100 bg-slate-50 shrink-0">
+          <div className="px-6 py-4 flex items-center justify-end space-x-3 border-t border-slate-100 bg-white shrink-0">
             <button
               type="button"
               onClick={onClose}

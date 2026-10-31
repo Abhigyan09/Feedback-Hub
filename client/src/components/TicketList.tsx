@@ -60,10 +60,10 @@ export const TicketList: React.FC<TicketListProps> = ({
     // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchTitle = t.title.toLowerCase().includes(q);
-      const matchCode = t.short_code.toLowerCase().includes(q);
-      const matchReporter = t.reporter_email.toLowerCase().includes(q);
-      const matchSquad = t.assigned_squad.toLowerCase().includes(q);
+      const matchTitle = (t.title || '').toLowerCase().includes(q);
+      const matchCode = (t.short_code || '').toLowerCase().includes(q);
+      const matchReporter = (t.reporter_email || '').toLowerCase().includes(q);
+      const matchSquad = (t.assigned_squad || '').toLowerCase().includes(q);
       const matchProduct = (t.product_name || '').toLowerCase().includes(q);
       if (!matchTitle && !matchCode && !matchReporter && !matchSquad && !matchProduct) return false;
     }
@@ -282,12 +282,12 @@ export const TicketList: React.FC<TicketListProps> = ({
 
       {/* Main Ticket Cards Container */}
       {isLoading ? (
-        <div className="p-16 text-center text-xs font-mono text-slate-400 border border-slate-200 bg-white shadow-2xs">
+        <div className="p-16 text-center text-xs font-mono text-slate-400 border border-slate-200 bg-white rounded-md card-subtle shadow-2xs">
           FETCHING TENANT INCIDENTS...
         </div>
       ) : filteredTickets.length === 0 ? (
-        <div className="bg-white border border-slate-200 p-16 text-center shadow-2xs space-y-3">
-          <div className="w-12 h-12 bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-2xs">
+        <div className="bg-white border border-slate-200 rounded-md card-subtle p-16 text-center shadow-2xs space-y-3">
+          <div className="w-12 h-12 bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto rounded-md shadow-2xs">
             <CheckCircle2 className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
@@ -305,7 +305,7 @@ export const TicketList: React.FC<TicketListProps> = ({
             <div className="pt-2">
               <button
                 onClick={onOpenWidgetSimulator}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium shadow-xs transition-colors cursor-pointer inline-flex items-center space-x-1.5 font-mono"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-[8px] shadow-xs transition-colors cursor-pointer inline-flex items-center space-x-1.5 font-mono"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>+ Ingest First Incident</span>
@@ -317,8 +317,14 @@ export const TicketList: React.FC<TicketListProps> = ({
         /* Modern, Clean Ticket Rows List */
         <div className="border border-slate-200/80 divide-y divide-slate-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.03)] rounded-[12px] overflow-hidden">
           {filteredTickets.map((ticket) => {
-            const domain = ticket.domain_origin || 
-              (ticket.telemetry?.page_url ? new URL(ticket.telemetry.page_url).hostname : 'client.app');
+            let domain = ticket.domain_origin || 'client.app';
+            if (!ticket.domain_origin && ticket.telemetry?.page_url) {
+              try {
+                domain = new URL(ticket.telemetry.page_url).hostname;
+              } catch {
+                domain = 'api.telemetry';
+              }
+            }
 
             return (
               <div
@@ -405,7 +411,7 @@ export const TicketList: React.FC<TicketListProps> = ({
                   
                   {/* Assignee Pill */}
                   <div className="flex items-center space-x-1.5 text-xs">
-                    <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-medium text-[10px]">
+                    <div className="w-6 h-6 rounded-[6px] bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-medium text-[10px]">
                       {ticket.assigned_to_name ? ticket.assigned_to_name.charAt(0) : <User className="w-3 h-3 text-slate-400" />}
                     </div>
                     <span className={`text-[11px] font-medium ${ticket.assigned_to_name ? 'text-slate-800' : 'text-slate-400 italic'}`}>

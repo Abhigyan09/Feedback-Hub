@@ -283,6 +283,7 @@ export async function createRefreshToken(
     replaced_by_token_hash: null
   };
   tenantStore.refreshTokens.push(record);
+  tenantStore.saveToDisk();
   return record;
 }
 
@@ -400,6 +401,7 @@ export async function revokeRefreshToken(
   if (replacedByTokenHash) {
     record.replaced_by_token_hash = replacedByTokenHash;
   }
+  tenantStore.saveToDisk();
   return true;
 }
 
@@ -436,6 +438,9 @@ export async function revokeTokenFamily(
       record.is_revoked = true;
       count++;
     }
+  }
+  if (count > 0) {
+    tenantStore.saveToDisk();
   }
   return count;
 }
@@ -592,6 +597,7 @@ export async function createPasswordResetToken(
     used_at: null
   };
   tenantStore.passwordResetTokens.push(record);
+  tenantStore.saveToDisk();
   return record;
 }
 
@@ -656,6 +662,7 @@ export async function markPasswordResetTokenUsed(
   if (!record || record.is_used) return false;
   record.is_used = true;
   record.used_at = new Date();
+  tenantStore.saveToDisk();
   return true;
 }
 
@@ -683,6 +690,7 @@ export async function updateUserPassword(
   const user = tenantStore.users.find(u => u.id === userId);
   if (!user) return false;
   user.password_hash = newPasswordHash;
+  tenantStore.saveToDisk();
   return true;
 }
 
@@ -712,6 +720,9 @@ export async function revokeAllUserRefreshTokens(
       record.is_revoked = true;
       count++;
     }
+  }
+  if (count > 0) {
+    tenantStore.saveToDisk();
   }
   return count;
 }

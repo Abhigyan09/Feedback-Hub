@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { user, accessToken, logout } = useAuth();
+  const { user, accessToken, logout, authFetch } = useAuth();
 
   // Tenant & Role State (Multi-tenant dynamic isolation with localStorage persistence or verified user)
   const [currentTenantId, setCurrentTenantId] = useState<string>(() => {
@@ -57,6 +57,29 @@ const Dashboard: React.FC = () => {
       .toUpperCase(),
     email: user?.email || 'admin@acme.com'
   }));
+
+  // Synchronize dynamic user attributes when authenticated user is restored or changes
+  useEffect(() => {
+    if (user) {
+      setCurrentUser({
+        name: user.full_name || user.email,
+        role: user.role === 'squad_lead' ? 'Squad Lead & Arch' : user.role === 'developer' ? 'Senior Backend Dev' : user.role === 'tenant_admin' ? 'Tenant Administrator' : user.role === 'super_admin' ? 'Global Super Admin' : 'Tenant Administrator',
+        initials: (user.full_name || user.email)
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase(),
+        email: user.email
+      });
+      if (user.tenant_id) {
+        setCurrentTenantId(user.tenant_id);
+      }
+      if (user.role) {
+        setCurrentRole(user.role);
+      }
+    }
+  }, [user]);
 
   // Dynamic Data State (Loaded 100% from live backend API)
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -147,13 +170,9 @@ const Dashboard: React.FC = () => {
         'pragma': 'no-cache',
         'cache-control': 'no-cache'
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tickets?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers,
-        credentials: 'include'
+        headers
       });
       const elapsed = Math.round(performance.now() - start);
       setApiLatencyMs(elapsed);
@@ -167,22 +186,21 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
-  // 2. Fetch Available Tenants List
+  // 2. Fetch Available Tenants List (Restricted strictly to super_admin by RBAC specification)
   const fetchAllTenants = useCallback(async () => {
+    if (currentRole !== 'super_admin') {
+      return;
+    }
     try {
       const headers: Record<string, string> = {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tenants/all?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tenants/all?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         const data = await res.json();
@@ -193,7 +211,7 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.warn('Failed to fetch tenants list:', err);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
   // 3. Fetch Dynamic Tenant & Team Members from Backend
   const fetchTenantMetadata = useCallback(async () => {
@@ -202,16 +220,17 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tenants/current?_t=${Date.now()}`, {
-        headers,
-        credentials: 'include'
+      const res = await authFetch(`/api/v1/tenants/current?_t=${Date.now()}`, {
+        headers
       });
       if (res.ok) {
         const data = await res.json();
         
+        // For non-super_admin users, populate the active tenant so tenant switcher and header have valid data
+        if (data.tenant && currentRole !== 'super_admin') {
+          setTenants([data.tenant]);
+        }
+
         // Dynamic Authenticated User Context from API
         if (data.active_auth) {
           const auth = data.active_auth;
@@ -271,7 +290,7 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.warn('Tenant metadata fetch error:', err);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
   // 4. Fetch Role Permissions Matrix
   const loadTenantPermissions = useCallback(async () => {
@@ -282,13 +301,9 @@ const Dashboard: React.FC = () => {
         'pragma': 'no-cache',
         'cache-control': 'no-cache'
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tenants/permissions?_t=${Date.now()}`, {
+      const res = await authFetch(`/api/v1/tenants/permissions?_t=${Date.now()}`, {
         cache: 'no-store',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         const data = await res.json();
@@ -299,7 +314,7 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to load permissions matrix:', err);
     }
-  }, [accessToken, currentTenantId, currentRole]);
+  }, [authFetch, currentTenantId, currentRole]);
 
   useEffect(() => {
     fetchTickets();
@@ -486,13 +501,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}/status`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}/status`, {
         method: 'PATCH',
         headers,
-        credentials: 'include',
         body: JSON.stringify({ status: newStatus, note })
       });
 
@@ -520,13 +531,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}/assignee`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}/assignee`, {
         method: 'PATCH',
         headers,
-        credentials: 'include',
         body: JSON.stringify({
           assigneeId: newAssigneeId,
           assigneeName: newAssigneeName
@@ -556,13 +563,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}`, {
         method: 'PUT',
         headers,
-        credentials: 'include',
         body: JSON.stringify(updatedFields)
       });
       if (!res.ok) {
@@ -586,13 +589,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}`, {
         method: 'DELETE',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -616,13 +615,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch(`/api/v1/tickets/${ticketId}/events`, {
+      const res = await authFetch(`/api/v1/tickets/${ticketId}/events`, {
         method: 'POST',
         headers,
-        credentials: 'include',
         body: JSON.stringify({ content, is_internal_only: isInternalOnly })
       });
       if (res.ok) {
@@ -649,13 +644,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch('/api/v1/tickets', {
+      const res = await authFetch('/api/v1/tickets', {
         method: 'POST',
         headers,
-        credentials: 'include',
         body: JSON.stringify(ticketData)
       });
 
@@ -686,13 +677,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch('/api/v1/tickets/seed-demo', {
+      const res = await authFetch('/api/v1/tickets/seed-demo', {
         method: 'POST',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         fetchTickets();
@@ -717,13 +704,9 @@ const Dashboard: React.FC = () => {
         'x-tenant-id': currentTenantId,
         'x-user-role': currentRole
       };
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      const res = await fetch('/api/v1/tickets/clear', {
+      const res = await authFetch('/api/v1/tickets/clear', {
         method: 'DELETE',
-        headers,
-        credentials: 'include'
+        headers
       });
       if (res.ok) {
         setTickets([]);
@@ -750,7 +733,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-[#f4f6fb] text-slate-800 font-sans">
+    <div className="h-screen w-full flex overflow-hidden bg-[#f0f5fa] text-slate-800 font-sans">
       
       {/* Sleek Dark Left Sidebar - Fixed at left, independent vertical scroll */}
       <Sidebar
@@ -767,7 +750,7 @@ const Dashboard: React.FC = () => {
       />
 
       {/* Main App Column: Header fixed at top, independent scrollable content below */}
-      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-[#f4f6fb]">
+      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-[#f0f5fa]">
         
         {/* Dynamic Dashboard Header - Fixed at top of main area */}
         <DashboardHeader
@@ -785,10 +768,12 @@ const Dashboard: React.FC = () => {
           urgentTickets={urgentCount}
           tickets={tickets}
           permissionsMatrix={permissionsMatrix}
-          onNewIncidentClick={() => setIsCreateModalOpen(true)}
+          onNewIncidentClick={() => setIsSimulatorOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
           onSeedDemo={handleSeedDemo}
           onClearTickets={handleClearTickets}
+          onSelectTicket={(ticket) => setSelectedTicket(ticket)}
+          onSelectView={(view) => setCurrentView(view)}
         />
 
         {/* Real-time Incident Alert Banner */}
@@ -811,7 +796,7 @@ const Dashboard: React.FC = () => {
         <div 
           ref={scrollContainerRef}
           id="main-scroll-container"
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col bg-[#f4f6fb] main-content-scroll"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col bg-[#f0f5fa] main-content-scroll"
         >
 
         {/* VIEW 1: DASHBOARD (Edge-to-Edge Observability & Incident Workspace) */}
