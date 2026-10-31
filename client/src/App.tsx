@@ -1160,6 +1160,8 @@ const Dashboard: React.FC = () => {
         onConfirm={handleConfirmLogout}
         onCancel={() => setIsLogoutModalOpen(false)}
         isLoggingOut={isLoggingOut}
+        user={currentUser}
+        tenantName={tenants.find(t => t.id === currentTenantId)?.name}
       />
 
     </div>
