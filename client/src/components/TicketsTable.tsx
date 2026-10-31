@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Ticket, TeamMember, UserRole, RolePermissionsMatrix } from '../types';
 import { normalizeSeverity, normalizeStatus, formatTimeAgo } from '../utils/formatters';
 import { hasRolePermission } from '../constants/permissions';
+import { CustomSelect } from './CustomSelect';
 import { 
   Search, 
   X, 
@@ -362,64 +363,47 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         <div className="flex items-center flex-wrap gap-2.5">
           
           {/* Status Filter */}
-          <div className="flex items-center space-x-1.5">
-            <label htmlFor="status-filter" className="text-xs text-slate-500 font-medium hidden sm:inline">
-              Status:
-            </label>
-            <select
-              id="status-filter"
-              value={statusFilter}
-              onChange={(e) => onStatusFilterChange(e.target.value)}
-              aria-label="Filter tickets by status"
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="Open">Open</option>
-              <option value="In Dev">In Dev</option>
-              <option value="In QA">In QA</option>
-              <option value="Resolved">Resolved</option>
-            </select>
-          </div>
+          <CustomSelect
+            id="status-filter"
+            label="Status"
+            value={statusFilter}
+            onChange={onStatusFilterChange}
+            options={[
+              { value: 'ALL', label: 'All Statuses' },
+              { value: 'Open', label: 'Open' },
+              { value: 'In Dev', label: 'In Dev' },
+              { value: 'In QA', label: 'In QA' },
+              { value: 'Resolved', label: 'Resolved' }
+            ]}
+          />
 
           {/* Assignee Filter */}
-          <div className="flex items-center space-x-1.5">
-            <label htmlFor="assignee-filter" className="text-xs text-slate-500 font-medium hidden sm:inline">
-              Assignee:
-            </label>
-            <select
-              id="assignee-filter"
-              value={assigneeFilter}
-              onChange={(e) => onAssigneeFilterChange(e.target.value)}
-              aria-label="Filter tickets by assignee"
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
-            >
-              <option value="ALL">All Assignees</option>
-              {teamMembers.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-              <option value="UNASSIGNED">Unassigned Only</option>
-            </select>
-          </div>
+          <CustomSelect
+            id="assignee-filter"
+            label="Assignee"
+            value={assigneeFilter}
+            onChange={onAssigneeFilterChange}
+            options={[
+              { value: 'ALL', label: 'All Assignees' },
+              ...teamMembers.map((m) => ({ value: m.id, label: m.name })),
+              { value: 'UNASSIGNED', label: 'Unassigned Only' }
+            ]}
+          />
 
           {/* Priority Filter */}
-          <div className="flex items-center space-x-1.5">
-            <label htmlFor="priority-filter" className="text-xs text-slate-500 font-medium hidden sm:inline">
-              Priority:
-            </label>
-            <select
-              id="priority-filter"
-              value={priorityFilter}
-              onChange={(e) => onPriorityFilterChange(e.target.value)}
-              aria-label="Filter tickets by priority"
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-[8px] font-medium focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
-            >
-              <option value="ALL">All Priorities</option>
-              <option value="Urgent">Urgent (P0)</option>
-              <option value="High">High (P1)</option>
-              <option value="Medium">Medium (P2)</option>
-              <option value="Low">Low (P3)</option>
-            </select>
-          </div>
+          <CustomSelect
+            id="priority-filter"
+            label="Priority"
+            value={priorityFilter}
+            onChange={onPriorityFilterChange}
+            options={[
+              { value: 'ALL', label: 'All Priorities' },
+              { value: 'Urgent', label: 'Urgent (P0)' },
+              { value: 'High', label: 'High (P1)' },
+              { value: 'Medium', label: 'Medium (P2)' },
+              { value: 'Low', label: 'Low (P3)' }
+            ]}
+          />
 
           {/* Reset Filters Button */}
           {hasActiveFilters && (

@@ -197,7 +197,108 @@
       "created_at": "2026-10-30T18:43:06.903Z"
     }
   ],
-  "tickets": [],
+  "tickets": [
+    {
+      "id": "ticket-1793458388226-3",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-dashboard",
+      "product_name": "Merchant Admin Portal",
+      "short_code": "FH-503",
+      "title": "Client feedback widget overflow on mobile screens < 360px width",
+      "description": "Modal horizontal container causes layout shift on small Android devices. Awaiting client reproduction video and viewport logs.",
+      "category": "UI_GLITCH",
+      "severity": "MEDIUM",
+      "status": "TRIAGED",
+      "reporter_email": "sarah.jenkins@feedbackhub.io",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "assigned_to": "member-3",
+      "assigned_to_name": "Sarah Jenkins",
+      "waiting_for_client": true,
+      "sla_due_at": "2026-10-31T17:53:08.226Z",
+      "created_at": "2026-10-31T13:38:08.226Z",
+      "updated_at": "2026-10-31T14:33:08.226Z"
+    },
+    {
+      "id": "ticket-1793458388226-2",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "short_code": "FH-502",
+      "title": "PostgreSQL connection pool exhaustion during batch telemetry ingest",
+      "description": "RDS Proxy spikes to 100% pool utilization under spike loads, queuing incoming crash telemetry.",
+      "category": "PERFORMANCE",
+      "severity": "CRITICAL",
+      "status": "OPEN",
+      "reporter_email": "alerts@internal-ops.io",
+      "assigned_squad": "INFRASTRUCTURE_CORE",
+      "sla_due_at": "2026-10-31T14:38:08.226Z",
+      "created_at": "2026-10-31T14:05:08.226Z",
+      "updated_at": "2026-10-31T14:43:08.226Z",
+      "telemetry": {
+        "page_url": "POST /api/v1/ingest/telemetry/bulk",
+        "app_version": "v2.14.0",
+        "console_logs": [
+          {
+            "type": "error",
+            "message": "remaining connection slots reserved for superuser",
+            "timestamp": "7:48:08 pm"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "POST /api/v1/ingest/telemetry/bulk",
+            "status": 503,
+            "timestamp": "7:48:08 pm"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ticket-1793458388226-1",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "short_code": "FH-501",
+      "title": "OAuth2 token exchange timing out on iOS Safari WebViews",
+      "description": "Clients on iOS 17.4 experiencing 504 gateway timeout when trading auth code for JWT session token.",
+      "category": "API_FAILURE",
+      "severity": "CRITICAL",
+      "status": "IN_DEV",
+      "reporter_email": "lead-dev@client-payment.com",
+      "assigned_squad": "PAYMENT_CORE_API",
+      "assigned_to": "member-2",
+      "assigned_to_name": "Marcus Chen",
+      "sla_due_at": "2026-10-31T15:38:08.226Z",
+      "created_at": "2026-10-31T14:39:08.226Z",
+      "updated_at": "2026-10-31T14:48:08.226Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi/intent?session=sess_982b",
+        "app_version": "v2.14.0-prod",
+        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15",
+        "viewport_dimensions": "390x844",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized OAuth SDK v2.4.1",
+            "timestamp": "8:09:08 pm"
+          },
+          {
+            "type": "error",
+            "message": "GatewayTimeoutError: Upstream auth cluster took > 10000ms",
+            "timestamp": "8:10:08 pm"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "POST /api/v1/auth/token/exchange",
+            "status": 504,
+            "method": "POST",
+            "timestamp": "8:10:08 pm"
+          }
+        ]
+      }
+    }
+  ],
   "events": [],
   "refreshTokens": [
     {
@@ -261,9 +362,42 @@
       "tenant_id": "tenant-acme-corp-001",
       "token_hash": "b33f1d3b0c6e8c3a52b53105855dd79204aa21e9e2cfa40a72e56ecefefa8a4e",
       "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": false,
+      "is_revoked": true,
       "expires_at": "2026-11-07T14:30:23.464Z",
       "created_at": "2026-10-31T14:30:23.465Z",
+      "replaced_by_token_hash": "041a433f95524a71b4843521937f76af81f98e92308f802058570b2c4038eea7"
+    },
+    {
+      "id": "rt-1793457534631-bo0j1d",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "041a433f95524a71b4843521937f76af81f98e92308f802058570b2c4038eea7",
+      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:38:54.624Z",
+      "created_at": "2026-10-31T14:38:54.631Z",
+      "replaced_by_token_hash": "aafbcc46d55e2e8b532f187f8dd512ac71d494deb1d118f845729ad6e785be62"
+    },
+    {
+      "id": "rt-1793458374736-4xqfl3",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "aafbcc46d55e2e8b532f187f8dd512ac71d494deb1d118f845729ad6e785be62",
+      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:52:54.731Z",
+      "created_at": "2026-10-31T14:52:54.736Z",
+      "replaced_by_token_hash": "bacbd914703f236798e1f651c406d7c9fb491832af8fef0978c7166d7eb48c14"
+    },
+    {
+      "id": "rt-1793459214995-kx4h8q",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "bacbd914703f236798e1f651c406d7c9fb491832af8fef0978c7166d7eb48c14",
+      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
+      "is_revoked": false,
+      "expires_at": "2026-11-07T15:06:54.992Z",
+      "created_at": "2026-10-31T15:06:54.995Z",
       "replaced_by_token_hash": null
     }
   ],
@@ -574,5 +708,5 @@
       }
     }
   },
-  "last_updated": "2026-10-31T14:30:23.465Z"
+  "last_updated": "2026-10-31T15:06:54.995Z"
 }

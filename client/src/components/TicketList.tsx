@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Ticket, TicketSeverity, TicketStatus, UserRole, RolePermissionsMatrix } from '../types';
 import { hasRolePermission } from '../constants/permissions';
+import { CustomSelect } from './CustomSelect';
 import { 
   Bug, 
   Lightbulb, 
@@ -174,54 +175,48 @@ export const TicketList: React.FC<TicketListProps> = ({
             
             {/* Status Dropdown (hidden if resolvedOnly view) */}
             {!isResolvedOnly && (
-              <div className="flex items-center space-x-1.5 bg-[#f8fafc] border border-slate-200 px-3 py-1.5 rounded-[8px] shadow-2xs">
-                <span className="text-slate-400 text-[10px] uppercase font-medium">Status:</span>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer"
-                >
-                  <option value="ALL">All Statuses ({tickets.length})</option>
-                  <option value="OPEN">Open ({openCount})</option>
-                  <option value="IN_DEV">In Dev ({inDevCount})</option>
-                  <option value="IN_QA">In QA ({inQaCount})</option>
-                  <option value="RESOLVED">Resolved ({resolvedCount})</option>
-                </select>
-              </div>
+              <CustomSelect
+                label="Status"
+                value={filterStatus}
+                onChange={setFilterStatus}
+                options={[
+                  { value: 'ALL', label: `All Statuses (${tickets.length})` },
+                  { value: 'OPEN', label: `Open (${openCount})` },
+                  { value: 'IN_DEV', label: `In Dev (${inDevCount})` },
+                  { value: 'IN_QA', label: `In QA (${inQaCount})` },
+                  { value: 'RESOLVED', label: `Resolved (${resolvedCount})` }
+                ]}
+              />
             )}
 
             {/* Assignee Dropdown */}
-            <div className="flex items-center space-x-1.5 bg-[#f8fafc] border border-slate-200 px-3 py-1.5 rounded-[8px] shadow-2xs">
-              <span className="text-slate-400 text-[10px] uppercase font-medium">Assignee:</span>
-              <select
-                value={filterAssignee}
-                onChange={(e) => setFilterAssignee(e.target.value)}
-                className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">All Team</option>
-                <option value="UNASSIGNED">Unassigned Only</option>
-                <option value="user-dev-01">Rahul Sharma</option>
-                <option value="user-dev-02">Priya Nair</option>
-                <option value="user-dev-03">Amit Patel</option>
-                <option value="user-lead-01">Vikram Mehta</option>
-              </select>
-            </div>
+            <CustomSelect
+              label="Assignee"
+              value={filterAssignee}
+              onChange={setFilterAssignee}
+              options={[
+                { value: 'ALL', label: 'All Team' },
+                { value: 'UNASSIGNED', label: 'Unassigned Only' },
+                { value: 'user-dev-01', label: 'Rahul Sharma' },
+                { value: 'user-dev-02', label: 'Priya Nair' },
+                { value: 'user-dev-03', label: 'Amit Patel' },
+                { value: 'user-lead-01', label: 'Vikram Mehta' }
+              ]}
+            />
 
             {/* Priority Dropdown */}
-            <div className="flex items-center space-x-1.5 bg-[#f8fafc] border border-slate-200 px-3 py-1.5 rounded-[8px] shadow-2xs">
-              <span className="text-slate-400 text-[10px] uppercase font-medium">Priority:</span>
-              <select
-                value={filterPriority}
-                onChange={(e) => setFilterPriority(e.target.value)}
-                className="bg-transparent text-slate-800 text-xs font-medium focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">All Priorities</option>
-                <option value="URGENT">Urgent (P0)</option>
-                <option value="HIGH">High (P1)</option>
-                <option value="MEDIUM">Medium (P2)</option>
-                <option value="LOW">Low (P3)</option>
-              </select>
-            </div>
+            <CustomSelect
+              label="Priority"
+              value={filterPriority}
+              onChange={setFilterPriority}
+              options={[
+                { value: 'ALL', label: 'All Priorities' },
+                { value: 'URGENT', label: 'Urgent (P0)' },
+                { value: 'HIGH', label: 'High (P1)' },
+                { value: 'MEDIUM', label: 'Medium (P2)' },
+                { value: 'LOW', label: 'Low (P3)' }
+              ]}
+            />
 
             {/* Reset Filters button if any filter active */}
             {(searchQuery || filterStatus !== 'ALL' || filterAssignee !== 'ALL' || filterPriority !== 'ALL' || filterCategory !== 'ALL') && (
