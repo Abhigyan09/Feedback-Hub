@@ -395,9 +395,53 @@
       "tenant_id": "tenant-acme-corp-001",
       "token_hash": "bacbd914703f236798e1f651c406d7c9fb491832af8fef0978c7166d7eb48c14",
       "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": false,
+      "is_revoked": true,
       "expires_at": "2026-11-07T15:06:54.992Z",
       "created_at": "2026-10-31T15:06:54.995Z",
+      "replaced_by_token_hash": "9a07b6253c102e9c58ff9e690ef4be21941e08f062f0261b2f36095f98f5126a"
+    },
+    {
+      "id": "rt-1793459608683-r43fh9",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "9a07b6253c102e9c58ff9e690ef4be21941e08f062f0261b2f36095f98f5126a",
+      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T15:13:28.680Z",
+      "created_at": "2026-10-31T15:13:28.683Z",
+      "replaced_by_token_hash": "19eec73263c6b4d9eb482d65abedc0555146fddad88999ae5806a430295951b5"
+    },
+    {
+      "id": "rt-1793463458681-fk689l",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "19eec73263c6b4d9eb482d65abedc0555146fddad88999ae5806a430295951b5",
+      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T16:17:38.671Z",
+      "created_at": "2026-10-31T16:17:38.682Z",
+      "replaced_by_token_hash": "bef17e0f30cae4193e972030ace56768191736213b1c128a4409ecc7d1c24a2d"
+    },
+    {
+      "id": "rt-1793465092773-qe7wza",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "bef17e0f30cae4193e972030ace56768191736213b1c128a4409ecc7d1c24a2d",
+      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T16:44:52.759Z",
+      "created_at": "2026-10-31T16:44:52.773Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793466415789-lckl3f",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "64fccff6a846b5a8ce8e44752dc1851afaca61045d47a565445079ce1afbfc12",
+      "family_id": "0947c149-2c1a-44b1-be5a-30ed00fef417",
+      "is_revoked": false,
+      "expires_at": "2026-11-07T17:06:55.788Z",
+      "created_at": "2026-10-31T17:06:55.789Z",
       "replaced_by_token_hash": null
     }
   ],
@@ -708,5 +752,5 @@
       }
     }
   },
-  "last_updated": "2026-10-31T15:06:54.995Z"
+  "last_updated": "2026-10-31T17:06:55.789Z"
 }
