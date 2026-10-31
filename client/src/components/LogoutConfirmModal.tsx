@@ -119,13 +119,13 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
 
           {/* Action Buttons */}
           <div className="space-y-2 pt-1">
-            {/* Primary Dark Button (Matching Reference Button exactly) */}
+            {/* Primary Action Button (Matching Sidebar #0066FF Blue) */}
             <button
               type="button"
               id="logout-confirm-btn"
               onClick={onConfirm}
               disabled={isLoggingOut}
-              className="w-full py-3 bg-[#262626] hover:bg-[#18181b] active:bg-[#09090b] text-white text-xs font-mono font-medium tracking-wider uppercase rounded-[8px] transition-all shadow-xs active:scale-[0.99] flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 bg-[#0066FF] hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-mono font-medium tracking-wider uppercase rounded-[8px] transition-all shadow-sm shadow-blue-600/25 active:scale-[0.99] flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
             >
               {isLoggingOut ? (
                 <>
