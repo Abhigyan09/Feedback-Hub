@@ -86,7 +86,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
   // Sync staffList whenever parent teamMembers updates
   useEffect(() => {
-    if (teamMembers && teamMembers.length > 0) {
+    if (Array.isArray(teamMembers)) {
       setStaffList(teamMembers);
     }
   }, [teamMembers]);
@@ -147,20 +147,35 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       urgentCount: number;
     }> = {};
 
-    staffList.forEach(m => {
-      const assigned = tickets.filter(t => t.assigned_to === m.id);
-      const open = assigned.filter(t => normalizeStatus(t.status) !== 'Resolved');
-      const resolved = assigned.filter(t => normalizeStatus(t.status) === 'Resolved');
-      const urgent = open.filter(t => normalizeSeverity(t.severity) === 'Urgent');
-
+    const safeStaff = Array.isArray(staffList) ? staffList : [];
+    safeStaff.forEach(m => {
       metrics[m.id] = {
-        open,
-        resolved,
-        urgent,
-        openCount: open.length,
-        resolvedCount: resolved.length,
-        urgentCount: urgent.length
+        open: [],
+        resolved: [],
+        urgent: [],
+        openCount: 0,
+        resolvedCount: 0,
+        urgentCount: 0
       };
+    });
+
+    const safeTicketList = Array.isArray(tickets) ? tickets : [];
+    safeTicketList.forEach(t => {
+      const assigneeId = t.assigned_to;
+      if (assigneeId && metrics[assigneeId]) {
+        const isResolved = normalizeStatus(t.status) === 'Resolved';
+        if (isResolved) {
+          metrics[assigneeId].resolved.push(t);
+          metrics[assigneeId].resolvedCount++;
+        } else {
+          metrics[assigneeId].open.push(t);
+          metrics[assigneeId].openCount++;
+          if (normalizeSeverity(t.severity) === 'Urgent') {
+            metrics[assigneeId].urgent.push(t);
+            metrics[assigneeId].urgentCount++;
+          }
+        }
+      }
     });
 
     return metrics;
@@ -261,6 +276,12 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
   const handleRebalanceWorkload = async () => {
     if (!isAdminOrLead) {
       setActionError("Only Squad Leads and Administrators have authority to rebalance squad workload.");
+      setTimeout(() => setActionError(null), 4000);
+      return;
+    }
+
+    if (staffList.length === 0) {
+      setActionError("Cannot rebalance workload: No squad engineers are registered on the roster. Add staff first.");
       setTimeout(() => setActionError(null), 4000);
       return;
     }
@@ -537,8 +558,14 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             type="button"
             id="auto-balance-load-btn"
             onClick={handleRebalanceWorkload}
-            disabled={isRebalancing || !isAdminOrLead}
-            title={isAdminOrLead ? "Automatically distribute unassigned tickets across available engineers" : "Requires Squad Lead authority"}
+            disabled={isRebalancing || !isAdminOrLead || staffList.length === 0}
+            title={
+              !isAdminOrLead 
+                ? "Requires Squad Lead authority" 
+                : staffList.length === 0 
+                ? "No engineers available on roster to balance load" 
+                : "Automatically distribute unassigned tickets across available engineers"
+            }
             className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed font-poppins"
           >
             <Zap className={`w-3.5 h-3.5 text-purple-600 ${isRebalancing ? 'animate-spin' : ''}`} />
@@ -768,7 +795,36 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       </div>
 
       {/* 4. Staff Member Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      {filteredMembers.length === 0 ? (
+        <div className="bg-white border border-slate-200/90 rounded-[12px] p-8 text-center space-y-3 card-subtle">
+          <div className="w-12 h-12 rounded-[12px] bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+            <Users className="w-6 h-6" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h4 className="text-sm font-medium text-slate-800">
+              {staffList.length === 0 ? 'No squad engineers registered' : 'No engineers match filter'}
+            </h4>
+            <p className="text-xs text-slate-500">
+              {staffList.length === 0
+                ? 'No squad members are registered on this tenant roster. Register engineers to enable assignment and workload distribution.'
+                : 'Try adjusting your search query or filter tab to view squad members.'}
+            </p>
+          </div>
+          {isAdminOrLead && staffList.length === 0 && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#0b1b36] text-white text-xs font-medium rounded-[8px] hover:bg-[#0b1b36]/90 transition-colors shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Register Squad Member</span>
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {filteredMembers.map((member) => {
           const metrics = memberMetrics[member.id] || { openCount: 0, resolvedCount: 0, urgentCount: 0 };
           const isSelected = selectedMemberId === member.id;
@@ -920,6 +976,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           );
         })}
       </div>
+      )}
 
       {/* 5. Detailed Assigned Workload Drawer / Table for Selected Member */}
       {activeMember && (
@@ -970,7 +1027,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             </div>
           ) : (
             <div className="border border-slate-200 rounded-md overflow-x-auto card-subtle">
-              <table className="w-full text-left border-collapse text-xs font-mono">
+              <table className="w-full min-w-[640px] text-left border-collapse text-xs font-mono">
                 <thead>
                   <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-wider">
                     <th className="p-2.5 font-medium">INCIDENT ID & SHORT CODE</th>
@@ -1026,13 +1083,18 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         <td className="p-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           {canAssign ? (
                             <CustomSelect
+                              disabled={staffList.length === 0}
                               value={t.assigned_to || ''}
                               onChange={(val: string) => handleQuickAssign(t.id, val)}
-                              placeholder="-- Reassign --"
-                              options={[
-                                { value: '', label: '-- Reassign --' },
-                                ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
-                              ]}
+                              placeholder={staffList.length === 0 ? "No staff available" : "-- Reassign --"}
+                              options={
+                                staffList.length === 0
+                                  ? [{ value: '', label: 'No staff available' }]
+                                  : [
+                                      { value: '', label: '-- Reassign --' },
+                                      ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
+                                    ]
+                              }
                               buttonClassName="text-[11px] font-mono border-slate-200 bg-white px-2 py-1 text-slate-700 rounded-[8px]"
                             />
                           ) : (
@@ -1084,8 +1146,9 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               <button
                 type="button"
                 onClick={handleRebalanceWorkload}
-                disabled={isRebalancing}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-mono font-medium cursor-pointer transition-colors shadow-xs flex items-center space-x-1.5"
+                disabled={isRebalancing || staffList.length === 0}
+                title={staffList.length === 0 ? "No engineers available on roster" : undefined}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-mono font-medium cursor-pointer transition-colors shadow-xs flex items-center space-x-1.5"
               >
                 <Zap className="w-3.5 h-3.5" />
                 <span>Auto-Assign All Unassigned</span>
@@ -1119,17 +1182,22 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <span className="truncate">{ticket.category}</span>
                   {canAssign ? (
                     <CustomSelect
+                      disabled={staffList.length === 0}
                       value=""
                       onChange={(val: string) => {
                         if (val) {
                           handleQuickAssign(ticket.id, val);
                         }
                       }}
-                      placeholder="+ Assign..."
-                      options={[
-                        { value: '', label: '+ Assign...' },
-                        ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
-                      ]}
+                      placeholder={staffList.length === 0 ? "No staff available" : "+ Assign..."}
+                      options={
+                        staffList.length === 0
+                          ? [{ value: '', label: 'No staff available' }]
+                          : [
+                              { value: '', label: '+ Assign...' },
+                              ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
+                            ]
+                      }
                       buttonClassName="text-[10px] font-mono border-amber-300 bg-white text-slate-800 px-2 py-0.5 rounded-[8px]"
                     />
                   ) : (

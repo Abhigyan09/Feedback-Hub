@@ -8,6 +8,7 @@ import { Toast } from './components/Toast';
 import { LogoutConfirmModal } from './components/LogoutConfirmModal';
 import { Ticket, Tenant, UserRole, RolePermissionsMatrix, TeamMember, TicketCategory, TicketSeverity } from './types';
 import { normalizeSeverity, normalizeStatus } from './utils/formatters';
+import { safeNumber } from './utils/edgeCaseHelpers';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { DashboardHeader, HeaderUser } from './components/DashboardHeader';
 import { SummaryCards } from './components/SummaryCards';
@@ -40,6 +41,10 @@ const Dashboard: React.FC = () => {
   const [currentTenantId, setCurrentTenantId] = useState<string>(() => {
     return localStorage.getItem('fb_current_tenant_id') || user?.tenant_id || 'tenant-acme-corp-001';
   });
+  const currentTenantIdRef = useRef<string>(currentTenantId);
+  useEffect(() => {
+    currentTenantIdRef.current = currentTenantId;
+  }, [currentTenantId]);
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     return (localStorage.getItem('fb_current_role') as UserRole) || user?.role || 'tenant_admin';
   });
@@ -95,9 +100,32 @@ const Dashboard: React.FC = () => {
   const [apiLatencyMs, setApiLatencyMs] = useState<number | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // WebSocket burst-throttling & batching refs
+  const pendingNewTicketsRef = useRef<Ticket[]>([]);
+  const pendingUpdatedTicketsRef = useRef<Map<string, Ticket>>(new Map());
+  const batchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState<boolean>(false);
+
+  // Modal Scrollbar Trapping: Lock document.body and main scroll container overflow when any modal is open
+  const isAnyModalOpen = Boolean(selectedTicket || isCreateModalOpen || isSimulatorOpen || isLogoutModalOpen);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isAnyModalOpen) {
+      const originalBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      const mainContainer = document.getElementById('main-scroll-container');
+      const originalContainerOverflow = mainContainer ? mainContainer.style.overflow : '';
+      if (mainContainer) mainContainer.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        if (mainContainer) mainContainer.style.overflow = originalContainerOverflow;
+      };
+    }
+  }, [isAnyModalOpen]);
 
   // Sidebar navigation state with localStorage persistence
   const [currentView, setCurrentView] = useState<SidebarView>(() => {
@@ -323,14 +351,102 @@ const Dashboard: React.FC = () => {
     loadTenantPermissions();
   }, [fetchTickets, fetchTenantMetadata, fetchAllTenants, loadTenantPermissions]);
 
-  // 5. Real-Time WebSockets connection to live backend
+  // 5. Real-Time WebSockets connection to live backend with auto-reconnect backoff & burst throttling
   useEffect(() => {
     const socket: Socket = io({
-      auth: accessToken ? { token: accessToken } : undefined
+      auth: accessToken ? { token: accessToken } : undefined,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.5,
+      timeout: 20000
     });
+
+    const flushSocketBatch = () => {
+      batchTimeoutRef.current = null;
+      const newItems = [...pendingNewTicketsRef.current];
+      const updatedMap = new Map(pendingUpdatedTicketsRef.current);
+
+      if (newItems.length === 0 && updatedMap.size === 0) return;
+
+      pendingNewTicketsRef.current = [];
+      pendingUpdatedTicketsRef.current.clear();
+
+      setTickets(prev => {
+        let current = prev;
+
+        // Apply batched updates
+        if (updatedMap.size > 0) {
+          current = current.map(t => updatedMap.has(t.id) ? updatedMap.get(t.id)! : t);
+        }
+
+        // Apply batched new tickets with duplicate checking by ID (prev.some check) and tenant check
+        if (newItems.length > 0) {
+          const uniqueToAdd: Ticket[] = [];
+          for (let i = 0; i < newItems.length; i++) {
+            const nt = newItems[i];
+            if (nt.tenant_id && nt.tenant_id !== currentTenantIdRef.current) {
+              continue;
+            }
+            const alreadyExists = current.some(t => t.id === nt.id) || uniqueToAdd.some(t => t.id === nt.id);
+            if (!alreadyExists) {
+              uniqueToAdd.push(nt);
+            }
+          }
+          if (uniqueToAdd.length > 0) {
+            current = [...uniqueToAdd, ...current];
+          }
+        }
+
+        return current;
+      });
+
+      if (updatedMap.size > 0) {
+        setSelectedTicket(curr => curr && updatedMap.has(curr.id) ? updatedMap.get(curr.id)! : curr);
+      }
+
+      if (newItems.length > 1) {
+        setAlertBanner(`${newItems.length} new incidents ingested`);
+        setTimeout(() => setAlertBanner(null), 5000);
+      } else if (newItems.length === 1) {
+        setAlertBanner(`New Incident: ${newItems[0].title}`);
+        setTimeout(() => setAlertBanner(null), 6000);
+      }
+
+      setLastUpdated(new Date());
+    };
+
+    const scheduleSocketBatch = () => {
+      if (!batchTimeoutRef.current) {
+        batchTimeoutRef.current = setTimeout(flushSocketBatch, 350); // 350ms batching window prevents render thrashing during bursts
+      }
+    };
+
+    const handleIncomingNewTicket = (newTicket: Ticket) => {
+      if (!newTicket || !newTicket.id) return;
+      // Cross-Tenant Socket Isolation: Defensively discard mismatched tenant_id
+      if (newTicket.tenant_id && newTicket.tenant_id !== currentTenantIdRef.current) {
+        return;
+      }
+      pendingNewTicketsRef.current.push(newTicket);
+      scheduleSocketBatch();
+    };
+
+    const handleIncomingUpdatedTicket = (updatedTicket: Ticket) => {
+      if (!updatedTicket || !updatedTicket.id) return;
+      // Cross-Tenant Socket Isolation: Defensively discard mismatched tenant_id
+      if (updatedTicket.tenant_id && updatedTicket.tenant_id !== currentTenantIdRef.current) {
+        return;
+      }
+      pendingUpdatedTicketsRef.current.set(updatedTicket.id, updatedTicket);
+      scheduleSocketBatch();
+    };
 
     socket.on('connect', () => {
       setIsConnected(true);
+      // On reconnect after drop/offline, re-fetch to catch any missed updates
+      fetchTickets();
     });
 
     socket.on('disconnect', () => {
@@ -342,26 +458,30 @@ const Dashboard: React.FC = () => {
       setIsConnected(false);
     });
 
-    socket.on('NEW_TICKET_ALERT', (data: { ticket: Ticket; message: string }) => {
+    socket.on('NEW_TICKET_ALERT', (data: { ticket: Ticket; message?: string }) => {
       if (data?.ticket) {
-        setAlertBanner(data.message || 'New Incident Received');
-        setTickets(prev => [data.ticket, ...prev.filter(t => t.id !== data.ticket.id)]);
-        setLastUpdated(new Date());
-        setTimeout(() => setAlertBanner(null), 7000);
+        handleIncomingNewTicket(data.ticket);
+      }
+    });
+
+    socket.on('TICKET_CREATED', (data: { ticket: Ticket }) => {
+      if (data?.ticket) {
+        handleIncomingNewTicket(data.ticket);
       }
     });
 
     socket.on('TICKET_UPDATED', (data: { ticket: Ticket }) => {
       if (data?.ticket) {
-        setTickets(prev => prev.map(t => t.id === data.ticket.id ? data.ticket : t));
-        setSelectedTicket(curr => curr && curr.id === data.ticket.id ? data.ticket : curr);
-        setLastUpdated(new Date());
+        handleIncomingUpdatedTicket(data.ticket);
       } else {
         fetchTickets();
       }
     });
 
-    socket.on('TICKET_DELETED', (data: { ticketId: string; message: string }) => {
+    socket.on('TICKET_DELETED', (data: { ticketId: string; message: string; tenant_id?: string }) => {
+      if (data?.tenant_id && data.tenant_id !== currentTenantIdRef.current) {
+        return;
+      }
       setAlertBanner(data.message);
       setTimeout(() => setAlertBanner(null), 6000);
       fetchTickets();
@@ -386,6 +506,10 @@ const Dashboard: React.FC = () => {
     });
 
     return () => {
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current);
+        batchTimeoutRef.current = null;
+      }
       socket.disconnect();
     };
   }, [accessToken, currentTenantId, currentRole, fetchTickets, fetchTenantMetadata, fetchAllTenants]);
@@ -393,40 +517,51 @@ const Dashboard: React.FC = () => {
   // Compute dynamic counts from live backend data
   const totalCount = tickets.length;
 
-  const openCount = useMemo(() => 
-    tickets.filter(t => normalizeStatus(t.status) !== 'Resolved').length, 
-    [tickets]
-  );
+  // High ticket influx optimization: Compute counts & metrics in a single O(N) pass
+  const { openCount, unassignedCount, urgentCount, resolvedCount, resolvedTickets, openTicketCounts } = useMemo(() => {
+    let open = 0;
+    let unassigned = 0;
+    let urgent = 0;
+    let resolved = 0;
+    const resolvedList: Ticket[] = [];
+    const memberCounts: Record<string, number> = {};
 
-  const unassignedCount = useMemo(() => 
-    tickets.filter(t => !t.assigned_to).length, 
-    [tickets]
-  );
+    const safeTeam = Array.isArray(teamMembers) ? teamMembers : [];
+    for (let i = 0; i < safeTeam.length; i++) {
+      memberCounts[safeTeam[i].id] = 0;
+    }
 
-  const urgentCount = useMemo(() => 
-    tickets.filter(t => normalizeSeverity(t.severity) === 'Urgent').length, 
-    [tickets]
-  );
+    const safeTicketList = Array.isArray(tickets) ? tickets : [];
+    for (let i = 0; i < safeTicketList.length; i++) {
+      const t = safeTicketList[i];
+      const isResolved = normalizeStatus(t.status) === 'Resolved' || t.status === 'RESOLVED' || t.status === 'CLOSED';
+      if (isResolved) {
+        resolved++;
+        resolvedList.push(t);
+      } else {
+        open++;
+        if (t.assigned_to && memberCounts[t.assigned_to] !== undefined) {
+          memberCounts[t.assigned_to]++;
+        }
+      }
 
-  const resolvedCount = useMemo(() => 
-    tickets.filter(t => normalizeStatus(t.status) === 'Resolved').length, 
-    [tickets]
-  );
+      if (!t.assigned_to) {
+        unassigned++;
+      }
 
-  const resolvedTickets = useMemo(() =>
-    tickets.filter(t => normalizeStatus(t.status) === 'Resolved' || t.status === 'RESOLVED' || t.status === 'CLOSED'),
-    [tickets]
-  );
+      if (normalizeSeverity(t.severity) === 'Urgent') {
+        urgent++;
+      }
+    }
 
-  // Compute open-ticket count per team member dynamically
-  const openTicketCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    teamMembers.forEach(m => {
-      counts[m.id] = tickets.filter(
-        t => t.assigned_to === m.id && normalizeStatus(t.status) !== 'Resolved'
-      ).length;
-    });
-    return counts;
+    return {
+      openCount: open,
+      unassignedCount: unassigned,
+      urgentCount: urgent,
+      resolvedCount: resolved,
+      resolvedTickets: resolvedList,
+      openTicketCounts: memberCounts
+    };
   }, [tickets, teamMembers]);
 
   // Handle clicking on summary cards to toggle filter
@@ -493,8 +628,53 @@ const Dashboard: React.FC = () => {
     setActiveCardFilter(null);
   }, []);
 
-  // Live status update via PATCH /api/v1/tickets/:id/status
+  // Tenant Switch Handler: Defensively close all open modals, clear active ticket selections, and reset search/filter states
+  const handleTenantSwitch = useCallback((newTenantId: string) => {
+    if (newTenantId === currentTenantId) return;
+    setCurrentTenantId(newTenantId);
+    setSelectedTicket(null);
+    setIsCreateModalOpen(false);
+    setIsSimulatorOpen(false);
+    setIsLogoutModalOpen(false);
+    handleResetFilters();
+  }, [currentTenantId, handleResetFilters]);
+
+  // Listen for 403 Forbidden events dispatched by authFetch (Permission Downgrade Mid-Session)
+  useEffect(() => {
+    const handlePermissionDenied = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message?: string }>;
+      const msg = customEvent.detail?.message || 'Access Forbidden (403): Your role permissions have changed.';
+      setAlertBanner(msg);
+      loadTenantPermissions();
+      fetchTickets();
+      setTimeout(() => setAlertBanner(null), 6000);
+    };
+
+    window.addEventListener('fb:permission_denied', handlePermissionDenied);
+    return () => {
+      window.removeEventListener('fb:permission_denied', handlePermissionDenied);
+    };
+  }, [loadTenantPermissions, fetchTickets]);
+
+  // Live status update via PATCH /api/v1/tickets/:id/status (Optimistic UI + Rollback on error)
   const handleUpdateStatus = async (ticketId: string, newStatus: string, note?: string) => {
+    const previousTickets = tickets;
+    const previousSelected = selectedTicket;
+
+    // Optimistic UI update
+    setTickets(prev => prev.map(t => t.id === ticketId ? {
+      ...t,
+      status: newStatus as any,
+      updated_at: new Date().toISOString()
+    } : t));
+    if (selectedTicket && selectedTicket.id === ticketId) {
+      setSelectedTicket(prev => prev ? {
+        ...prev,
+        status: newStatus as any,
+        updated_at: new Date().toISOString()
+      } : null);
+    }
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -507,15 +687,25 @@ const Dashboard: React.FC = () => {
         body: JSON.stringify({ status: newStatus, note })
       });
 
-      if (res.ok) {
-        fetchTickets();
-      } else {
-        const err = await res.json();
-        setAlertBanner(err.message || err.error || 'Failed to update ticket status');
+      if (!res.ok) {
+        // Rollback on server error
+        setTickets(previousTickets);
+        setSelectedTicket(previousSelected);
+        const err = await res.json().catch(() => ({}));
+        const errorMsg = err.message || err.error || 'Failed to update ticket status';
+        if (res.status === 403) {
+          loadTenantPermissions();
+          setAlertBanner(`Access Forbidden (403): ${errorMsg}`);
+        } else {
+          setAlertBanner(errorMsg);
+        }
         setTimeout(() => setAlertBanner(null), 5000);
         fetchTickets();
       }
     } catch (err: any) {
+      // Rollback on network failure
+      setTickets(previousTickets);
+      setSelectedTicket(previousSelected);
       console.error('Failed to update status:', err);
       setAlertBanner(err.message || 'Network error updating status');
       setTimeout(() => setAlertBanner(null), 5000);
@@ -523,8 +713,27 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Live assignee update via PATCH /api/v1/tickets/:id/assignee
+  // Live assignee update via PATCH /api/v1/tickets/:id/assignee (Optimistic UI + Rollback on error)
   const handleUpdateTicketAssignee = async (ticketId: string, newAssigneeId: string | null, newAssigneeName: string | null) => {
+    const previousTickets = tickets;
+    const previousSelected = selectedTicket;
+
+    // Optimistic UI update
+    setTickets(prev => prev.map(t => t.id === ticketId ? {
+      ...t,
+      assigned_to: newAssigneeId || undefined,
+      assigned_to_name: newAssigneeName || undefined,
+      updated_at: new Date().toISOString()
+    } : t));
+    if (selectedTicket && selectedTicket.id === ticketId) {
+      setSelectedTicket(prev => prev ? {
+        ...prev,
+        assigned_to: newAssigneeId || undefined,
+        assigned_to_name: newAssigneeName || undefined,
+        updated_at: new Date().toISOString()
+      } : null);
+    }
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -539,15 +748,25 @@ const Dashboard: React.FC = () => {
           assigneeName: newAssigneeName
         })
       });
-      if (res.ok) {
-        fetchTickets();
-      } else {
-        const err = await res.json();
-        setAlertBanner(err.message || err.error || 'Failed to update assignee');
+      if (!res.ok) {
+        // Rollback on server error
+        setTickets(previousTickets);
+        setSelectedTicket(previousSelected);
+        const err = await res.json().catch(() => ({}));
+        const errorMsg = err.message || err.error || 'Failed to update assignee';
+        if (res.status === 403) {
+          loadTenantPermissions();
+          setAlertBanner(`Access Forbidden (403): ${errorMsg}`);
+        } else {
+          setAlertBanner(errorMsg);
+        }
         setTimeout(() => setAlertBanner(null), 5000);
         fetchTickets();
       }
     } catch (err: any) {
+      // Rollback on network failure
+      setTickets(previousTickets);
+      setSelectedTicket(previousSelected);
       console.error('Failed to update assignee on server:', err);
       setAlertBanner(err.message || 'Network error updating assignee');
       setTimeout(() => setAlertBanner(null), 5000);
@@ -569,8 +788,15 @@ const Dashboard: React.FC = () => {
         body: JSON.stringify(updatedFields)
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to update ticket');
+        const errorData = await res.json().catch(() => ({}));
+        const errorMsg = errorData.error || errorData.message || 'Failed to update ticket';
+        if (res.status === 403) {
+          loadTenantPermissions();
+          setAlertBanner(`Access Forbidden (403): ${errorMsg}`);
+          setTimeout(() => setAlertBanner(null), 5000);
+          return;
+        }
+        throw new Error(errorMsg);
       }
       fetchTickets();
       if (selectedTicket && selectedTicket.id === ticketId) {
@@ -594,8 +820,15 @@ const Dashboard: React.FC = () => {
         headers
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to delete ticket');
+        const errorData = await res.json().catch(() => ({}));
+        const errorMsg = errorData.error || errorData.message || 'Failed to delete ticket';
+        if (res.status === 403) {
+          loadTenantPermissions();
+          setAlertBanner(`Access Forbidden (403): ${errorMsg}`);
+          setTimeout(() => setAlertBanner(null), 5000);
+          return;
+        }
+        throw new Error(errorMsg);
       }
       fetchTickets();
       if (selectedTicket && selectedTicket.id === ticketId) {
@@ -713,6 +946,16 @@ const Dashboard: React.FC = () => {
         setSelectedTicket(null);
         setAlertBanner('All incidents cleared for this workspace.');
         setTimeout(() => setAlertBanner(null), 4000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        const errorMsg = err.message || err.error || 'Failed to clear incidents';
+        if (res.status === 403) {
+          loadTenantPermissions();
+          setAlertBanner(`Access Forbidden (403): ${errorMsg}`);
+        } else {
+          setAlertBanner(errorMsg);
+        }
+        setTimeout(() => setAlertBanner(null), 5000);
       }
     } catch (err) {
       console.error('Failed to clear tickets:', err);
@@ -756,10 +999,7 @@ const Dashboard: React.FC = () => {
         <DashboardHeader
           tenants={tenants}
           currentTenantId={currentTenantId}
-          onSelectTenant={(id) => {
-            setCurrentTenantId(id);
-            setActiveCardFilter(null);
-          }}
+          onSelectTenant={handleTenantSwitch}
           currentRole={currentRole}
           onSelectRole={setCurrentRole}
           user={currentUser}
@@ -779,9 +1019,9 @@ const Dashboard: React.FC = () => {
         {/* Real-time Incident Alert Banner */}
         {alertBanner && (
           <div className="bg-purple-900 border-b border-purple-800 text-purple-100 px-6 py-2.5 text-xs font-medium flex items-center justify-between animate-in slide-in-from-top duration-200 shrink-0">
-            <div className="flex items-center space-x-2.5">
-              <Bell className="w-4 h-4 text-purple-300 animate-bounce" />
-              <span>{alertBanner}</span>
+            <div className="flex items-center space-x-2.5 min-w-0 pr-4">
+              <Bell className="w-4 h-4 text-purple-300 animate-bounce shrink-0" />
+              <span className="truncate break-all max-w-3xl">{alertBanner}</span>
             </div>
             <button
               onClick={() => setAlertBanner(null)}
@@ -810,8 +1050,14 @@ const Dashboard: React.FC = () => {
                   <h1 className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight font-poppins">
                     {greeting}, {currentUser.name.replace(/\s*\([^)]*\)/g, '').trim()} 👋
                   </h1>
-                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                  <span className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-medium border shadow-2xs ${
+                    isConnected
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                      : 'bg-amber-50 text-amber-700 border-amber-300'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full inline-block ${
+                      isConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
+                    }`} />
                     <span className="font-poppins">{isConnected ? 'Live WebSockets Connected' : 'Syncing Live Engine'}</span>
                   </span>
                 </div>
@@ -959,7 +1205,7 @@ const Dashboard: React.FC = () => {
                     <span>Total Tickets Registry</span>
                   </h2>
                   <span className="px-2.5 py-0.5 text-xs font-medium bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-[6px] font-poppins">
-                    {totalCount} Total
+                    {safeNumber(totalCount, 0)} Total
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-poppins">
@@ -1000,6 +1246,7 @@ const Dashboard: React.FC = () => {
             {/* Main Ticket Queue */}
             <TicketList
               tickets={tickets}
+              teamMembers={teamMembers}
               onSelectTicket={setSelectedTicket}
               currentRole={currentRole}
               isLoading={isLoading}
@@ -1023,7 +1270,7 @@ const Dashboard: React.FC = () => {
                     <span>Resolved Incidents & SLA Compliance</span>
                   </h2>
                   <span className="px-2.5 py-0.5 text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-[6px] font-poppins">
-                    {resolvedCount} Resolved
+                    {safeNumber(resolvedCount, 0)} Resolved
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-poppins">
@@ -1046,6 +1293,7 @@ const Dashboard: React.FC = () => {
             {/* Main Ticket Queue for Resolved */}
             <TicketList
               tickets={resolvedTickets}
+              teamMembers={teamMembers}
               onSelectTicket={setSelectedTicket}
               currentRole={currentRole}
               isLoading={isLoading}

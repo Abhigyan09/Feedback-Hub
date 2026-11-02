@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AuthenticatedUser, LoginRequestDTO } from '../types';
 import { loginApi, refreshSessionApi, logoutApi } from '../api/auth.api';
+import { updateServerTimeOffset } from '../utils/edgeCaseHelpers';
 
 export interface ToastNotification {
   message: string;
@@ -163,6 +164,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await loginApi(credentials);
     updateSessionState(data.user, data.access_token);
     scheduleTokenRefresh(data.expires_in || 900);
+    // Restore saved return URL if user was redirected to /login after session expiry
+    try {
+      const returnUrl = sessionStorage.getItem('fb_return_url');
+      if (returnUrl) {
+        sessionStorage.removeItem('fb_return_url');
+        window.history.replaceState({}, '', returnUrl);
+      }
+    } catch {
+      // Ignore in restricted environments
+    }
   };
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -214,6 +225,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         credentials: 'include'
       });
 
+      // Synchronize client clock with backend server time header to prevent clock skew
+      const serverTime = response.headers.get('x-server-time') || response.headers.get('date');
+      if (serverTime) {
+        updateServerTimeOffset(serverTime);
+      }
+
       // If unauthorized (401), try silent renewal once and replay request
       if (response.status === 401) {
         const newToken = await refreshSession();
@@ -224,6 +241,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             headers,
             credentials: 'include'
           });
+          const retryServerTime = response.headers.get('x-server-time') || response.headers.get('date');
+          if (retryServerTime) {
+            updateServerTimeOffset(retryServerTime);
+          }
+        } else {
+          // Refresh failed (e.g. idle overnight, expired/revoked refresh token):
+          // Save return URL, update session state, and cleanly redirect to /login
+          try {
+            const currentPath = window.location.pathname + window.location.search;
+            if (currentPath && !currentPath.includes('/login') && !currentPath.includes('/reset-password') && !currentPath.includes('/forgot-password')) {
+              sessionStorage.setItem('fb_return_url', currentPath);
+            }
+            if (window.location.pathname !== '/login') {
+              window.history.pushState({}, '', '/login');
+            }
+          } catch {
+            // Ignore in non-browser or restricted environments
+          }
+          updateSessionState(null, null);
+        }
+      }
+
+      // If forbidden (403), notify listeners to re-evaluate permissions matrix
+      if (response.status === 403) {
+        try {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('fb:permission_denied'));
+          }
+        } catch {
+          // Ignore
         }
       }
 

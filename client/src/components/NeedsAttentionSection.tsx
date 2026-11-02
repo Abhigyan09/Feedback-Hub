@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Ticket, TeamMember } from '../types';
 import { normalizeSeverity, normalizeStatus } from '../utils/formatters';
+import { safeArray, getSyncedNow, getSafeSlaDueAt, parseSafeDate } from '../utils/edgeCaseHelpers';
 import { 
   AlertTriangle, 
   Clock, 
@@ -10,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface NeedsAttentionSectionProps {
-  tickets: Ticket[];
+  tickets?: Ticket[];
   teamMembers?: TeamMember[];
   onSelectTicket: (ticket: Ticket) => void;
 }
@@ -23,15 +24,19 @@ export interface AttentionItem {
 }
 
 export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
-  tickets,
+  tickets = [],
   teamMembers = [],
   onSelectTicket
 }) => {
-  const now = Date.now();
+  const safeTickets = safeArray<Ticket>(tickets);
+  const safeTeam = safeArray<TeamMember>(teamMembers);
+  const now = getSyncedNow();
 
-  // Helper to format waiting time (e.g., "8m", "48m", "2h 15m")
-  const formatWaitTime = (dateStr: string) => {
-    const diff = Math.max(0, now - new Date(dateStr).getTime());
+  // Helper to format waiting time safely guarding against clock skew or invalid dates
+  const formatWaitTime = (dateStr?: string | null) => {
+    if (!dateStr) return '0m';
+    const parsed = parseSafeDate(dateStr, now);
+    const diff = Math.max(0, now - parsed);
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins}m`;
     const hrs = Math.floor(mins / 60);
@@ -45,7 +50,7 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
   const attentionItems: AttentionItem[] = useMemo(() => {
     const items: AttentionItem[] = [];
 
-    tickets.forEach((ticket) => {
+    safeTickets.forEach((ticket) => {
       const normStatus = normalizeStatus(ticket.status);
       if (normStatus === 'Resolved') return;
 
@@ -54,43 +59,31 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
       const isWaitingClient = 
         Boolean(ticket.waiting_for_client) || 
         ticket.status === 'TRIAGED' ||
-        ticket.description?.toLowerCase().includes('awaiting client');
+        (ticket.description || '').toLowerCase().includes('awaiting client');
 
-      // Dynamic SLA determination
-      let slaDueTime = ticket.sla_due_at ? new Date(ticket.sla_due_at).getTime() : null;
-      if (!slaDueTime && ticket.created_at) {
-        // Industry-standard dynamic SLA: Urgent = 1h, High = 4h, Medium = 2h response, Low = 24h
-        const createdMs = new Date(ticket.created_at).getTime();
-        const slaDurationMs = normSev === 'Urgent' 
-          ? 1 * 3600000 
-          : normSev === 'High' 
-          ? 4 * 3600000 
-          : normSev === 'Medium' 
-          ? 2 * 3600000 
-          : 24 * 3600000;
-        slaDueTime = createdMs + slaDurationMs;
-      }
+      // Safe dynamic SLA calculation falling back to dynamic severity SLA
+      const slaDueTime = getSafeSlaDueAt(ticket);
 
       let slaLabel = 'SLA Active';
       let isBreached = false;
       let needsAttention = false;
 
-      if (slaDueTime) {
-        const diffMs = slaDueTime - now;
-        if (diffMs <= 0) {
-          isBreached = true;
+      // Exact SLA Breach boundary: consistent < 0 check prevents flickering/state flapping at diff === 0
+      const diffMs = slaDueTime - now;
+      if (diffMs < 0) {
+        isBreached = true;
+        needsAttention = true;
+        const overdueMins = Math.max(1, Math.floor(Math.abs(diffMs) / 60000));
+        const overdueStr = overdueMins >= 60 ? `${Math.floor(overdueMins / 60)}h overdue` : `${overdueMins}m overdue`;
+        slaLabel = `SLA Breached (${overdueStr})`;
+      } else {
+        // Within SLA window
+        isBreached = false;
+        const minsLeft = Math.floor(diffMs / 60000);
+        const timeStr = minsLeft >= 60 ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m` : minsLeft === 0 ? '<1m' : `${minsLeft}m`;
+        slaLabel = `SLA Due in ${timeStr}`;
+        if (diffMs <= 24 * 3600000) {
           needsAttention = true;
-          const overdueMins = Math.floor(Math.abs(diffMs) / 60000);
-          const overdueStr = overdueMins > 60 ? `${Math.floor(overdueMins / 60)}h overdue` : `${overdueMins}m overdue`;
-          slaLabel = `SLA Breached (${overdueStr})`;
-        } else {
-          // Within SLA window
-          const minsLeft = Math.floor(diffMs / 60000);
-          const timeStr = minsLeft >= 60 ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m` : `${minsLeft}m`;
-          slaLabel = `SLA Due in ${timeStr}`;
-          if (diffMs <= 24 * 3600000) {
-            needsAttention = true;
-          }
         }
       }
 
@@ -112,7 +105,7 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
     });
 
     return items;
-  }, [tickets, now]);
+  }, [safeTickets, now]);
 
   if (attentionItems.length === 0) {
     return (
@@ -142,6 +135,11 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
       </div>
     );
   }
+
+  // Cap visible attention cards to prevent thousands of DOM nodes during high ticket influx
+  const MAX_VISIBLE_ATTENTION = 4;
+  const visibleItems = attentionItems.slice(0, MAX_VISIBLE_ATTENTION);
+  const hiddenCount = Math.max(0, attentionItems.length - MAX_VISIBLE_ATTENTION);
 
   return (
     <div className="bg-white border border-rose-200/80 rounded-[12px] p-5 sm:p-6 space-y-4 shadow-[0_2px_12px_rgba(244,63,94,0.04)] transition-all animate-in fade-in duration-200 font-poppins">
@@ -173,20 +171,20 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
         </div>
       </div>
 
-      {/* Grid of Attention items */}
+      {/* Grid of Attention items (max 4 rendered to preserve performance & layout) */}
       <div className={`grid gap-3.5 ${
-        attentionItems.length === 1
+        visibleItems.length === 1
           ? 'grid-cols-1'
-          : attentionItems.length === 2
+          : visibleItems.length === 2
           ? 'grid-cols-1 md:grid-cols-2'
-          : attentionItems.length === 3
+          : visibleItems.length === 3
           ? 'grid-cols-1 md:grid-cols-3'
           : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
       }`}>
-        {attentionItems.map(({ ticket, slaLabel, isBreached, waitingDuration }) => {
+        {visibleItems.map(({ ticket, slaLabel, isBreached, waitingDuration }) => {
           const normSeverity = normalizeSeverity(ticket.severity);
           const normStatus = normalizeStatus(ticket.status);
-          const assignedMember = teamMembers.find(m => m.id === ticket.assigned_to);
+          const assignedMember = safeTeam.find(m => m.id === ticket.assigned_to);
 
           return (
             <div
@@ -233,7 +231,10 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
               </div>
 
               {/* Third row: Title */}
-              <h3 className="text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 leading-snug tracking-tight">
+              <h3 
+                className="text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate break-all leading-snug tracking-tight"
+                title={ticket.title}
+              >
                 {ticket.title}
               </h3>
 
@@ -269,6 +270,18 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
           );
         })}
       </div>
+
+      {/* Overflow summary footer when attention list exceeds MAX_VISIBLE_ATTENTION */}
+      {hiddenCount > 0 && (
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-slate-500 border-t border-rose-100/70 font-poppins">
+          <span>
+            Showing top <strong>{MAX_VISIBLE_ATTENTION}</strong> highest-priority incidents (<strong>{attentionItems.length}</strong> total requiring triage).
+          </span>
+          <span className="text-slate-400 font-mono text-[11px]">
+            Filter by 'Urgent' or 'Open' in table below to inspect full list.
+          </span>
+        </div>
+      )}
 
     </div>
   );

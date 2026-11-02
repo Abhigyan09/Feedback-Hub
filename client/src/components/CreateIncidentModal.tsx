@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CustomSelect } from './CustomSelect';
+import { safeArray } from '../utils/edgeCaseHelpers';
 import { TeamMember, TicketCategory, TicketSeverity } from '../types';
 import { X, Plus, AlertCircle, Cpu, Bug, Layout, ShieldAlert } from 'lucide-react';
 
@@ -21,9 +22,10 @@ interface CreateIncidentModalProps {
 export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
   isOpen,
   onClose,
-  teamMembers,
+  teamMembers = [],
   onCreateTicket
 }) => {
+  const safeTeam = safeArray(teamMembers);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<TicketCategory>('BUG');
@@ -32,6 +34,20 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
   const [reporterEmail, setReporterEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Close dialog on Escape key press (Nested Dialog ESC Dismiss)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, isSubmitting]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +55,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
     if (!title.trim()) return;
 
     setIsSubmitting(true);
-    const assignedMember = teamMembers.find(m => m.id === assigneeId);
+    const assignedMember = safeTeam.find(m => m.id === assigneeId);
 
     try {
       await onCreateTicket({
@@ -73,7 +89,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
       aria-modal="true"
       aria-labelledby="create-modal-title"
     >
-      <div className="bg-white border border-slate-200/90 rounded-[16px] w-full max-w-lg shadow-2xl overflow-hidden font-poppins relative animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white border border-slate-200/90 rounded-[16px] w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden font-poppins relative animate-in fade-in zoom-in-95 duration-150">
         
         {/* Subtle top-right dismiss button */}
         <button
@@ -86,7 +102,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
         </button>
 
         {/* Top Hero Section (Reference: Soft Gray Inset Rounded Card) */}
-        <div className="m-3 p-5 sm:p-6 bg-[#f4f4f5] rounded-[12px] flex flex-col space-y-3 text-left">
+        <div className="m-3 p-5 sm:p-6 bg-[#f4f4f5] rounded-[12px] flex flex-col space-y-3 text-left shrink-0">
           {/* Top Icon Badge */}
           <div className="w-9 h-9 rounded-full bg-white border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-2xs">
             <Plus className="w-4 h-4 text-slate-700 stroke-[2.2]" />
@@ -103,8 +119,8 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
           </div>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 pt-1 space-y-4 text-xs">
+        {/* Form Body - Independent max-h-[85vh] scrollable container */}
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 pt-1 space-y-4 text-xs overflow-y-auto max-h-[calc(85vh-140px)]">
           
           {/* Title */}
           <div className="space-y-1.5 text-left">
@@ -136,7 +152,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
           </div>
 
           {/* Category & Severity Row */}
-          <div className="grid grid-cols-2 gap-3 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
             <div className="space-y-1.5">
               <label className="text-slate-700 font-medium text-xs">
                 Category
@@ -176,7 +192,7 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
           </div>
 
           {/* Assignee & Reporter Email Row */}
-          <div className="grid grid-cols-2 gap-3 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
             <div className="space-y-1.5">
               <label className="text-slate-700 font-medium text-xs">
                 Assignee
@@ -185,10 +201,15 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
                 fullWidth
                 value={assigneeId}
                 onChange={(val: string) => setAssigneeId(val)}
-                options={[
-                  { value: 'UNASSIGNED', label: '-- Unassigned --' },
-                  ...teamMembers.map((m) => ({ value: m.id, label: m.name }))
-                ]}
+                disabled={safeTeam.length === 0}
+                options={
+                  safeTeam.length === 0
+                    ? [{ value: 'UNASSIGNED', label: 'No staff available (Unassigned)' }]
+                    : [
+                        { value: 'UNASSIGNED', label: '-- Unassigned --' },
+                        ...safeTeam.map((m) => ({ value: m.id, label: m.name }))
+                      ]
+                }
                 buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
               />
             </div>

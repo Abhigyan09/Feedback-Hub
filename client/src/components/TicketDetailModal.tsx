@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Ticket, TicketEvent, UserRole, TicketCategory, TicketSeverity, TicketStatus, RolePermissionsMatrix } from '../types';
 import { hasRolePermission } from '../constants/permissions';
 import { useAuth } from '../context/AuthContext';
 import { CustomSelect } from './CustomSelect';
+import { safeArray, processLogTraces, downloadRawLog, isSafeImageUrl } from '../utils/edgeCaseHelpers';
 import { 
   X, 
   Terminal, 
@@ -19,7 +20,8 @@ import {
   Save, 
   ArrowLeft,
   UserCheck,
-  User
+  User,
+  Download
 } from 'lucide-react';
 
 export const DEVELOPER_ROSTER = [
@@ -56,15 +58,17 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   teamMembers
 }) => {
   const { authFetch } = useAuth();
+  const safeTeam = safeArray(teamMembers);
   const activeRoster = React.useMemo(() => {
-    if (teamMembers && teamMembers.length > 0) {
-      return [
-        { id: '', name: 'Unassigned' },
-        ...teamMembers.map(m => ({ id: m.id, name: m.role ? `${m.name} (${m.role})` : m.name }))
-      ];
-    }
-    return DEVELOPER_ROSTER;
-  }, [teamMembers]);
+    return [
+      { id: '', name: 'Unassigned' },
+      ...safeTeam.map(m => ({ id: m.id, name: m.role ? `${m.name} (${m.role})` : m.name }))
+    ];
+  }, [safeTeam]);
+  const processedLogs = useMemo(
+    () => processLogTraces(ticket?.telemetry?.console_logs),
+    [ticket?.telemetry?.console_logs]
+  );
   const [activeTab, setActiveTab] = useState<'TELEMETRY' | 'TIMELINE'>('TELEMETRY');
   const [events, setEvents] = useState<TicketEvent[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -86,6 +90,17 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   // Delete Confirmation State
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Close modal on Escape key press (nested CustomSelect dropdowns stopPropagation so only dropdown closes first)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   // Load ticket details and events from backend
   useEffect(() => {
@@ -203,7 +218,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200/90 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl rounded-[12px] overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-900 font-poppins">
+      <div className="bg-white border border-slate-200/90 w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl rounded-[12px] overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-900 font-poppins">
         
         {/* Header */}
         <div className="p-5 border-b border-slate-200/80 flex items-start justify-between bg-slate-50/60">
@@ -247,10 +262,15 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               }`}>
                 {ticket.status}
               </span>
+              {!ticket.telemetry && (
+                <span className="text-slate-600 bg-slate-100 border border-slate-200/70 px-2 py-0.5 rounded-[6px] font-normal text-[11px]">
+                  Manual Ingest
+                </span>
+              )}
             </div>
 
             {!isEditing && (
-              <h2 className="text-lg font-medium text-slate-900 tracking-tight leading-snug">
+              <h2 className="text-lg font-medium text-slate-900 tracking-tight leading-snug break-all" title={ticket.title}>
                 {ticket.title}
               </h2>
             )}
@@ -407,13 +427,18 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 <label className="text-slate-600 font-medium text-xs">Assigned Developer</label>
                 <CustomSelect
                   fullWidth
+                  disabled={safeTeam.length === 0}
                   value={editAssignedTo}
                   onChange={(val: string) => {
                     const dev = activeRoster.find(d => d.id === val);
                     setEditAssignedTo(val);
                     setEditAssignedToName(dev && dev.id ? dev.name : '');
                   }}
-                  options={activeRoster.map(dev => ({ value: dev.id, label: dev.name }))}
+                  options={
+                    safeTeam.length === 0
+                      ? [{ value: '', label: 'No engineers available' }]
+                      : activeRoster.map(dev => ({ value: dev.id, label: dev.name }))
+                  }
                   buttonClassName="w-full bg-white border border-slate-200 p-2 text-blue-700 font-medium rounded-[8px] shadow-2xs text-xs"
                 />
               </div>
@@ -484,23 +509,33 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   
                   {/* Developer Assignment Dropdown */}
                   {canAssign && (
-                    <CustomSelect
-                      icon={<UserCheck className="w-3.5 h-3.5 text-blue-600" />}
-                      label="Assign"
-                      value={ticket.assigned_to || ''}
-                      onChange={async (selectedId) => {
-                        const dev = activeRoster.find(d => d.id === selectedId);
-                        if (onUpdateTicket) {
-                          await onUpdateTicket(ticket.id, {
-                            assigned_to: selectedId || undefined,
-                            assigned_to_name: dev && dev.id ? dev.name : undefined,
-                            status: ticket.status === 'OPEN' && selectedId ? 'IN_DEV' : ticket.status
-                          });
-                        }
-                      }}
-                      options={activeRoster.map(dev => ({ value: dev.id, label: dev.name }))}
-                      buttonClassName="bg-white hover:bg-slate-50 border-slate-200/80 px-2.5 py-1 shadow-2xs"
-                    />
+                    safeTeam.length === 0 ? (
+                      <div
+                        title="No squad engineers registered on the roster. Add staff in Staff Workload first."
+                        className="inline-flex items-center space-x-1.5 px-2.5 py-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-[8px]"
+                      >
+                        <UserCheck className="w-3.5 h-3.5 text-amber-600" />
+                        <span>No engineers available (Add staff first)</span>
+                      </div>
+                    ) : (
+                      <CustomSelect
+                        icon={<UserCheck className="w-3.5 h-3.5 text-blue-600" />}
+                        label="Assign"
+                        value={ticket.assigned_to || ''}
+                        onChange={async (selectedId) => {
+                          const dev = activeRoster.find(d => d.id === selectedId);
+                          if (onUpdateTicket) {
+                            await onUpdateTicket(ticket.id, {
+                              assigned_to: selectedId || undefined,
+                              assigned_to_name: dev && dev.id ? dev.name : undefined,
+                              status: ticket.status === 'OPEN' && selectedId ? 'IN_DEV' : ticket.status
+                            });
+                          }
+                        }}
+                        options={activeRoster.map(dev => ({ value: dev.id, label: dev.name }))}
+                        buttonClassName="bg-white hover:bg-slate-50 border-slate-200/80 px-2.5 py-1 shadow-2xs"
+                      />
+                    )
                   )}
 
                   {/* Status Advancement Buttons */}
@@ -574,11 +609,17 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                         <span>Attached User Screenshot</span>
                       </h4>
                       <div className="border border-slate-200/80 bg-slate-50/60 p-3 rounded-[12px]">
-                        <img 
-                          src={ticket.screenshot_url || ticket.telemetry?.screenshot_url} 
-                          alt="Client attached screenshot" 
-                          className="max-h-72 object-contain border border-slate-200 rounded-[8px]"
-                        />
+                        {isSafeImageUrl(ticket.screenshot_url || ticket.telemetry?.screenshot_url) ? (
+                          <img 
+                            src={ticket.screenshot_url || ticket.telemetry?.screenshot_url} 
+                            alt="Client attached screenshot" 
+                            className="max-h-72 object-contain border border-slate-200 rounded-[8px]"
+                          />
+                        ) : (
+                          <div className="text-xs text-rose-500 italic p-2 bg-rose-50 border border-rose-200 rounded-[6px]">
+                            Screenshot image URL blocked by security policy (invalid or unsafe protocol).
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -586,15 +627,20 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   {/* Environment Information (Safe for all roles) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     <div className="p-3.5 border border-slate-200/80 bg-slate-50/60 rounded-[12px] space-y-1">
-                      <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Page URL</span>
-                      <p className="text-xs text-slate-700 font-normal truncate">
-                        {ticket.telemetry?.page_url || 'https://client-app.com/dashboard'}
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Page URL</span>
+                        {!ticket.telemetry?.page_url && (
+                          <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-normal">Manual Ingest</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-700 font-normal truncate" title={ticket.telemetry?.page_url ?? 'N/A'}>
+                        {ticket.telemetry?.page_url ?? 'N/A'}
                       </p>
                     </div>
                     <div className="p-3.5 border border-slate-200/80 bg-slate-50/60 rounded-[12px] space-y-1">
                       <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">User Agent & Viewport</span>
-                      <p className="text-xs text-slate-700 font-normal truncate">
-                        {ticket.telemetry?.viewport_dimensions || '1920x1080'} • {ticket.telemetry?.app_version || 'v1.0.0'}
+                      <p className="text-xs text-slate-700 font-normal truncate" title={ticket.telemetry?.user_agent ?? 'Manual Ingest'}>
+                        {ticket.telemetry?.viewport_dimensions ? `${ticket.telemetry.viewport_dimensions} • ` : ''}{ticket.telemetry?.app_version ? `${ticket.telemetry.app_version} • ` : ''}{ticket.telemetry?.user_agent ?? 'Manual Ingest'}
                       </p>
                     </div>
                   </div>
@@ -612,7 +658,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     </div>
                   )}
 
-                  {/* Console Logs (Engineering Only) */}
+                  {/* Console Logs (Engineering Only) with 50KB Truncation & Download Raw Log */}
                   {canViewTechnicalTelemetry && (
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
@@ -620,20 +666,42 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                           <Terminal className="w-3.5 h-3.5 text-blue-600" />
                           <span>Captured Browser Console Logs</span>
                         </h4>
-                        <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-[6px]">AUTO-EXTRACTED BY SDK</span>
+                        <div className="flex items-center space-x-2">
+                          {processedLogs.rawText && (
+                            <button
+                              type="button"
+                              onClick={() => downloadRawLog(processedLogs.rawText, `ticket-${ticket.short_code || ticket.id}-console.log`)}
+                              className="inline-flex items-center space-x-1 text-[10px] text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-[6px] transition-colors cursor-pointer"
+                              title="Download complete raw console log trace"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>Download Raw Log</span>
+                            </button>
+                          )}
+                          <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-[6px]">
+                            {ticket.telemetry ? 'AUTO-EXTRACTED BY SDK' : 'MANUAL INGEST'}
+                          </span>
+                        </div>
                       </div>
+
+                      {processedLogs.isTruncated && (
+                        <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-[8px] flex items-center justify-between">
+                          <span>⚠️ Large log trace truncated to the first 50KB for browser responsiveness (Total: {(processedLogs.totalBytes / 1024).toFixed(1)}KB).</span>
+                          <button
+                            type="button"
+                            onClick={() => downloadRawLog(processedLogs.rawText, `ticket-${ticket.short_code || ticket.id}-console.log`)}
+                            className="font-medium underline ml-2 hover:text-amber-900 cursor-pointer text-[10px]"
+                          >
+                            Download Full Log
+                          </button>
+                        </div>
+                      )}
                       
-                      <div className="bg-[#151c2c] border border-slate-800 p-3.5 font-mono text-xs text-slate-300 space-y-1.5 max-h-40 overflow-y-auto rounded-[12px]">
-                        {ticket.telemetry?.console_logs && ticket.telemetry.console_logs.length > 0 ? (
-                          ticket.telemetry.console_logs.map((log, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <span className="text-slate-500 text-[10px]">[{log.timestamp}]</span>
-                              <span className={`text-[10px] uppercase font-medium ${log.type === 'error' ? 'text-red-400' : 'text-blue-400'}`}>
-                                [{log.type}]
-                              </span>
-                              <span className="flex-1 text-slate-200 font-normal">{log.message}</span>
-                            </div>
-                          ))
+                      <div className="bg-[#151c2c] border border-slate-800 p-3.5 font-mono text-xs text-slate-300 space-y-1.5 max-h-48 overflow-y-auto rounded-[12px]">
+                        {processedLogs.rawText ? (
+                          <pre className="text-slate-200 font-mono text-xs whitespace-pre-wrap break-all leading-relaxed">
+                            {processedLogs.truncatedText}
+                          </pre>
                         ) : (
                           <span className="text-slate-400 font-normal">No client console errors recorded.</span>
                         )}
@@ -717,7 +785,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                                   </span>
                                 )}
                               </span>
-                              <span className="text-slate-400 text-[11px]">{new Date(ev.created_at).toLocaleTimeString()}</span>
+                              <span className="text-slate-400 text-[11px]">{Number.isFinite(new Date(ev.created_at).getTime()) ? new Date(ev.created_at).toLocaleTimeString() : 'Just now'}</span>
                             </div>
                             <p className="text-slate-700 font-normal leading-relaxed">{ev.content}</p>
                           </div>

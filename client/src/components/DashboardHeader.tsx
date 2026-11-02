@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { UserRole, Ticket, RolePermissionsMatrix } from '../types';
 import { normalizeStatus } from '../utils/formatters';
+import { getSyncedNow, getSafeSlaDueAt } from '../utils/edgeCaseHelpers';
 import { hasRolePermission } from '../constants/permissions';
 import { NotificationPanel } from './NotificationPanel';
 
@@ -184,9 +185,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     plan: 'ENTERPRISE'
   };
 
-  // 100% Dynamic SLA calculation based on real ticket SLA breaches
+  // 100% Dynamic SLA calculation based on real ticket SLA breaches, synchronized with server time
+  const now = getSyncedNow();
   const breachedCount = (tickets || []).filter(
-    t => t.sla_due_at && new Date(t.sla_due_at).getTime() < Date.now() && normalizeStatus(t.status) !== 'Resolved'
+    t => normalizeStatus(t.status) !== 'Resolved' && getSafeSlaDueAt(t) < now
   ).length;
 
   const numericSla = totalTickets > 0
@@ -330,20 +332,20 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <button
                 type="button"
                 onClick={onNewIncidentClick}
-                className="bg-[#0b1b36] hover:bg-[#12284c] text-white px-3.5 sm:px-4 py-2 rounded-[8px] text-xs font-medium flex items-center space-x-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-[0.98] whitespace-nowrap shrink-0 cursor-pointer"
+                className="bg-[#0b1b36] hover:bg-[#12284c] text-white px-3 sm:px-4 py-2 rounded-[8px] text-xs font-medium flex items-center space-x-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-[0.98] whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="font-medium tracking-tight whitespace-nowrap">New Incident</span>
+                <span className="font-medium tracking-tight whitespace-nowrap hidden sm:inline">New Incident</span>
               </button>
             ) : (
               <button
                 type="button"
                 disabled
                 title="Your active role lacks 'tickets:create' authority"
-                className="bg-slate-200 text-slate-400 px-3.5 sm:px-4 py-2 rounded-[8px] text-xs font-medium flex items-center space-x-1.5 shadow-none cursor-not-allowed whitespace-nowrap shrink-0 opacity-60"
+                className="bg-slate-200 text-slate-400 px-3 sm:px-4 py-2 rounded-[8px] text-xs font-medium flex items-center space-x-1.5 shadow-none cursor-not-allowed whitespace-nowrap shrink-0 opacity-60"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="font-medium tracking-tight whitespace-nowrap">New Incident</span>
+                <span className="font-medium tracking-tight whitespace-nowrap hidden sm:inline">New Incident</span>
               </button>
             )}
 

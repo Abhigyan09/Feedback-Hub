@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Ticket, TicketSeverity, TicketStatus, UserRole, RolePermissionsMatrix } from '../types';
 import { hasRolePermission } from '../constants/permissions';
 import { CustomSelect } from './CustomSelect';
+import { safeArray, safeNumber, safeSearchMatch } from '../utils/edgeCaseHelpers';
+import { normalizeStatus, normalizeSeverity } from '../utils/formatters';
 import { 
   Bug, 
   Lightbulb, 
@@ -21,11 +23,13 @@ import {
   ChevronRight,
   ShieldAlert,
   Clock,
-  Layers
+  Layers,
+  RotateCcw
 } from 'lucide-react';
 
 interface TicketListProps {
   tickets: Ticket[];
+  teamMembers?: Array<{ id: string; name: string; role?: string }>;
   onSelectTicket: (ticket: Ticket) => void;
   currentRole: UserRole;
   isLoading: boolean;
@@ -38,6 +42,7 @@ interface TicketListProps {
 
 export const TicketList: React.FC<TicketListProps> = ({
   tickets,
+  teamMembers = [],
   onSelectTicket,
   currentRole,
   isLoading,
@@ -47,6 +52,9 @@ export const TicketList: React.FC<TicketListProps> = ({
   isResolvedOnly = false,
   permissionsMatrix
 }) => {
+  const safeTickets = safeArray(tickets);
+  const safeTeam = safeArray(teamMembers);
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterAssignee, setFilterAssignee] = useState<string>('ALL');
@@ -57,35 +65,53 @@ export const TicketList: React.FC<TicketListProps> = ({
   const canChangeStatus = hasRolePermission(permissionsMatrix, currentRole, 'tickets:change_status');
   const canDeleteTicket = hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete');
 
-  const filteredTickets = tickets.filter(t => {
-    // Search filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = (t.title || '').toLowerCase().includes(q);
-      const matchCode = (t.short_code || '').toLowerCase().includes(q);
-      const matchReporter = (t.reporter_email || '').toLowerCase().includes(q);
-      const matchSquad = (t.assigned_squad || '').toLowerCase().includes(q);
-      const matchProduct = (t.product_name || '').toLowerCase().includes(q);
-      if (!matchTitle && !matchCode && !matchReporter && !matchSquad && !matchProduct) return false;
-    }
+  const handleClearAllFilters = () => {
+    setSearchQuery('');
+    setFilterStatus('ALL');
+    setFilterAssignee('ALL');
+    setFilterPriority('ALL');
+    setFilterCategory('ALL');
+  };
 
-    // Status filter
-    if (filterStatus !== 'ALL' && t.status !== filterStatus) return false;
+  const filteredTickets = useMemo(() => {
+    return safeTickets.filter(t => {
+      // Search filter with safe regex character escaping
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = safeSearchMatch(t.title, q);
+        const matchCode = safeSearchMatch(t.short_code, q);
+        const matchReporter = safeSearchMatch(t.reporter_email, q);
+        const matchSquad = safeSearchMatch(t.assigned_squad, q);
+        const matchProduct = safeSearchMatch(t.product_name, q);
+        if (!matchTitle && !matchCode && !matchReporter && !matchSquad && !matchProduct) return false;
+      }
 
-    // Assignee filter
-    if (filterAssignee === 'UNASSIGNED' && t.assigned_to) return false;
-    if (filterAssignee !== 'ALL' && filterAssignee !== 'UNASSIGNED') {
-      if (t.assigned_to !== filterAssignee && t.assigned_to_name !== filterAssignee) return false;
-    }
+      // Status filter with normalized status comparison
+      if (filterStatus !== 'ALL') {
+        const normTicketStatus = normalizeStatus(t.status);
+        const normFilterStatus = normalizeStatus(filterStatus);
+        if (normTicketStatus !== normFilterStatus) return false;
+      }
 
-    // Priority / Severity filter
-    if (filterPriority !== 'ALL' && t.severity !== filterPriority) return false;
+      // Assignee filter
+      if (filterAssignee === 'UNASSIGNED' && t.assigned_to) return false;
+      if (filterAssignee !== 'ALL' && filterAssignee !== 'UNASSIGNED') {
+        if (t.assigned_to !== filterAssignee && t.assigned_to_name !== filterAssignee) return false;
+      }
 
-    // Category filter
-    if (filterCategory !== 'ALL' && t.category !== filterCategory) return false;
+      // Priority / Severity filter with normalized severity comparison
+      if (filterPriority !== 'ALL') {
+        const normTicketSev = normalizeSeverity(t.severity);
+        const normFilterSev = normalizeSeverity(filterPriority as any);
+        if (normTicketSev !== normFilterSev) return false;
+      }
 
-    return true;
-  });
+      // Category filter
+      if (filterCategory !== 'ALL' && t.category !== filterCategory) return false;
+
+      return true;
+    });
+  }, [safeTickets, searchQuery, filterStatus, filterAssignee, filterPriority, filterCategory]);
 
   const getSeverityBadge = (severity: TicketSeverity) => {
     switch (severity) {
@@ -135,11 +161,23 @@ export const TicketList: React.FC<TicketListProps> = ({
     }
   };
 
-  // Quick counts for status pills
-  const openCount = tickets.filter(t => t.status === 'OPEN').length;
-  const inDevCount = tickets.filter(t => t.status === 'IN_DEV').length;
-  const inQaCount = tickets.filter(t => t.status === 'IN_QA').length;
-  const resolvedCount = tickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
+  // Quick counts for status pills with single-pass optimization and safe zero defaults
+  const { openCount, inDevCount, inQaCount, resolvedCount } = useMemo(() => {
+    let open = 0;
+    let inDev = 0;
+    let inQa = 0;
+    let resolved = 0;
+
+    for (let i = 0; i < safeTickets.length; i++) {
+      const s = normalizeStatus(safeTickets[i].status);
+      if (s === 'Open') open++;
+      else if (s === 'In Dev') inDev++;
+      else if (s === 'In QA') inQa++;
+      else if (s === 'Resolved' || s === 'Closed') resolved++;
+    }
+
+    return { openCount: open, inDevCount: inDev, inQaCount: inQa, resolvedCount: resolved };
+  }, [safeTickets]);
 
   return (
     <div className="space-y-4 select-none">
@@ -180,7 +218,7 @@ export const TicketList: React.FC<TicketListProps> = ({
                 value={filterStatus}
                 onChange={setFilterStatus}
                 options={[
-                  { value: 'ALL', label: `All Statuses (${tickets.length})` },
+                  { value: 'ALL', label: `All Statuses (${safeTickets.length})` },
                   { value: 'OPEN', label: `Open (${openCount})` },
                   { value: 'IN_DEV', label: `In Dev (${inDevCount})` },
                   { value: 'IN_QA', label: `In QA (${inQaCount})` },
@@ -194,14 +232,19 @@ export const TicketList: React.FC<TicketListProps> = ({
               label="Assignee"
               value={filterAssignee}
               onChange={setFilterAssignee}
-              options={[
-                { value: 'ALL', label: 'All Team' },
-                { value: 'UNASSIGNED', label: 'Unassigned Only' },
-                { value: 'user-dev-01', label: 'Rahul Sharma' },
-                { value: 'user-dev-02', label: 'Priya Nair' },
-                { value: 'user-dev-03', label: 'Amit Patel' },
-                { value: 'user-lead-01', label: 'Vikram Mehta' }
-              ]}
+              options={
+                safeTeam.length === 0
+                  ? [
+                      { value: 'ALL', label: 'All Team' },
+                      { value: 'UNASSIGNED', label: 'Unassigned Only' },
+                      { value: 'NO_STAFF', label: 'No staff available', disabled: true }
+                    ]
+                  : [
+                      { value: 'ALL', label: 'All Team' },
+                      { value: 'UNASSIGNED', label: 'Unassigned Only' },
+                      ...safeTeam.map((m) => ({ value: m.id, label: m.name }))
+                    ]
+              }
             />
 
             {/* Priority Dropdown */}
@@ -221,17 +264,13 @@ export const TicketList: React.FC<TicketListProps> = ({
             {/* Reset Filters button if any filter active */}
             {(searchQuery || filterStatus !== 'ALL' || filterAssignee !== 'ALL' || filterPriority !== 'ALL' || filterCategory !== 'ALL') && (
               <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setFilterStatus('ALL');
-                  setFilterAssignee('ALL');
-                  setFilterPriority('ALL');
-                  setFilterCategory('ALL');
-                }}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-medium rounded-[8px] cursor-pointer transition-colors"
+                type="button"
+                onClick={handleClearAllFilters}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-medium rounded-[8px] cursor-pointer transition-colors inline-flex items-center space-x-1"
                 title="Clear all active filters"
               >
-                Clear
+                <RotateCcw className="w-3 h-3 text-slate-500" />
+                <span>Clear</span>
               </button>
             )}
 
@@ -268,7 +307,7 @@ export const TicketList: React.FC<TicketListProps> = ({
       {/* Meta Row: Live Count & Subtitle */}
       <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-mono">
         <div>
-          Showing <span className="font-medium text-slate-900">{filteredTickets.length}</span> of {tickets.length} tickets
+          Showing <span className="font-medium text-slate-900">{filteredTickets.length}</span> of {safeTickets.length} tickets
         </div>
         <div className="hidden sm:block text-slate-400 text-[11px]">
           Click any card to inspect full telemetry, console logs & dev notes
@@ -287,23 +326,39 @@ export const TicketList: React.FC<TicketListProps> = ({
           </div>
           <div>
             <h4 className="text-base font-medium text-slate-900 tracking-tight">
-              {isResolvedOnly ? 'No Resolved Incidents In Archive' : 'Workspace Clean • No Incidents Found'}
+              {safeTickets.length === 0 
+                ? (isResolvedOnly ? 'No Resolved Incidents In Archive' : 'Workspace Clean • No Incidents Found')
+                : 'No incidents match your active filters'}
             </h4>
             <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
-              {tickets.length === 0 
+              {safeTickets.length === 0 
                 ? 'No tickets currently stored in this tenant scope. Telemetry listeners and WebSocket triage active.'
                 : 'No tickets match your active filter criteria. Clear filters to see all tickets.'}
             </p>
           </div>
 
-          {tickets.length === 0 && onOpenWidgetSimulator && (
+          {safeTickets.length === 0 && onOpenWidgetSimulator && (
             <div className="pt-2">
               <button
+                type="button"
                 onClick={onOpenWidgetSimulator}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-[8px] shadow-xs transition-colors cursor-pointer inline-flex items-center space-x-1.5 font-mono"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>+ Ingest First Incident</span>
+              </button>
+            </div>
+          )}
+
+          {safeTickets.length > 0 && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleClearAllFilters}
+                className="px-4 py-2 bg-[#0b1b36] hover:bg-[#12284c] text-white text-xs font-medium rounded-[8px] shadow-xs transition-colors cursor-pointer inline-flex items-center space-x-1.5 font-poppins"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Clear Filters</span>
               </button>
             </div>
           )}

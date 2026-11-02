@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Ticket, TeamMember } from '../types';
 import { normalizeSeverity, normalizeStatus } from '../utils/formatters';
+import { safeArray, safeNumber, safePercentage, safeDivision, getSyncedNow, parseSafeDate } from '../utils/edgeCaseHelpers';
 import { 
   BarChart3, 
   Activity, 
@@ -13,12 +14,13 @@ import {
   ShieldAlert, 
   AlertTriangle,
   ArrowDownRight,
-  Sparkles
+  Sparkles,
+  Inbox
 } from 'lucide-react';
 
 interface ObservabilityGraphsProps {
-  tickets: Ticket[];
-  teamMembers: TeamMember[];
+  tickets?: Ticket[];
+  teamMembers?: TeamMember[];
   onSelectCategory?: (cat: string) => void;
   isLoading?: boolean;
   onSeedDemo?: () => void;
@@ -27,8 +29,8 @@ interface ObservabilityGraphsProps {
 }
 
 export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
-  tickets,
-  teamMembers,
+  tickets = [],
+  teamMembers = [],
   onSelectCategory,
   isLoading = false,
   onSeedDemo,
@@ -38,7 +40,10 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   const [timeWindow, setTimeWindow] = useState<'24h' | '7d'>('24h');
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
 
-  // 1. Dynamic Category Breakdown
+  const safeTickets = safeArray<Ticket>(tickets);
+  const totalTickets = safeTickets.length;
+
+  // 1. Dynamic Category Breakdown with safe percentages
   const categoryStats = useMemo(() => {
     const categories = [
       { id: 'API_FAILURE', label: 'API Failures', icon: Cpu, color: 'text-red-500' },
@@ -48,68 +53,78 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       { id: 'UI_GLITCH', label: 'UI & Frontend', icon: Layout, color: 'text-blue-500' }
     ];
 
-    const total = tickets.length;
     return categories.map(cat => {
-      const count = tickets.filter(t => t.category === cat.id).length;
-      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      const count = safeTickets.filter(t => t.category === cat.id).length;
+      const pct = safePercentage(count, totalTickets, 0);
       return {
         ...cat,
         count,
         pct
       };
     });
-  }, [tickets]);
+  }, [safeTickets, totalTickets]);
 
-  // 2. Dynamic Severity Breakdown
+  // 2. Dynamic Severity Breakdown with safe percentages
   const severityStats = useMemo(() => {
-    const total = tickets.length;
-    const p0 = tickets.filter(t => normalizeSeverity(t.severity) === 'Urgent').length;
-    const p1 = tickets.filter(t => normalizeSeverity(t.severity) === 'High').length;
-    const p2 = tickets.filter(t => normalizeSeverity(t.severity) === 'Medium').length;
-    const p3 = tickets.filter(t => normalizeSeverity(t.severity) === 'Low').length;
+    let p0 = 0, p1 = 0, p2 = 0, p3 = 0;
+    for (let i = 0; i < safeTickets.length; i++) {
+      const sev = normalizeSeverity(safeTickets[i].severity);
+      if (sev === 'Urgent') p0++;
+      else if (sev === 'High') p1++;
+      else if (sev === 'Medium') p2++;
+      else p3++;
+    }
 
     return {
       p0,
       p1,
       p2,
       p3,
-      pctP0: total > 0 ? (p0 / total) * 100 : 0,
-      pctP1: total > 0 ? (p1 / total) * 100 : 0,
-      pctP2: total > 0 ? (p2 / total) * 100 : 0,
-      pctP3: total > 0 ? (p3 / total) * 100 : 0,
+      pctP0: safePercentage(p0, totalTickets, 0),
+      pctP1: safePercentage(p1, totalTickets, 0),
+      pctP2: safePercentage(p2, totalTickets, 0),
+      pctP3: safePercentage(p3, totalTickets, 0),
     };
-  }, [tickets]);
+  }, [safeTickets, totalTickets]);
 
-  // Dynamic MTTR & Real Performance calculations
+  // Dynamic MTTR & Performance calculations
   const { avgMttrMinutes, telemetryFidelityPct, resolvedCount, unassignedCount } = useMemo(() => {
-    const resolved = tickets.filter(t => normalizeStatus(t.status) === 'Resolved');
-    const unassigned = tickets.filter(t => !t.assigned_to);
+    let resolvedCnt = 0;
+    let unassignedCnt = 0;
+    let totalMinutes = 0;
+    let telemetryCount = 0;
 
-    let avgMinutes: number | null = null;
-    if (resolved.length > 0) {
-      const totalMinutes = resolved.reduce((acc, t) => {
-        const start = new Date(t.created_at).getTime();
-        const end = new Date(t.updated_at || t.created_at).getTime();
-        const diff = Math.max(1, Math.round((end - start) / 60000));
-        return acc + diff;
-      }, 0);
-      avgMinutes = Math.round(totalMinutes / resolved.length);
+    for (let i = 0; i < safeTickets.length; i++) {
+      const t = safeTickets[i];
+      if (normalizeStatus(t.status) === 'Resolved') {
+        resolvedCnt++;
+        const start = parseSafeDate(t.created_at, getSyncedNow());
+        const end = parseSafeDate(t.updated_at || t.created_at, start);
+        const diff = Math.max(0, Math.round((end - start) / 60000));
+        totalMinutes += diff;
+      }
+      if (!t.assigned_to) {
+        unassignedCnt++;
+      }
+      if (t.telemetry && (t.telemetry.page_url || t.telemetry.user_agent || (t.telemetry.network_errors && t.telemetry.network_errors.length > 0))) {
+        telemetryCount++;
+      }
     }
 
-    const telemetryCount = tickets.filter(t => t.telemetry && (t.telemetry.page_url || t.telemetry.user_agent || t.telemetry.network_errors?.length)).length;
-    const fidelity = tickets.length > 0 ? Math.round((telemetryCount / tickets.length) * 100) : 100;
+    const avgMinutes = resolvedCnt > 0 ? Math.round(safeDivision(totalMinutes, resolvedCnt, 0)) : null;
+    const fidelity = totalTickets > 0 ? safePercentage(telemetryCount, totalTickets, 0) : null;
 
     return {
       avgMttrMinutes: avgMinutes,
       telemetryFidelityPct: fidelity,
-      resolvedCount: resolved.length,
-      unassignedCount: unassigned.length
+      resolvedCount: resolvedCnt,
+      unassignedCount: unassignedCnt
     };
-  }, [tickets]);
+  }, [safeTickets, totalTickets]);
 
-  // 3. Dynamic Time-Series Data Points for SVG Area Chart (100% computed from real tickets)
+  // 3. Dynamic Time-Series Data Points for SVG Area Chart
   const trendData = useMemo(() => {
-    const now = Date.now();
+    const now = getSyncedNow();
     if (timeWindow === '24h') {
       const buckets = [
         { label: '-24h', cutoff: now - 24 * 3600000 },
@@ -122,8 +137,8 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       ];
 
       return buckets.map(b => {
-        const ingested = tickets.filter(t => new Date(t.created_at).getTime() <= b.cutoff).length;
-        const resolved = tickets.filter(t => normalizeStatus(t.status) === 'Resolved' && new Date(t.updated_at || t.created_at).getTime() <= b.cutoff).length;
+        const ingested = safeTickets.filter(t => parseSafeDate(t.created_at, now) <= b.cutoff).length;
+        const resolved = safeTickets.filter(t => normalizeStatus(t.status) === 'Resolved' && parseSafeDate(t.updated_at || t.created_at, now) <= b.cutoff).length;
         return {
           label: b.label,
           ingested,
@@ -131,18 +146,22 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
         };
       });
     } else {
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      // Cross-Timezone & DST Shift resilient grouping via calendar date math & Intl.DateTimeFormat
+      const dayFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
+      const today = new Date(now);
       const buckets = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(now - (6 - i) * 86400000);
+        const d = new Date(today);
+        d.setDate(today.getDate() - (6 - i));
+        d.setHours(23, 59, 59, 999);
         return {
-          label: i === 6 ? 'Now' : days[d.getDay()],
-          cutoff: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).getTime()
+          label: i === 6 ? 'Now' : dayFormatter.format(d),
+          cutoff: d.getTime()
         };
       });
 
       return buckets.map(b => {
-        const ingested = tickets.filter(t => new Date(t.created_at).getTime() <= b.cutoff).length;
-        const resolved = tickets.filter(t => normalizeStatus(t.status) === 'Resolved' && new Date(t.updated_at || t.created_at).getTime() <= b.cutoff).length;
+        const ingested = safeTickets.filter(t => parseSafeDate(t.created_at, now) <= b.cutoff).length;
+        const resolved = safeTickets.filter(t => normalizeStatus(t.status) === 'Resolved' && parseSafeDate(t.updated_at || t.created_at, now) <= b.cutoff).length;
         return {
           label: b.label,
           ingested,
@@ -150,25 +169,31 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
         };
       });
     }
-  }, [timeWindow, tickets]);
+  }, [timeWindow, safeTickets]);
 
-  // SVG Area calculations
+  // SVG Area calculations with finite-number guards
   const chartHeight = 150;
   const chartWidth = 560;
   const maxIngested = Math.max(3, ...trendData.map(d => Math.max(d.ingested, d.resolved))) + 0.5;
 
   const pointsIngested = useMemo(() => {
+    const divisor = Math.max(1, trendData.length - 1);
     return trendData.map((d, i) => {
-      const x = (i / (trendData.length - 1)) * (chartWidth - 50) + 25;
-      const y = chartHeight - (d.ingested / maxIngested) * (chartHeight - 40) - 20;
+      const rawX = (i / divisor) * (chartWidth - 50) + 25;
+      const rawY = chartHeight - (d.ingested / maxIngested) * (chartHeight - 40) - 20;
+      const x = Number.isFinite(rawX) ? rawX : 25;
+      const y = Number.isFinite(rawY) ? rawY : chartHeight - 20;
       return { x, y, ...d };
     });
   }, [trendData, maxIngested]);
 
   const pointsResolved = useMemo(() => {
+    const divisor = Math.max(1, trendData.length - 1);
     return trendData.map((d, i) => {
-      const x = (i / (trendData.length - 1)) * (chartWidth - 50) + 25;
-      const y = chartHeight - (d.resolved / maxIngested) * (chartHeight - 40) - 20;
+      const rawX = (i / divisor) * (chartWidth - 50) + 25;
+      const rawY = chartHeight - (d.resolved / maxIngested) * (chartHeight - 40) - 20;
+      const x = Number.isFinite(rawX) ? rawX : 25;
+      const y = Number.isFinite(rawY) ? rawY : chartHeight - 20;
       return { x, y, ...d };
     });
   }, [trendData, maxIngested]);
@@ -269,7 +294,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
                     INCIDENT INGESTION & RESOLUTION TREND
                   </h3>
                   <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-[6px]">
-                    {tickets.length} Ingested • {resolvedCount} Resolved
+                    {totalTickets} Ingested • {resolvedCount} Resolved
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-1 font-normal">
@@ -290,85 +315,121 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
               </div>
             </div>
 
-            {/* SVG Area Chart */}
-            <div className="relative pt-6 pb-2 overflow-hidden">
-              <svg 
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
-                className="w-full h-40 overflow-visible"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <linearGradient id="purpleAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#a855f7" stopOpacity="0.02" />
-                  </linearGradient>
-                </defs>
+            {/* SVG Area Chart or Clean Empty State */}
+            {totalTickets === 0 ? (
+              <div className="h-44 flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-[8px] bg-slate-50/50 text-center p-6 my-2 space-y-2">
+                <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                  <Inbox className="w-4 h-4" />
+                </div>
+                <div className="space-y-0.5">
+                  <h4 className="text-xs font-medium text-slate-700">No telemetry data recorded</h4>
+                  <p className="text-[11px] text-slate-400 max-w-xs">
+                    Inbound telemetry curves will render dynamically once incidents or SDK events are logged.
+                  </p>
+                </div>
+                {(onSeedDemo || onSimulateTelemetry) && (
+                  <div className="flex items-center space-x-2 pt-1">
+                    {onSeedDemo && (
+                      <button
+                        type="button"
+                        onClick={onSeedDemo}
+                        className="px-2.5 py-1 text-[11px] font-medium bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-[6px] transition-colors cursor-pointer"
+                      >
+                        Seed Demo Events
+                      </button>
+                    )}
+                    {onSimulateTelemetry && (
+                      <button
+                        type="button"
+                        onClick={onSimulateTelemetry}
+                        className="px-2.5 py-1 text-[11px] font-medium bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-[6px] transition-colors cursor-pointer"
+                      >
+                        Simulate Telemetry
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="relative pt-6 pb-2 overflow-hidden">
+                <svg 
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
+                  className="w-full h-40 overflow-visible"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id="purpleAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#a855f7" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#a855f7" stopOpacity="0.02" />
+                    </linearGradient>
+                  </defs>
 
-                {/* Dotted horizontal gridlines */}
-                <line x1="20" y1="30" x2={chartWidth - 20} y2="30" stroke="#f8fafc" strokeDasharray="3 3" />
-                <line x1="20" y1="75" x2={chartWidth - 20} y2="75" stroke="#f1f5f9" strokeDasharray="3 3" />
-                <line x1="20" y1="120" x2={chartWidth - 20} y2="120" stroke="#f1f5f9" strokeDasharray="3 3" />
+                  {/* Dotted horizontal gridlines */}
+                  <line x1="20" y1="30" x2={chartWidth - 20} y2="30" stroke="#f8fafc" strokeDasharray="3 3" />
+                  <line x1="20" y1="75" x2={chartWidth - 20} y2="75" stroke="#f1f5f9" strokeDasharray="3 3" />
+                  <line x1="20" y1="120" x2={chartWidth - 20} y2="120" stroke="#f1f5f9" strokeDasharray="3 3" />
 
-                {/* Ingested Area fill */}
-                <path d={areaIngested} fill="url(#purpleAreaGradient)" />
+                  {/* Ingested Area fill */}
+                  <path d={areaIngested} fill="url(#purpleAreaGradient)" />
 
-                {/* Ingested Path line (Purple) */}
-                <path d={pathIngested} fill="none" stroke="#9333ea" strokeWidth="2.5" strokeLinecap="round" />
+                  {/* Ingested Path line (Purple) */}
+                  <path d={pathIngested} fill="none" stroke="#9333ea" strokeWidth="2.5" strokeLinecap="round" />
 
-                {/* Resolved Path line (Teal dashed) */}
-                <path d={pathResolved} fill="none" stroke="#14b8a6" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" />
+                  {/* Resolved Path line (Teal dashed) */}
+                  <path d={pathResolved} fill="none" stroke="#14b8a6" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" />
 
-                {/* Data points for Resolved */}
-                {pointsResolved.map((p, idx) => (
-                  <circle
-                    key={`res-${idx}`}
-                    cx={p.x}
-                    cy={p.y}
-                    r={3}
-                    fill="#14b8a6"
-                    stroke="#ffffff"
-                    strokeWidth="1.5"
-                  />
-                ))}
-
-                {/* Data points for Inbound */}
-                {pointsIngested.map((p, idx) => (
-                  <g key={`ing-${idx}`}>
+                  {/* Data points for Resolved */}
+                  {pointsResolved.map((p, idx) => (
                     <circle
+                      key={`res-${idx}`}
                       cx={p.x}
                       cy={p.y}
-                      r={idx === pointsIngested.length - 1 ? 5 : 3.5}
-                      fill="#9333ea"
+                      r={3}
+                      fill="#14b8a6"
                       stroke="#ffffff"
-                      strokeWidth="2"
-                      className="cursor-pointer transition-all"
-                      onMouseEnter={() => setHoveredPointIndex(idx)}
-                      onMouseLeave={() => setHoveredPointIndex(null)}
+                      strokeWidth="1.5"
                     />
-                    {hoveredPointIndex === idx && (
-                      <text
-                        x={p.x}
-                        y={p.y - 10}
-                        textAnchor="middle"
-                        fill="#7e22ce"
-                        fontSize="10"
-                        fontWeight="bold"
-                        className="font-mono"
-                      >
-                        {p.ingested} In
-                      </text>
-                    )}
-                  </g>
-                ))}
-              </svg>
+                  ))}
 
-              {/* X-Axis Labels */}
-              <div className="flex justify-between text-[11px] text-slate-400 font-mono px-2 pt-1 border-t border-slate-100">
-                {trendData.map((d, i) => (
-                  <span key={i}>{d.label}</span>
-                ))}
+                  {/* Data points for Inbound */}
+                  {pointsIngested.map((p, idx) => (
+                    <g key={`ing-${idx}`}>
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={idx === pointsIngested.length - 1 ? 5 : 3.5}
+                        fill="#9333ea"
+                        stroke="#ffffff"
+                        strokeWidth="2"
+                        className="cursor-pointer transition-all"
+                        onMouseEnter={() => setHoveredPointIndex(idx)}
+                        onMouseLeave={() => setHoveredPointIndex(null)}
+                      />
+                      {hoveredPointIndex === idx && (
+                        <text
+                          x={p.x}
+                          y={p.y - 10}
+                          textAnchor="middle"
+                          fill="#7e22ce"
+                          fontSize="10"
+                          fontWeight="bold"
+                          className="font-mono"
+                        >
+                          {p.ingested} In
+                        </text>
+                      )}
+                    </g>
+                  ))}
+                </svg>
+
+                {/* X-Axis Labels */}
+                <div className="flex justify-between text-[11px] text-slate-400 font-mono px-2 pt-1 border-t border-slate-100">
+                  {trendData.map((d, i) => (
+                    <span key={i}>{d.label}</span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -384,7 +445,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
               </p>
             </div>
             <span className="text-xs font-mono text-slate-500 font-medium">
-              {tickets.length} total
+              {totalTickets} total
             </span>
           </div>
 
@@ -429,12 +490,18 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
               <span className="font-mono text-slate-400 text-xs">P0 → P3</span>
             </div>
 
-            {/* Stacked Bar */}
+            {/* Stacked Bar with Homogeneous & Zero Data Safety */}
             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex">
-              <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${severityStats.pctP0}%` }} title={`P0: ${severityStats.p0}`} />
-              <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${severityStats.pctP1}%` }} title={`P1: ${severityStats.p1}`} />
-              <div className="h-full bg-purple-600 transition-all duration-500" style={{ width: `${severityStats.pctP2}%` }} title={`P2: ${severityStats.p2}`} />
-              <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${severityStats.pctP3}%` }} title={`P3: ${severityStats.p3}`} />
+              {totalTickets === 0 ? (
+                <div className="w-full h-full bg-slate-100" title="No incidents recorded" />
+              ) : (
+                <>
+                  <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${severityStats.pctP0}%` }} title={`P0: ${severityStats.p0}`} />
+                  <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${severityStats.pctP1}%` }} title={`P1: ${severityStats.p1}`} />
+                  <div className="h-full bg-purple-600 transition-all duration-500" style={{ width: `${severityStats.pctP2}%` }} title={`P2: ${severityStats.p2}`} />
+                  <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${severityStats.pctP3}%` }} title={`P3: ${severityStats.p3}`} />
+                </>
+              )}
             </div>
 
             {/* Legend below bar */}
@@ -473,17 +540,17 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
             </span>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl sm:text-3xl font-medium text-slate-900 tracking-tight">
-                {avgMttrMinutes !== null ? `${avgMttrMinutes}m` : 'Tracking'}
+                {avgMttrMinutes !== null ? `${avgMttrMinutes}m` : '--'}
               </span>
               <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px]">
                 <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
-                {resolvedCount > 0 ? `${resolvedCount} resolved` : 'Active triage'}
+                {resolvedCount > 0 ? `${resolvedCount} resolved` : '0 resolved'}
               </span>
             </div>
             <p className="text-xs text-slate-400 font-normal">
               {avgMttrMinutes !== null 
                 ? 'Calculated from resolved production incident timeline.'
-                : 'Awaiting first verified incident resolution.'}
+                : 'Awaiting verified incident resolutions.'}
             </p>
           </div>
           <div className="w-9 h-9 rounded-[8px] bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200 shadow-2xs flex-shrink-0">
@@ -499,7 +566,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
             </span>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl sm:text-3xl font-medium text-emerald-700 tracking-tight">
-                {telemetryFidelityPct}%
+                {telemetryFidelityPct !== null ? `${telemetryFidelityPct}%` : '--'}
               </span>
               <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px]">
                 <ShieldCheck className="w-3.5 h-3.5 mr-0.5" />
@@ -507,7 +574,9 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-400 font-normal">
-              Encrypted stack traces with sensitive auth masking.
+              {telemetryFidelityPct !== null 
+                ? 'Encrypted stack traces with sensitive auth masking.' 
+                : 'Ready for inbound client telemetry capture.'}
             </p>
           </div>
           <div className="w-9 h-9 rounded-[8px] bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-2xs flex-shrink-0">

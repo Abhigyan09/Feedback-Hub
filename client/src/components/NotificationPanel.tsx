@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Ticket } from '../types';
 import { formatTimeAgo, normalizeSeverity, normalizeStatus } from '../utils/formatters';
+import { getSyncedNow, getSafeSlaDueAt } from '../utils/edgeCaseHelpers';
 
 export interface NotificationItem {
   id: string;
@@ -70,23 +71,24 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
   // Construct structured notifications from real live tickets
   const notifications: NotificationItem[] = useMemo(() => {
-    const now = Date.now();
+    const now = getSyncedNow();
 
     return tickets.map((ticket) => {
       let type: NotificationItem['type'] = 'general';
       let slaWarning: string | undefined;
 
-      // Detect SLA conditions
-      if (ticket.sla_due_at) {
-        const due = new Date(ticket.sla_due_at).getTime();
+      // Safe dynamic SLA condition with exact SLA breach boundary (< 0)
+      const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
+      if (!isResolved) {
+        const due = getSafeSlaDueAt(ticket);
         const diff = due - now;
-        if (diff <= 0) {
+        if (diff < 0) {
           type = 'sla_breached';
-          const overdueMins = Math.floor(Math.abs(diff) / 60000);
-          slaWarning = overdueMins > 60 ? `${Math.floor(overdueMins / 60)}h overdue` : `${overdueMins}m overdue`;
+          const overdueMins = Math.max(1, Math.floor(Math.abs(diff) / 60000));
+          slaWarning = overdueMins >= 60 ? `${Math.floor(overdueMins / 60)}h overdue` : `${overdueMins}m overdue`;
         } else if (diff <= 2 * 60 * 60 * 1000) {
           const minsLeft = Math.floor(diff / 60000);
-          slaWarning = `Due in ${minsLeft}m`;
+          slaWarning = minsLeft === 0 ? 'Due in <1m' : `Due in ${minsLeft}m`;
         }
       }
 
@@ -103,7 +105,6 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         }
       }
 
-      const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
       const isRead = readNotificationIds.has(ticket.id) || isResolved;
 
       return {

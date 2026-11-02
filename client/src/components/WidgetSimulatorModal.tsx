@@ -78,6 +78,20 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
     return () => window.removeEventListener('paste', handlePaste);
   }, [isOpen]);
 
+  // Close modal on Escape key press (Nested Dialog ESC Dismiss)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, isSubmitting]);
+
   if (!isOpen) return null;
 
   // Active Simulated Context
@@ -200,7 +214,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white text-slate-800 w-full max-w-[540px] max-h-[90vh] flex flex-col rounded-[12px] shadow-2xl border border-slate-300 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 modal-subtle">
+      <div className="bg-white text-slate-800 w-full max-w-[540px] max-h-[85vh] flex flex-col rounded-[12px] shadow-2xl border border-slate-300 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 modal-subtle">
         
         {/* Modal Header - Fixed at top */}
         <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">

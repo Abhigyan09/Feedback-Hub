@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AlertCircle, UserPlus, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Ticket } from '../types';
 import { normalizeSeverity, normalizeStatus } from '../utils/formatters';
+import { safeNumber, safeArray } from '../utils/edgeCaseHelpers';
 
 interface SummaryCardsProps {
   tickets?: Ticket[];
@@ -22,24 +23,45 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
   activeFilterType,
   onCardClick
 }) => {
-  // Real dynamic breakdown calculations
-  const inDevCount = tickets.filter(t => normalizeStatus(t.status) === 'In Dev').length;
-  const newTriageCount = tickets.filter(t => normalizeStatus(t.status) === 'Open').length;
+  const safeTickets = safeArray<Ticket>(tickets);
+  const safeOpen = safeNumber(openCount, 0);
+  const safeUnassigned = safeNumber(unassignedCount, 0);
+  const safeUrgent = safeNumber(urgentCount, 0);
+  const safeResolved = safeNumber(resolvedCount, 0);
 
-  const unassignedUrgent = tickets.filter(
-    t => !t.assigned_to && (normalizeSeverity(t.severity) === 'Urgent' || normalizeSeverity(t.severity) === 'High')
-  ).length;
+  // Single-pass triage breakdown calculation for efficiency with large ticket volumes
+  const { inDevCount, newTriageCount, unassignedUrgent } = useMemo(() => {
+    let inDev = 0;
+    let newTriage = 0;
+    let unassignedUrg = 0;
+
+    for (let i = 0; i < safeTickets.length; i++) {
+      const t = safeTickets[i];
+      const normStatus = normalizeStatus(t.status);
+      if (normStatus === 'In Dev') inDev++;
+      if (normStatus === 'Open') newTriage++;
+
+      if (!t.assigned_to) {
+        const normSev = normalizeSeverity(t.severity);
+        if (normSev === 'Urgent' || normSev === 'High') {
+          unassignedUrg++;
+        }
+      }
+    }
+
+    return { inDevCount: inDev, newTriageCount: newTriage, unassignedUrgent: unassignedUrg };
+  }, [safeTickets]);
 
   const cards = [
     {
       id: 'OPEN' as const,
       label: 'Open',
-      count: openCount,
-      sublabel: openCount > 0 
+      count: safeOpen,
+      sublabel: safeOpen > 0 
         ? (newTriageCount > 0 ? 'Pending triage' : inDevCount > 0 ? 'In Dev triage' : 'Active triage') 
         : 'Queue clear',
-      dotColor: openCount > 0 ? 'bg-teal-400' : 'bg-emerald-400',
-      parenthesisCount: openCount,
+      dotColor: safeOpen > 0 ? 'bg-teal-400' : 'bg-emerald-400',
+      parenthesisCount: safeOpen,
       icon: AlertCircle,
       iconBg: 'bg-purple-50 text-purple-600 border border-purple-100',
       activeBorder: 'ring-2 ring-purple-600 border-purple-300'
@@ -47,14 +69,14 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
     {
       id: 'UNASSIGNED' as const,
       label: 'Unassigned',
-      count: unassignedCount,
-      sublabel: unassignedCount > 0 
+      count: safeUnassigned,
+      sublabel: safeUnassigned > 0 
         ? (unassignedUrgent > 0 ? 'P0/P1 Urgent' : 'P2/P3 Standard') 
         : 'All assigned',
-      dotColor: unassignedCount > 0 
+      dotColor: safeUnassigned > 0 
         ? (unassignedUrgent > 0 ? 'bg-amber-500' : 'bg-slate-400') 
         : 'bg-emerald-400',
-      parenthesisCount: unassignedCount,
+      parenthesisCount: safeUnassigned,
       icon: UserPlus,
       iconBg: 'bg-amber-50 text-amber-600 border border-amber-100',
       activeBorder: 'ring-2 ring-amber-500 border-amber-300'
@@ -62,10 +84,10 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
     {
       id: 'URGENT' as const,
       label: 'Urgent',
-      count: urgentCount,
-      sublabel: urgentCount > 0 ? 'Critical alerts' : 'No critical alerts',
-      dotColor: urgentCount > 0 ? 'bg-rose-500' : 'bg-teal-400',
-      parenthesisCount: urgentCount,
+      count: safeUrgent,
+      sublabel: safeUrgent > 0 ? 'Critical alerts' : 'No critical alerts',
+      dotColor: safeUrgent > 0 ? 'bg-rose-500' : 'bg-teal-400',
+      parenthesisCount: safeUrgent,
       icon: ShieldAlert,
       iconBg: 'bg-rose-50 text-rose-600 border border-rose-100',
       activeBorder: 'ring-2 ring-rose-500 border-rose-300'
@@ -73,10 +95,10 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
     {
       id: 'RESOLVED' as const,
       label: 'Resolved',
-      count: resolvedCount,
-      sublabel: resolvedCount > 0 ? 'Verified & closed' : 'Awaiting resolutions',
-      dotColor: resolvedCount > 0 ? 'bg-emerald-500' : 'bg-slate-300',
-      parenthesisCount: resolvedCount,
+      count: safeResolved,
+      sublabel: safeResolved > 0 ? 'Verified & closed' : 'Awaiting resolutions',
+      dotColor: safeResolved > 0 ? 'bg-emerald-500' : 'bg-slate-300',
+      parenthesisCount: safeResolved,
       icon: CheckCircle2,
       iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
       activeBorder: 'ring-2 ring-emerald-500 border-emerald-300'

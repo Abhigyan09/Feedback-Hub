@@ -59,6 +59,10 @@ export const corsMiddleware = cors({
     'X-Product-Key',
     'X-User-Email',
     'X-User-Id'
+  ],
+  exposedHeaders: [
+    'Date',
+    'X-Server-Time'
   ]
 });
 

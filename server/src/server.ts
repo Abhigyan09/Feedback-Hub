@@ -39,6 +39,7 @@ app.use('/api', (req, res, next) => {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('X-Server-Time', new Date().toISOString());
   next();
 });
 

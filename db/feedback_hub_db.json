@@ -487,6 +487,17 @@
       "expires_at": "2026-11-09T12:39:33.168Z",
       "created_at": "2026-11-02T12:39:33.168Z",
       "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793638276389-fyu4ye",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "782552b247afcc8f4beec159683760e6a024044f67bf0e5e991e37ccd3391f3f",
+      "family_id": "149b7b14-4a13-4550-9a49-fb60f670bd5d",
+      "is_revoked": false,
+      "expires_at": "2026-11-09T16:51:16.388Z",
+      "created_at": "2026-11-02T16:51:16.389Z",
+      "replaced_by_token_hash": null
     }
   ],
   "passwordResetTokens": [],
@@ -796,5 +807,5 @@
       }
     }
   },
-  "last_updated": "2026-11-02T12:39:33.168Z"
+  "last_updated": "2026-11-02T16:51:16.389Z"
 }

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CustomSelect } from './CustomSelect';
+import { safeArray, processLogTraces, downloadRawLog } from '../utils/edgeCaseHelpers';
 import { Ticket, TeamMember } from '../types';
 import { normalizeSeverity, normalizeStatus, formatTimeAgo } from '../utils/formatters';
-import { X, Terminal, Cpu, Bug, ShieldAlert, CheckCircle2, User, Clock, AlertTriangle, ExternalLink } from 'lucide-react';
+import { X, Terminal, Cpu, Bug, ShieldAlert, CheckCircle2, User, Clock, AlertTriangle, ExternalLink, Download } from 'lucide-react';
 
 interface TicketInspectorModalProps {
   ticket: Ticket | null;
@@ -14,16 +15,29 @@ interface TicketInspectorModalProps {
 
 export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
   ticket,
-  teamMembers,
+  teamMembers = [],
   onClose,
   onUpdateStatus,
   onUpdateAssignee
 }) => {
   if (!ticket) return null;
 
-  const assignedMember = teamMembers.find((m) => m.id === ticket.assigned_to);
+  const safeTeam = safeArray(teamMembers);
+  const assignedMember = safeTeam.find((m) => m.id === ticket.assigned_to);
   const currentStatusNorm = normalizeStatus(ticket.status);
   const currentPriorityNorm = normalizeSeverity(ticket.severity);
+  const processedLogs = useMemo(() => processLogTraces(ticket.telemetry?.console_logs), [ticket.telemetry?.console_logs]);
+
+  // Close on Escape key (nested CustomSelect dropdown stops propagation when open)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   return (
     <div 
@@ -33,12 +47,12 @@ export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
       aria-labelledby="modal-ticket-title"
     >
       <div 
-        className="bg-white border border-slate-200 rounded-[12px] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative text-slate-800 modal-subtle overflow-hidden"
+        className="bg-white border border-slate-200 rounded-[12px] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl relative text-slate-800 modal-subtle overflow-hidden"
         tabIndex={-1}
       >
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-4">
-          <div className="space-y-1.5 min-w-0">
+          <div className="space-y-1.5 min-w-0 flex-1">
             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
               <span className="font-mono text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-[6px]">
                 {ticket.short_code}
@@ -50,7 +64,7 @@ export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
                 {currentPriorityNorm} Priority
               </span>
             </div>
-            <h2 id="modal-ticket-title" className="text-base sm:text-lg font-medium text-slate-900 leading-snug">
+            <h2 id="modal-ticket-title" className="text-base sm:text-lg font-medium text-slate-900 leading-snug break-all" title={ticket.title}>
               {ticket.title}
             </h2>
           </div>
@@ -106,17 +120,27 @@ export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
               </span>
               <CustomSelect
                 fullWidth
+                disabled={safeTeam.length === 0}
                 value={ticket.assigned_to || 'UNASSIGNED'}
                 onChange={(val: string) => {
-                  const member = teamMembers.find(m => m.id === val);
+                  const member = safeTeam.find(m => m.id === val);
                   onUpdateAssignee(ticket.id, val === 'UNASSIGNED' ? null : val, member ? member.name : null);
                 }}
-                options={[
-                  { value: 'UNASSIGNED', label: '-- Unassigned --' },
-                  ...teamMembers.map(m => ({ value: m.id, label: `${m.name} (${m.role.split(' ')[0]})` }))
-                ]}
+                options={
+                  safeTeam.length === 0
+                    ? [{ value: 'UNASSIGNED', label: 'No engineers available' }]
+                    : [
+                        { value: 'UNASSIGNED', label: '-- Unassigned --' },
+                        ...safeTeam.map(m => ({ value: m.id, label: `${m.name} (${(m.role || 'Staff').split(' ')[0]})` }))
+                      ]
+                }
                 buttonClassName="bg-white border-slate-200 text-slate-800 text-xs px-3 py-1.5 rounded-[8px]"
               />
+              {safeTeam.length === 0 && (
+                <p className="text-[11px] text-amber-600 font-medium">
+                  No engineers available. Add staff in Settings first.
+                </p>
+              )}
             </div>
 
           </div>
@@ -149,53 +173,83 @@ export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
           </div>
 
           {/* Telemetry Payload / Stack Trace */}
-          {ticket.telemetry && (
-            <div className="space-y-1.5">
-              <div className="flex items-center space-x-1.5 text-slate-700 font-medium">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-slate-700 font-medium">
+              <div className="flex items-center space-x-1.5">
                 <Terminal className="w-3.5 h-3.5 text-purple-600" />
                 <span className="text-xs">
                   Captured Telemetry & Stack Trace
                 </span>
               </div>
-
-              <div className="p-3.5 bg-slate-900 rounded-[12px] font-mono text-[11px] space-y-2 text-slate-200">
-                {ticket.telemetry.page_url && (
-                  <div className="flex items-start space-x-2">
-                    <span className="text-slate-400 uppercase w-20 flex-shrink-0">URL:</span>
-                    <span className="text-purple-300 font-medium break-all">{ticket.telemetry.page_url}</span>
-                  </div>
-                )}
-                {ticket.telemetry.app_version && (
-                  <div className="flex items-start space-x-2">
-                    <span className="text-slate-400 uppercase w-20 flex-shrink-0">Version:</span>
-                    <span className="text-slate-300">{ticket.telemetry.app_version}</span>
-                  </div>
-                )}
-                {ticket.telemetry.user_agent && (
-                  <div className="flex items-start space-x-2">
-                    <span className="text-slate-400 uppercase w-20 flex-shrink-0">User-Agent:</span>
-                    <span className="text-slate-400 text-[10px] break-all">{ticket.telemetry.user_agent}</span>
-                  </div>
-                )}
-                {ticket.telemetry.network_errors && ticket.telemetry.network_errors.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-slate-800">
-                    <span className="text-amber-400 font-medium block mb-1">Network Error:</span>
-                    <div className="text-amber-300 bg-amber-950/40 border border-amber-900/60 p-2 rounded-[8px] text-[10px]">
-                      {ticket.telemetry.network_errors[0].method || 'POST'} {ticket.telemetry.network_errors[0].url} — HTTP {ticket.telemetry.network_errors[0].status}
-                    </div>
-                  </div>
-                )}
-                {ticket.telemetry.console_logs && ticket.telemetry.console_logs.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-slate-800">
-                    <span className="text-red-400 font-medium block mb-1">Console Exception:</span>
-                    <pre className="text-red-300 bg-red-950/40 border border-red-900/60 p-2.5 rounded-[8px] overflow-x-auto text-[10px] leading-tight font-mono">
-                      {ticket.telemetry.console_logs.map(l => `[${l.type}] ${l.message}`).join('\n')}
-                    </pre>
-                  </div>
-                )}
-              </div>
+              {!ticket.telemetry && (
+                <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                  Manual Ingest
+                </span>
+              )}
             </div>
-          )}
+
+            <div className="p-3.5 bg-slate-900 rounded-[12px] font-mono text-[11px] space-y-2 text-slate-200">
+              <div className="flex items-start space-x-2">
+                <span className="text-slate-400 uppercase w-20 flex-shrink-0">URL:</span>
+                <span className="text-purple-300 font-medium break-all">
+                  {ticket.telemetry?.page_url ?? 'N/A'}
+                </span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-slate-400 uppercase w-20 flex-shrink-0">Version:</span>
+                <span className="text-slate-300">
+                  {ticket.telemetry?.app_version ?? 'N/A'}
+                </span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-slate-400 uppercase w-20 flex-shrink-0">User-Agent:</span>
+                <span className="text-slate-400 text-[10px] break-all">
+                  {ticket.telemetry?.user_agent ?? 'Manual Ingest (Web Console)'}
+                </span>
+              </div>
+
+              {ticket.telemetry?.network_errors && ticket.telemetry.network_errors.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-slate-800">
+                  <span className="text-amber-400 font-medium block mb-1">Network Error:</span>
+                  <div className="text-amber-300 bg-amber-950/40 border border-amber-900/60 p-2 rounded-[8px] text-[10px]">
+                    {ticket.telemetry.network_errors[0].method || 'POST'} {ticket.telemetry.network_errors[0].url} — HTTP {ticket.telemetry.network_errors[0].status}
+                  </div>
+                </div>
+              )}
+
+              {/* Massive Console Log Traces handling: Truncate to first 50KB with Download Raw Log button */}
+              {processedLogs.rawText && (
+                <div className="mt-2 pt-2 border-t border-slate-800">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-red-400 font-medium block">Console Exception:</span>
+                    <button
+                      type="button"
+                      onClick={() => downloadRawLog(processedLogs.rawText, `ticket-${ticket.short_code || ticket.id}-logs.log`)}
+                      className="inline-flex items-center space-x-1 text-[10px] text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded-[6px] border border-slate-700 transition-colors cursor-pointer"
+                      title="Download complete raw console log trace"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>Download Raw Log</span>
+                    </button>
+                  </div>
+                  {processedLogs.isTruncated && (
+                    <div className="text-[10px] text-amber-400 bg-amber-950/50 border border-amber-800/60 px-2 py-1 rounded-[6px] mb-1">
+                      ⚠️ Large log dump truncated to 50KB for UI performance. Click &quot;Download Raw Log&quot; to inspect full {(processedLogs.totalBytes / 1024).toFixed(1)}KB telemetry.
+                    </div>
+                  )}
+                  <pre className="text-red-300 bg-red-950/40 border border-red-900/60 p-2.5 rounded-[8px] overflow-x-auto text-[10px] leading-tight font-mono max-h-48 overflow-y-auto">
+                    {processedLogs.truncatedText}
+                  </pre>
+                </div>
+              )}
+
+              {!ticket.telemetry && (
+                <div className="text-slate-400 italic text-[11px] pt-1">
+                  No automated SDK telemetry or stack traces captured for this manual entry.
+                </div>
+              )}
+            </div>
+          </div>
 
         </div>
 

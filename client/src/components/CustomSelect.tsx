@@ -6,6 +6,7 @@ export interface SelectOption {
   label: string;
   badge?: string | number;
   icon?: React.ReactNode;
+  disabled?: boolean;
 }
 
 export interface CustomSelectProps {
@@ -14,7 +15,7 @@ export interface CustomSelectProps {
   icon?: React.ReactNode;
   value: string;
   onChange: (value: string) => void;
-  options: SelectOption[];
+  options?: SelectOption[];
   placeholder?: string;
   className?: string;
   buttonClassName?: string;
@@ -30,7 +31,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   icon,
   value,
   onChange,
-  options,
+  options = [],
   placeholder = 'Select...',
   className = '',
   buttonClassName = '',
@@ -41,8 +42,33 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState<{ flipUp: boolean; alignRight: boolean }>({
+    flipUp: false,
+    alignRight: align === 'right'
+  });
 
-  const selectedOption = options.find((opt) => opt.value === value);
+  // Dynamic dropdown boundary collision handling via getBoundingClientRect:
+  // Flips upward ('bottom-full') if opened near the bottom of viewport
+  // Aligns to right ('right-0') if opened near right edge of screen to prevent horizontal page overflow
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const estimatedMenuHeight = 260; // max-h-64 (256px) + padding
+      const estimatedMenuWidth = 280;
+
+      const shouldFlipUp = spaceBelow < estimatedMenuHeight && rect.top > estimatedMenuHeight;
+      const shouldAlignRight = align === 'right' || (rect.left + estimatedMenuWidth > window.innerWidth);
+
+      setPlacement({
+        flipUp: shouldFlipUp,
+        alignRight: shouldAlignRight
+      });
+    }
+  }, [isOpen, align]);
+
+  const safeOptions = Array.isArray(options) ? options : [];
+  const selectedOption = safeOptions.find((opt) => opt.value === value);
 
   // Close on outside click
   useEffect(() => {
@@ -60,19 +86,21 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     };
   }, [isOpen]);
 
-  // Close on Escape key
+  // Close on Escape key with event propagation stopped to prevent closing parent modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keydown', handleKeyDown, true);
     }
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [isOpen]);
 
@@ -121,54 +149,66 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         <div
           role="listbox"
           tabIndex={-1}
-          className={`absolute top-full mt-1.5 ${
-            align === 'right' ? 'right-0' : 'left-0'
+          className={`absolute ${placement.flipUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'} ${
+            placement.alignRight ? 'right-0' : 'left-0'
           } z-50 min-w-full w-max max-w-[340px] bg-white border border-slate-200 rounded-[10px] shadow-xl p-1.5 max-h-64 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 select-none font-poppins ${menuClassName}`}
         >
-          {options.map((option) => {
-            const isSelected = option.value === value;
+          {safeOptions.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-slate-400 italic text-center select-none">
+              No options available
+            </div>
+          ) : (
+            safeOptions.map((option) => {
+              const isSelected = option.value === value;
+              const isOptionDisabled = Boolean(option.disabled);
 
-            return (
-              <div
-                key={option.value}
-                role="option"
-                aria-selected={isSelected}
-                tabIndex={0}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+              return (
+                <div
+                  key={option.value}
+                  role="option"
+                  aria-selected={isSelected}
+                  aria-disabled={isOptionDisabled}
+                  tabIndex={isOptionDisabled ? -1 : 0}
+                  onClick={() => {
+                    if (isOptionDisabled) return;
                     onChange(option.value);
                     setIsOpen(false);
-                  }
-                }}
-                className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-[6px] transition-colors cursor-pointer group ${
-                  isSelected
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-normal'
-                }`}
-              >
-                <div className="flex items-center space-x-2 truncate pr-2">
-                  {option.icon && (
-                    <span className="shrink-0">{option.icon}</span>
-                  )}
-                  <span className="truncate">{option.label}</span>
-                </div>
+                  }}
+                  onKeyDown={(e) => {
+                    if (isOptionDisabled) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onChange(option.value);
+                      setIsOpen(false);
+                    }
+                  }}
+                  className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-[6px] transition-colors ${
+                    isOptionDisabled
+                      ? 'opacity-40 cursor-not-allowed text-slate-400'
+                      : isSelected
+                      ? 'bg-blue-50 text-blue-700 font-medium cursor-pointer'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-normal cursor-pointer'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2 truncate pr-2">
+                    {option.icon && (
+                      <span className="shrink-0">{option.icon}</span>
+                    )}
+                    <span className="truncate">{option.label}</span>
+                  </div>
 
-                {isSelected && (
-                  <Check className="w-3.5 h-3.5 text-blue-600 shrink-0 ml-2" />
-                )}
-                {!isSelected && option.badge !== undefined && (
-                  <span className="text-[10px] font-mono text-slate-400 group-hover:text-slate-600 shrink-0 ml-2">
-                    {option.badge}
-                  </span>
-                )}
-              </div>
-            );
-          })}
+                  {isSelected && (
+                    <Check className="w-3.5 h-3.5 text-blue-600 shrink-0 ml-2" />
+                  )}
+                  {!isSelected && option.badge !== undefined && (
+                    <span className="text-[10px] font-mono text-slate-400 group-hover:text-slate-600 shrink-0 ml-2">
+                      {option.badge}
+                    </span>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       )}
     </div>
