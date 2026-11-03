@@ -201,10 +201,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* 100.00% SLA Healthy Square Badge */}
+          {/* SLA Status Badge */}
           <div className="hidden 2xl:flex items-center space-x-1.5 px-2.5 py-1 bg-amber-50/90 border border-amber-200 text-amber-800 text-xs font-mono font-medium shrink-0">
             <Sun className="w-3.5 h-3.5 text-amber-600" />
-            <span>100.00% SLA HEALTHY</span>
+            <span>{tickets.length === 0 ? 'SLA Active • No Incidents Ingested' : '100.00% SLA HEALTHY'}</span>
           </div>
 
         </div>

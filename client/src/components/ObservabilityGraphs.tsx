@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   ArrowDownRight,
   Sparkles,
-  Inbox
+  Inbox,
+  HelpCircle
 } from 'lucide-react';
 
 interface ObservabilityGraphsProps {
@@ -43,7 +44,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   const safeTickets = safeArray<Ticket>(tickets);
   const totalTickets = safeTickets.length;
 
-  // 1. Dynamic Category Breakdown with safe percentages
+  // 1. Dynamic Category Breakdown with safe percentages and Other/Feedback fallback bucket (3.1)
   const categoryStats = useMemo(() => {
     const categories = [
       { id: 'API_FAILURE', label: 'API Failures', icon: Cpu, color: 'text-red-500' },
@@ -53,15 +54,43 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       { id: 'UI_GLITCH', label: 'UI & Frontend', icon: Layout, color: 'text-blue-500' }
     ];
 
-    return categories.map(cat => {
-      const count = safeTickets.filter(t => t.category === cat.id).length;
-      const pct = safePercentage(count, totalTickets, 0);
-      return {
-        ...cat,
-        count,
-        pct
-      };
+    const knownIds = new Set(categories.map(c => c.id));
+    let otherCount = 0;
+    const counts: Record<string, number> = {
+      API_FAILURE: 0,
+      SECURITY: 0,
+      PERFORMANCE: 0,
+      BUG: 0,
+      UI_GLITCH: 0
+    };
+
+    safeTickets.forEach(t => {
+      const cat = (t.category || '').toUpperCase().trim();
+      if (knownIds.has(cat)) {
+        counts[cat]++;
+      } else {
+        otherCount++;
+      }
     });
+
+    const result = categories.map(cat => ({
+      ...cat,
+      count: counts[cat.id],
+      pct: safePercentage(counts[cat.id], totalTickets, 0)
+    }));
+
+    if (otherCount > 0 || totalTickets === 0) {
+      result.push({
+        id: 'OTHER',
+        label: 'Other / Feedback',
+        icon: HelpCircle,
+        color: 'text-slate-500',
+        count: otherCount,
+        pct: safePercentage(otherCount, totalTickets, 0)
+      });
+    }
+
+    return result;
   }, [safeTickets, totalTickets]);
 
   // 2. Dynamic Severity Breakdown with safe percentages
@@ -122,29 +151,75 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
     };
   }, [safeTickets, totalTickets]);
 
-  // 3. Dynamic Time-Series Data Points for SVG Area Chart
-  const trendData = useMemo(() => {
+  // 3. Dynamic Time-Series Data Points for SVG Area Chart with Adaptive Bucketing
+  const { trendData, isAdaptiveZoom, adaptiveWindowLabel } = useMemo(() => {
     const now = getSyncedNow();
     if (timeWindow === '24h') {
-      const buckets = [
-        { label: '-24h', cutoff: now - 24 * 3600000 },
-        { label: '-20h', cutoff: now - 20 * 3600000 },
-        { label: '-16h', cutoff: now - 16 * 3600000 },
-        { label: '-12h', cutoff: now - 12 * 3600000 },
-        { label: '-8h', cutoff: now - 8 * 3600000 },
-        { label: '-4h', cutoff: now - 4 * 3600000 },
-        { label: 'Now', cutoff: now }
-      ];
+      const ticketTimes = safeTickets
+        .map(t => parseSafeDate(t.created_at, now))
+        .filter(t => t <= now);
+      const earliestTime = ticketTimes.length > 0 ? Math.min(...ticketTimes) : null;
+      const spanMs = earliestTime !== null ? Math.max(0, now - earliestTime) : 0;
 
-      return buckets.map(b => {
+      // Adaptive Bucketing: When data is sparse or recently initiated (< 6 hours),
+      // adapt bucket granularity so the graph doesn't flatline for 20 hours and jump at 'Now'.
+      let buckets: Array<{ label: string; cutoff: number; isPreTelemetry?: boolean }>;
+      let adaptiveActive = false;
+      let windowLabel = '';
+
+      if (earliestTime !== null && spanMs <= 2 * 3600000 && safeTickets.length > 0) {
+        adaptiveActive = true;
+        windowLabel = '2h zoom';
+        buckets = [
+          { label: '-120m', cutoff: now - 120 * 60000 },
+          { label: '-90m', cutoff: now - 90 * 60000 },
+          { label: '-60m', cutoff: now - 60 * 60000 },
+          { label: '-45m', cutoff: now - 45 * 60000 },
+          { label: '-30m', cutoff: now - 30 * 60000 },
+          { label: '-15m', cutoff: now - 15 * 60000 },
+          { label: 'Now', cutoff: now }
+        ];
+      } else if (earliestTime !== null && spanMs <= 6 * 3600000 && safeTickets.length > 0) {
+        adaptiveActive = true;
+        windowLabel = '6h zoom';
+        buckets = [
+          { label: '-6h', cutoff: now - 6 * 3600000 },
+          { label: '-5h', cutoff: now - 5 * 3600000 },
+          { label: '-4h', cutoff: now - 4 * 3600000 },
+          { label: '-3h', cutoff: now - 3 * 3600000 },
+          { label: '-2h', cutoff: now - 2 * 3600000 },
+          { label: '-1h', cutoff: now - 1 * 3600000 },
+          { label: 'Now', cutoff: now }
+        ];
+      } else {
+        buckets = [
+          { label: '-24h', cutoff: now - 24 * 3600000 },
+          { label: '-20h', cutoff: now - 20 * 3600000 },
+          { label: '-16h', cutoff: now - 16 * 3600000 },
+          { label: '-12h', cutoff: now - 12 * 3600000 },
+          { label: '-8h', cutoff: now - 8 * 3600000 },
+          { label: '-4h', cutoff: now - 4 * 3600000 },
+          { label: 'Now', cutoff: now }
+        ];
+      }
+
+      const points = buckets.map(b => {
         const ingested = safeTickets.filter(t => parseSafeDate(t.created_at, now) <= b.cutoff).length;
         const resolved = safeTickets.filter(t => normalizeStatus(t.status) === 'Resolved' && parseSafeDate(t.updated_at || t.created_at, now) <= b.cutoff).length;
+        const isPreTelemetry = earliestTime !== null && b.cutoff < earliestTime;
         return {
           label: b.label,
           ingested,
-          resolved
+          resolved,
+          isPreTelemetry
         };
       });
+
+      return {
+        trendData: points,
+        isAdaptiveZoom: adaptiveActive,
+        adaptiveWindowLabel: windowLabel
+      };
     } else {
       // Cross-Timezone & DST Shift resilient grouping via calendar date math & Intl.DateTimeFormat
       const dayFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
@@ -159,15 +234,22 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
         };
       });
 
-      return buckets.map(b => {
+      const points = buckets.map(b => {
         const ingested = safeTickets.filter(t => parseSafeDate(t.created_at, now) <= b.cutoff).length;
         const resolved = safeTickets.filter(t => normalizeStatus(t.status) === 'Resolved' && parseSafeDate(t.updated_at || t.created_at, now) <= b.cutoff).length;
         return {
           label: b.label,
           ingested,
-          resolved
+          resolved,
+          isPreTelemetry: false
         };
       });
+
+      return {
+        trendData: points,
+        isAdaptiveZoom: false,
+        adaptiveWindowLabel: ''
+      };
     }
   }, [timeWindow, safeTickets]);
 
@@ -250,7 +332,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
             Telemetry Observability & Triage Velocity
           </h2>
           <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-[6px]">
-            REAL-TIME API LATENCY: {apiLatencyMs !== null && apiLatencyMs !== undefined ? `${apiLatencyMs}ms` : '955ms'}
+            REAL-TIME API LATENCY: {apiLatencyMs !== null && apiLatencyMs !== undefined ? `${apiLatencyMs}ms` : 'Measuring...'}
           </span>
         </div>
 
@@ -296,6 +378,11 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
                   <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-[6px]">
                     {totalTickets} Ingested • {resolvedCount} Resolved
                   </span>
+                  {isAdaptiveZoom && (
+                    <span className="text-[10px] font-mono text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-[6px] hidden sm:inline-block">
+                      Adaptive Velocity ({adaptiveWindowLabel})
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 mt-1 font-normal">
                   Telemetry events ingested via SDK & API compared against engineering resolution velocity.
@@ -322,9 +409,9 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
                   <Inbox className="w-4 h-4" />
                 </div>
                 <div className="space-y-0.5">
-                  <h4 className="text-xs font-medium text-slate-700">No telemetry data recorded</h4>
+                  <h4 className="text-xs font-medium text-slate-700">No telemetry data recorded (Zero Ingestion)</h4>
                   <p className="text-[11px] text-slate-400 max-w-xs">
-                    Inbound telemetry curves will render dynamically once incidents or SDK events are logged.
+                    SDK bridge is standing by. Inbound telemetry curves will render dynamically once client events or incidents are logged.
                   </p>
                 </div>
                 {(onSeedDemo || onSimulateTelemetry) && (
@@ -408,25 +495,40 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
                       {hoveredPointIndex === idx && (
                         <text
                           x={p.x}
-                          y={p.y - 10}
+                          y={Math.max(14, p.y - 10)}
                           textAnchor="middle"
                           fill="#7e22ce"
                           fontSize="10"
                           fontWeight="bold"
                           className="font-mono"
                         >
-                          {p.ingested} In
+                          {p.isPreTelemetry ? 'Unmonitored' : `${p.ingested} In`}
                         </text>
                       )}
                     </g>
                   ))}
                 </svg>
 
-                {/* X-Axis Labels */}
-                <div className="flex justify-between text-[11px] text-slate-400 font-mono px-2 pt-1 border-t border-slate-100">
+                {/* X-Axis Labels: Responsive alternate labels for screens < 400px (3.3) */}
+                <div className="hidden sm:flex justify-between text-[11px] text-slate-400 font-mono px-2 pt-1 border-t border-slate-100">
                   {trendData.map((d, i) => (
                     <span key={i}>{d.label}</span>
                   ))}
+                </div>
+                <div className="flex sm:hidden justify-between text-[11px] text-slate-400 font-mono px-2 pt-1 border-t border-slate-100">
+                  {timeWindow === '24h' ? (
+                    <>
+                      <span>-24h</span>
+                      <span>-12h</span>
+                      <span>Now</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>-7d</span>
+                      <span>-3d</span>
+                      <span>Now</span>
+                    </>
+                  )}
                 </div>
               </div>
             )}

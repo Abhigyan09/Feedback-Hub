@@ -57,7 +57,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
   onRefresh,
   onStaffUpdated
 }) => {
-  const { authFetch } = useAuth();
+  const { authFetch, user, logout } = useAuth();
   // Local staff list state for instant optimistic responsiveness
   const [staffList, setStaffList] = useState<TeamMember[]>(teamMembers);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -83,6 +83,28 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
   // Ref for auto-scrolling to queue
   const queueSectionRef = useRef<HTMLDivElement>(null);
+
+  // Modal Scrollbar Trapping Prevention: Lock background body scroll while add staff modal is mounted
+  useEffect(() => {
+    if (!isAddModalOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isAddModalOpen]);
+
+  // Close add staff dialog on Escape key press
+  useEffect(() => {
+    if (!isAddModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        setIsAddModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAddModalOpen, isSubmitting]);
 
   // Sync staffList whenever parent teamMembers updates
   useEffect(() => {
@@ -214,9 +236,9 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       // Search query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const matchName = m.name.toLowerCase().includes(query);
-        const matchRole = m.role.toLowerCase().includes(query);
-        const matchEmail = m.email.toLowerCase().includes(query);
+        const matchName = (m.name || '').toLowerCase().includes(query);
+        const matchRole = (m.role || '').toLowerCase().includes(query);
+        const matchEmail = (m.email || '').toLowerCase().includes(query);
         const matchSquad = (m.squad || '').toLowerCase().includes(query);
         return matchName || matchRole || matchEmail || matchSquad;
       }
@@ -225,10 +247,16 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     }).sort((a, b) => {
       const loadA = memberMetrics[a.id]?.openCount || 0;
       const loadB = memberMetrics[b.id]?.openCount || 0;
-      if (sortBy === 'LOAD_DESC') return loadB - loadA;
-      if (sortBy === 'NAME_ASC') return a.name.localeCompare(b.name);
-      if (sortBy === 'ROLE') return a.role.localeCompare(b.role);
-      return 0;
+      if (sortBy === 'LOAD_DESC') {
+        const diff = loadB - loadA;
+        return diff !== 0 ? diff : (a.name || '').localeCompare(b.name || '');
+      }
+      if (sortBy === 'NAME_ASC') return (a.name || '').localeCompare(b.name || '');
+      if (sortBy === 'ROLE') {
+        const roleDiff = (a.role || '').localeCompare(b.role || '');
+        return roleDiff !== 0 ? roleDiff : (a.name || '').localeCompare(b.name || '');
+      }
+      return (a.name || '').localeCompare(b.name || '');
     });
   }, [staffList, memberMetrics, filterType, searchQuery, sortBy]);
 
@@ -373,8 +401,15 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to remove '${member.name}' from the squad? Any open assigned incidents will be returned to the unassigned backlog.`)) {
-      return;
+    const isSelfDelete = user?.id === member.id;
+    if (isSelfDelete) {
+      if (!window.confirm(`Warning: You are about to remove your OWN account ('${member.name}'). If you proceed, your current session will terminate and you will be signed out. Do you wish to continue?`)) {
+        return;
+      }
+    } else {
+      if (!window.confirm(`Are you sure you want to remove '${member.name}' from the squad? Any open assigned incidents will be returned to the unassigned backlog.`)) {
+        return;
+      }
     }
 
     setDeletingMemberId(member.id);
@@ -394,6 +429,11 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       });
       const data = await res.json();
       if (res.ok) {
+        if (isSelfDelete) {
+          await logout();
+          window.location.href = '/login';
+          return;
+        }
         setActionSuccess(data.message || `Staff member '${member.name}' removed successfully.`);
         setTimeout(() => setActionSuccess(null), 4000);
         await fetchStaffData();
@@ -417,6 +457,12 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     e.preventDefault();
     if (!newStaffName.trim() || !newStaffEmail.trim()) {
       setActionError('Please provide both full name and a valid corporate email.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newStaffEmail.trim())) {
+      setActionError('Please provide a valid corporate email address (e.g. name@company.com).');
       return;
     }
 
@@ -542,7 +588,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               className="px-4 py-2 bg-[#0b1b36] hover:bg-[#12284c] text-white text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs font-poppins"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Staff Member</span>
+              <span className="hidden sm:inline">Add Staff Member</span>
             </button>
           ) : (
             <div 
@@ -550,7 +596,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               className="px-3.5 py-2 bg-slate-100 border border-slate-200 text-slate-400 text-xs font-medium rounded-[8px] flex items-center space-x-1.5 cursor-not-allowed select-none font-poppins"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Admin / Lead Only</span>
+              <span className="hidden sm:inline">Admin / Lead Only</span>
             </div>
           )}
 
@@ -569,7 +615,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed font-poppins"
           >
             <Zap className={`w-3.5 h-3.5 text-purple-600 ${isRebalancing ? 'animate-spin' : ''}`} />
-            <span>{isRebalancing ? 'Balancing...' : 'Auto-Balance Load'}</span>
+            <span className="hidden sm:inline">{isRebalancing ? 'Balancing...' : 'Auto-Balance Load'}</span>
           </button>
 
           <button
@@ -580,7 +626,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs rounded-[8px] font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 font-poppins"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+            <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
@@ -802,12 +848,12 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           </div>
           <div className="max-w-md mx-auto space-y-1">
             <h4 className="text-sm font-medium text-slate-800">
-              {staffList.length === 0 ? 'No squad engineers registered' : 'No engineers match filter'}
+              {staffList.length === 0 ? 'No squad engineers registered' : 'No squad members match your active filter criteria'}
             </h4>
             <p className="text-xs text-slate-500">
               {staffList.length === 0
                 ? 'No squad members are registered on this tenant roster. Register engineers to enable assignment and workload distribution.'
-                : 'Try adjusting your search query or filter tab to view squad members.'}
+                : 'No engineers match your active filter criteria. Clear filters to see all squad members.'}
             </p>
           </div>
           {isAdminOrLead && staffList.length === 0 && (
@@ -819,6 +865,21 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Register Squad Member</span>
+              </button>
+            </div>
+          )}
+          {staffList.length > 0 && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterType('ALL');
+                  setSearchQuery('');
+                }}
+                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#0b1b36] hover:bg-[#12284c] text-white text-xs font-medium rounded-[8px] transition-colors cursor-pointer shadow-2xs font-poppins"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Clear Filters</span>
               </button>
             </div>
           )}
@@ -873,7 +934,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   {/* Name, Role & Email */}
                   <div className="min-w-0">
                     <div className="flex items-center space-x-1.5 flex-wrap">
-                      <h3 className="text-xs font-medium text-slate-900 truncate">
+                      <h3 className="text-xs font-medium text-slate-900 truncate break-all" title={member.name}>
                         {member.name}
                       </h3>
                       {isOnCall && (
@@ -885,7 +946,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                     <p className="text-[11px] text-slate-500 truncate mt-0.5">
                       {member.role}
                     </p>
-                    <p className="text-[10px] text-slate-400 font-mono truncate">
+                    <p className="text-[10px] text-slate-400 font-mono truncate break-all" title={member.email}>
                       {member.email}
                     </p>
                   </div>
@@ -902,6 +963,11 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   {metrics.urgentCount > 0 && (
                     <span className="text-[9px] font-mono font-medium text-rose-600 bg-rose-50 px-1 py-0.2 rounded-[6px] mt-1">
                       {metrics.urgentCount} Urgent
+                    </span>
+                  )}
+                  {metrics.openCount > 10 && (
+                    <span className="text-[9px] font-mono font-medium text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-[6px] mt-1">
+                      Overloaded (&gt;10)
                     </span>
                   )}
                 </div>
@@ -1251,6 +1317,21 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
             {/* Form */}
             <form onSubmit={handleAddStaffMember} className="p-5 sm:p-6 pt-1 space-y-4 text-xs">
+              {actionError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-[8px] flex items-center justify-between font-poppins">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{actionError}</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setActionError(null)} 
+                    className="text-rose-600 hover:text-rose-900 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
               <div className="space-y-1.5 text-left">
                 <label className="text-slate-700 font-medium text-xs">
                   Full Name & Title <span className="text-rose-500">*</span>

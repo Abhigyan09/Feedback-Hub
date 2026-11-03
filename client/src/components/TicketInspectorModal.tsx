@@ -28,6 +28,15 @@ export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
   const currentPriorityNorm = normalizeSeverity(ticket.severity);
   const processedLogs = useMemo(() => processLogTraces(ticket.telemetry?.console_logs), [ticket.telemetry?.console_logs]);
 
+  // Modal Scrollbar Trapping Prevention: Lock background body scroll while modal is mounted
+  React.useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Close on Escape key (nested CustomSelect dropdown stops propagation when open)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -131,7 +140,10 @@ export const TicketInspectorModal: React.FC<TicketInspectorModalProps> = ({
                     ? [{ value: 'UNASSIGNED', label: 'No engineers available' }]
                     : [
                         { value: 'UNASSIGNED', label: '-- Unassigned --' },
-                        ...safeTeam.map(m => ({ value: m.id, label: `${m.name} (${(m.role || 'Staff').split(' ')[0]})` }))
+                        ...safeTeam.map(m => ({ value: m.id, label: `${m.name} (${(m.role || 'Staff').split(' ')[0]})` })),
+                        ...(ticket.assigned_to && !safeTeam.some(m => m.id === ticket.assigned_to)
+                          ? [{ value: ticket.assigned_to, label: `${ticket.assigned_to_name || 'Former Staff'} (Former Staff)` }]
+                          : [])
                       ]
                 }
                 buttonClassName="bg-white border-slate-200 text-slate-800 text-xs px-3 py-1.5 rounded-[8px]"

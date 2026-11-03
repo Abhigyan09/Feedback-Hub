@@ -50,6 +50,8 @@ interface TicketsTableProps {
   onAssigneeFilterChange: (assigneeId: string) => void;
   priorityFilter: string;
   onPriorityFilterChange: (priority: string) => void;
+  categoryFilter?: string;
+  onCategoryFilterChange?: (category: string) => void;
   sortField: SortField;
   sortDirection: SortDirection;
   onSortChange: (field: SortField) => void;
@@ -77,6 +79,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   onAssigneeFilterChange,
   priorityFilter,
   onPriorityFilterChange,
+  categoryFilter = 'ALL',
+  onCategoryFilterChange,
   sortField,
   sortDirection,
   onSortChange,
@@ -144,7 +148,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     Boolean(searchQuery.trim()) || 
     statusFilter !== 'ALL' || 
     assigneeFilter !== 'ALL' || 
-    priorityFilter !== 'ALL';
+    priorityFilter !== 'ALL' ||
+    (Boolean(categoryFilter) && categoryFilter !== 'ALL');
 
   const getPriorityWeight = (priority: string): number => {
     switch (priority) {
@@ -186,8 +191,22 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         }
       }
 
-      if (statusFilter !== 'ALL' && normStatus !== statusFilter) {
+      // Active in-flight lifecycle filtering (Open card includes Open, Triaged, In Dev, In QA)
+      if (statusFilter === 'NON_RESOLVED') {
+        if (normStatus === 'Resolved') return false;
+      } else if (statusFilter !== 'ALL' && normStatus !== statusFilter) {
         return false;
+      }
+
+      // Category multi-dimensional filtering
+      if (categoryFilter && categoryFilter !== 'ALL') {
+        const cat = (t.category || '').toUpperCase().trim();
+        if (categoryFilter === 'OTHER') {
+          const standardCats = ['API_FAILURE', 'SECURITY', 'PERFORMANCE', 'BUG', 'UI_GLITCH'];
+          if (standardCats.includes(cat)) return false;
+        } else if (cat !== categoryFilter.toUpperCase()) {
+          return false;
+        }
       }
 
       if (assigneeFilter !== 'ALL') {
@@ -435,6 +454,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
             onChange={onStatusFilterChange}
             options={[
               { value: 'ALL', label: 'All Statuses' },
+              { value: 'NON_RESOLVED', label: 'Active In-Flight (Open/Dev/QA)' },
               { value: 'Open', label: 'Open' },
               { value: 'In Dev', label: 'In Dev' },
               { value: 'In QA', label: 'In QA' },
@@ -496,6 +516,93 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         </div>
 
       </div>
+
+      {/* Active Multi-Dimensional Filter Pills Bar with 1-Click Reset (2.2) */}
+      {hasActiveFilters && (
+        <div className="flex items-center flex-wrap gap-2 px-1">
+          <span className="text-[11px] font-medium text-slate-400">Active filters:</span>
+          {categoryFilter && categoryFilter !== 'ALL' && (
+            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-[6px] text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+              <span>Category: {categoryFilter.replace('_', ' ')}</span>
+              {onCategoryFilterChange && (
+                <button
+                  type="button"
+                  onClick={() => onCategoryFilterChange('ALL')}
+                  className="hover:text-purple-900 cursor-pointer"
+                  title="Remove category filter"
+                >
+                  <X className="w-3 h-3 ml-0.5" />
+                </button>
+              )}
+            </span>
+          )}
+          {statusFilter !== 'ALL' && (
+            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-[6px] text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+              <span>Status: {statusFilter === 'NON_RESOLVED' ? 'Active In-Flight' : statusFilter}</span>
+              <button
+                type="button"
+                onClick={() => onStatusFilterChange('ALL')}
+                className="hover:text-blue-900 cursor-pointer"
+                title="Remove status filter"
+              >
+                <X className="w-3 h-3 ml-0.5" />
+              </button>
+            </span>
+          )}
+          {priorityFilter !== 'ALL' && (
+            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-[6px] text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
+              <span>Priority: {priorityFilter}</span>
+              <button
+                type="button"
+                onClick={() => onPriorityFilterChange('ALL')}
+                className="hover:text-rose-900 cursor-pointer"
+                title="Remove priority filter"
+              >
+                <X className="w-3 h-3 ml-0.5" />
+              </button>
+            </span>
+          )}
+          {assigneeFilter !== 'ALL' && (
+            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-[6px] text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+              <span>Assignee: {assigneeFilter === 'UNASSIGNED' ? 'Unassigned' : safeTeam.find(m => m.id === assigneeFilter)?.name || assigneeFilter}</span>
+              <button
+                type="button"
+                onClick={() => onAssigneeFilterChange('ALL')}
+                className="hover:text-amber-900 cursor-pointer"
+                title="Remove assignee filter"
+              >
+                <X className="w-3 h-3 ml-0.5" />
+              </button>
+            </span>
+          )}
+          {searchQuery.trim() && (
+            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-[6px] text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+              <span>Query: "{searchQuery}"</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalSearch('');
+                  onSearchChange('');
+                }}
+                className="hover:text-slate-900 cursor-pointer"
+                title="Clear search query"
+              >
+                <X className="w-3 h-3 ml-0.5" />
+              </button>
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setLocalSearch('');
+              onResetFilters();
+            }}
+            className="text-xs font-medium text-blue-600 hover:text-blue-800 ml-1 cursor-pointer underline underline-offset-2"
+          >
+            Reset All
+          </button>
+        </div>
+      )}
 
       {/* Table Results Counter & Status Row */}
       <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2 pt-0.5">

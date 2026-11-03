@@ -48,18 +48,91 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Multi-Product / Domain Simulation Switcher
-  const [simulatedProduct, setSimulatedProduct] = useState<'checkout' | 'merchant' | 'medsync'>('checkout');
+  // Dynamic Product & Key configuration per tenant (prevents tenant key mismatch)
+  interface SimulatorProductItem {
+    id: string;
+    name: string;
+    key: string;
+    domain: string;
+    url: string;
+  }
+  const [tenantProducts, setTenantProducts] = useState<SimulatorProductItem[]>([]);
+  const [selectedProductKey, setSelectedProductKey] = useState<string>('');
 
-  // Auto-sync simulated product to active tenant scope
   useEffect(() => {
-    if (isOpen && currentTenantId) {
-      if (currentTenantId.includes('medsync') || currentTenantId === '00000000-0000-4000-8000-000000000002') {
-        setSimulatedProduct('medsync');
-      } else {
-        setSimulatedProduct('checkout');
+    if (!isOpen) return;
+    let isMounted = true;
+
+    const loadProducts = async () => {
+      try {
+        const res = await fetch('/api/v1/tenants/products', {
+          headers: {
+            'x-tenant-id': currentTenantId || 'tenant-acme-corp-001'
+          }
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.products && Array.isArray(data.products) && data.products.length > 0 && isMounted) {
+            const mapped: SimulatorProductItem[] = data.products.map((p: any) => {
+              const cleanSlug = (p.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+              const domain = p.domain || `${cleanSlug || 'app'}.client.com`;
+              return {
+                id: p.id,
+                name: p.name,
+                key: p.raw_api_key || p.api_key_hash,
+                domain,
+                url: `https://${domain}/app/dashboard`
+              };
+            });
+            setTenantProducts(mapped);
+            setSelectedProductKey(mapped[0].key);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to dynamically load tenant products for simulator:', err);
       }
-    }
+
+      // Safe fallback based on currentTenantId
+      if (isMounted) {
+        if (currentTenantId === 'tenant-medsync-002') {
+          const medsyncItem: SimulatorProductItem = {
+            id: 'prod-medsync-1',
+            name: 'MedSync Healthcare (Patient Portal)',
+            key: 'fb_live_medsync_key_771',
+            domain: 'portal.medsync.io',
+            url: 'https://portal.medsync.io/records/telehealth'
+          };
+          setTenantProducts([medsyncItem]);
+          setSelectedProductKey(medsyncItem.key);
+        } else {
+          const acmeItems: SimulatorProductItem[] = [
+            {
+              id: 'prod-checkout-1',
+              name: 'Acme Payments Inc. (Checkout Gateway)',
+              key: 'fb_live_acme_checkout_key_998',
+              domain: 'checkout.acme.com',
+              url: 'https://checkout.acme.com/v2/pay/upi'
+            },
+            {
+              id: 'prod-merchant-1',
+              name: 'Acme Payments Inc. (Merchant Portal)',
+              key: 'hash_prod_live_portal_key',
+              domain: 'merchant.acme.com',
+              url: 'https://merchant.acme.com/billing/invoices'
+            }
+          ];
+          setTenantProducts(acmeItems);
+          setSelectedProductKey(acmeItems[0].key);
+        }
+      }
+    };
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, currentTenantId]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +193,16 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
     return () => window.removeEventListener('paste', handlePaste);
   }, [isOpen]);
 
+  // Modal Scrollbar Trapping Prevention: Lock background body scroll while modal is mounted
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
   // Close modal on Escape key press (Nested Dialog ESC Dismiss)
   useEffect(() => {
     if (!isOpen) return;
@@ -136,29 +219,16 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Active Simulated Context
-  const productConfigs = {
-    checkout: {
-      name: 'Acme Payments Inc. (Checkout Gateway)',
-      key: 'fb_live_acme_checkout_key_998',
-      domain: 'checkout.acme.com',
-      url: 'https://checkout.acme.com/v2/pay/upi'
-    },
-    merchant: {
-      name: 'Acme Payments Inc. (Merchant Portal)',
-      key: 'hash_prod_live_portal_key',
-      domain: 'merchant.acme.com',
-      url: 'https://merchant.acme.com/billing/invoices'
-    },
-    medsync: {
-      name: 'MedSync Healthcare (Patient Portal)',
-      key: 'fb_live_medsync_key_771',
-      domain: 'portal.medsync.io',
-      url: 'https://portal.medsync.io/records/telehealth'
-    }
-  };
 
-  const currentConfig = productConfigs[simulatedProduct];
+  // Active Simulated Context dynamically matching active tenant monitored products
+  const currentConfig = tenantProducts.find(p => p.key === selectedProductKey) || tenantProducts[0] || {
+    id: 'default-product',
+    name: 'Active Workspace Application',
+    key: currentTenantId === 'tenant-medsync-002' ? 'fb_live_medsync_key_771' : 'fb_live_acme_checkout_key_998',
+    domain: currentTenantId === 'tenant-medsync-002' ? 'portal.medsync.io' : 'checkout.acme.com',
+    url: currentTenantId === 'tenant-medsync-002' ? 'https://portal.medsync.io/app' : 'https://checkout.acme.com/v2/pay/upi'
+
+  };
 
   // Dynamic placeholders based on category
   const getSubjectPlaceholder = () => {
@@ -245,8 +315,8 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
         onTicketCreated();
         onClose();
       } else {
-        const errorData = await response.json();
-        alert('Submission failed: ' + (errorData.error || 'Server error'));
+        const errorData = await response.json().catch(() => ({}));
+        alert('Submission failed: ' + (errorData.error || errorData.message || 'Server error'));
       }
     } catch (err: any) {
       alert('Network error: ' + err.message);
@@ -513,13 +583,12 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                   </label>
                   <CustomSelect
                     fullWidth
-                    value={simulatedProduct}
-                    onChange={(val: string) => setSimulatedProduct(val as any)}
-                    options={[
-                      { value: 'checkout', label: 'Acme Payments (checkout.acme.com)' },
-                      { value: 'merchant', label: 'Acme Payments (merchant.acme.com)' },
-                      { value: 'medsync', label: 'MedSync Healthcare (portal.medsync.io)' }
-                    ]}
+                    value={currentConfig.key}
+                    onChange={(val: string) => setSelectedProductKey(val)}
+                    options={tenantProducts.map(p => ({
+                      value: p.key,
+                      label: `${p.name} (${p.domain})`
+                    }))}
                     buttonClassName="bg-slate-50 border-slate-200 rounded-[8px] p-2 font-mono text-xs"
                   />
                 </div>

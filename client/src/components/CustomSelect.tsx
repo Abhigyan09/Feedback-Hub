@@ -107,6 +107,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   return (
     <div 
       ref={containerRef} 
+      onClick={(e) => e.stopPropagation()}
       className={`relative ${fullWidth ? 'w-full' : 'inline-block'} text-left font-poppins ${className}`}
     >
       {/* Trigger Button */}
@@ -114,7 +115,10 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         type="button"
         id={id}
         disabled={disabled}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen((prev) => !prev);
+        }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={`flex items-center justify-between space-x-1.5 bg-slate-50 hover:bg-slate-100/80 active:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-[8px] text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-2xs focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -169,7 +173,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                   aria-selected={isSelected}
                   aria-disabled={isOptionDisabled}
                   tabIndex={isOptionDisabled ? -1 : 0}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (isOptionDisabled) return;
                     onChange(option.value);
                     setIsOpen(false);

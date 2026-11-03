@@ -110,6 +110,41 @@ tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenan
     return res.status(404).json({ error: 'Tenant not found.' });
   }
 
+  // Pre-validation boundaries
+  if (name !== undefined && !name.trim()) {
+    return res.status(400).json({ error: 'Organization name cannot be empty.' });
+  }
+
+  if (webhook_url !== undefined && webhook_url.trim()) {
+    try {
+      const parsed = new URL(webhook_url.trim());
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return res.status(400).json({ error: 'Webhook URL protocol must be http:// or https://' });
+      }
+    } catch {
+      return res.status(400).json({ error: 'Invalid Webhook URL format.' });
+    }
+  }
+
+  if (notification_email !== undefined && notification_email.trim()) {
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!EMAIL_REGEX.test(notification_email.trim())) {
+      return res.status(400).json({ error: 'Invalid Escalation Email format.' });
+    }
+  }
+
+  if (Array.isArray(allowed_domains)) {
+    for (const d of allowed_domains) {
+      const clean = String(d).trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+      if (clean.includes('*')) {
+        const isValidWildcard = clean === '*' || /^\*\.[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(clean);
+        if (!isValidWildcard) {
+          return res.status(400).json({ error: "Invalid wildcard domain '" + clean + "'. Format must be '*.domain.com' or '*'." });
+        }
+      }
+    }
+  }
+
   // Update in-memory store
   if (name !== undefined && name.trim()) tenant.name = name.trim();
   if (plan !== undefined) tenant.plan = plan;
@@ -166,6 +201,8 @@ tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenan
 
   // Broadcast settings change in real-time
   broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', {
+    tenantId,
+    tenant_id: tenantId,
     tenant,
     message: `Tenant settings updated for ${tenant.name}`
   });
@@ -233,6 +270,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
     const updated = tenantStore.getPermissionsMatrix(tenantId);
     broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
       tenantId,
+      tenant_id: tenantId,
       matrix: updated,
       message: 'All role permissions matrix updated.'
     });
@@ -262,6 +300,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
     // Broadcast permissions change real-time
     broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
       tenantId,
+      tenant_id: tenantId,
       role,
       matrix: updatedMatrix,
       message: `Permissions updated for role '${role}'.`
@@ -348,6 +387,13 @@ tenantRouter.post('/products', requirePermission('products:create'), async (req:
 
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Product name is required.' });
+  }
+
+  const isDuplicate = tenantStore.products.some(
+    p => p.tenant_id === tenantId && p.name.trim().toLowerCase() === name.trim().toLowerCase()
+  );
+  if (isDuplicate) {
+    return res.status(400).json({ error: "A product named '" + name.trim() + "' already exists in this tenant." });
   }
 
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -602,6 +648,7 @@ tenantRouter.post('/staff', async (req: Request, res: Response) => {
   tenantStore.saveToDisk();
 
   broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', { tenantId, message: `New squad engineer '${newUser.full_name}' added.` });
+  broadcastTicketEvent(tenantId, 'STAFF_UPDATED', { tenantId, tenant_id: tenantId, staff: newUser, message: `New squad engineer '${newUser.full_name}' added.` });
 
   res.status(201).json({
     success: true,
@@ -657,6 +704,7 @@ tenantRouter.patch('/staff/:id', async (req: Request, res: Response) => {
   tenantStore.saveToDisk();
 
   broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', { tenantId, message: `Staff member '${user.full_name}' updated.` });
+  broadcastTicketEvent(tenantId, 'STAFF_UPDATED', { tenantId, tenant_id: tenantId, staff: user, message: `Staff member '${user.full_name}' updated.` });
 
   res.json({
     success: true,
@@ -705,6 +753,7 @@ tenantRouter.delete('/staff/:id', async (req: Request, res: Response) => {
   tenantStore.saveToDisk();
 
   broadcastTicketEvent(tenantId, 'SETTINGS_UPDATED', { tenantId, message: `Staff member '${removedUser.full_name}' removed. ${unassignedCount} tickets unassigned.` });
+  broadcastTicketEvent(tenantId, 'STAFF_UPDATED', { tenantId, tenant_id: tenantId, staffId: id, message: `Staff member '${removedUser.full_name}' removed. ${unassignedCount} tickets unassigned.` });
   broadcastTicketEvent(tenantId, 'TICKETS_UPDATED', { tenantId });
 
   res.json({

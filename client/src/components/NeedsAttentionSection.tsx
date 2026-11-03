@@ -68,9 +68,9 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
       let isBreached = false;
       let needsAttention = false;
 
-      // Exact SLA Breach boundary: consistent < 0 check prevents flickering/state flapping at diff === 0
+      // Exact SLA Breach boundary: consistent <= 0 check prevents flickering/state flapping at diff === 0
       const diffMs = slaDueTime - now;
-      if (diffMs < 0) {
+      if (diffMs <= 0) {
         isBreached = true;
         needsAttention = true;
         const overdueMins = Math.max(1, Math.floor(Math.abs(diffMs) / 60000));
@@ -97,11 +97,48 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
       }
     });
 
-    // Sort: Breached first, then Urgent unassigned, then closest SLA
+    // Helper for normalized severity ranking (P0 Urgent -> 4, P1 High -> 3, P2 Medium -> 2, P3 Low -> 1)
+    const getSevRank = (sev: string) => {
+      const norm = normalizeSeverity(sev as any);
+      if (norm === 'Urgent') return 4;
+      if (norm === 'High') return 3;
+      if (norm === 'Medium') return 2;
+      return 1;
+    };
+
+    // Deterministic sorting with stable tie-breaker:
+    // 1. Breached SLA items always first
+    // 2. Prioritize P0/P1 Unassigned ahead of Waiting for Client items in the visible slice
+    // 3. Higher severity weight (Urgent > High > Medium > Low)
+    // 4. Earliest SLA due time
+    // 5. Stable secondary tie-breaker by ticket short code / ID
     items.sort((a, b) => {
+      // 1. SLA Breached first
       if (a.isBreached && !b.isBreached) return -1;
       if (!a.isBreached && b.isBreached) return 1;
-      return 0;
+
+      // 2. Prioritize P0/P1 Unassigned ahead of Waiting for Client items
+      const aIsUnassignedUrgentOrHigh = !a.ticket.assigned_to && (getSevRank(a.ticket.severity) >= 3);
+      const bIsUnassignedUrgentOrHigh = !b.ticket.assigned_to && (getSevRank(b.ticket.severity) >= 3);
+      if (aIsUnassignedUrgentOrHigh && !bIsUnassignedUrgentOrHigh) return -1;
+      if (!aIsUnassignedUrgentOrHigh && bIsUnassignedUrgentOrHigh) return 1;
+
+      const aIsUnassigned = !a.ticket.assigned_to;
+      const bIsUnassigned = !b.ticket.assigned_to;
+      if (aIsUnassigned && !bIsUnassigned) return -1;
+      if (!aIsUnassigned && bIsUnassigned) return 1;
+
+      // 3. Highest severity weight (P0 -> P3)
+      const rankDiff = getSevRank(b.ticket.severity) - getSevRank(a.ticket.severity);
+      if (rankDiff !== 0) return rankDiff;
+
+      // 4. Earliest SLA due time
+      const dueA = getSafeSlaDueAt(a.ticket);
+      const dueB = getSafeSlaDueAt(b.ticket);
+      if (dueA !== dueB) return dueA - dueB;
+
+      // 5. Deterministic tie-breaker
+      return (a.ticket.id || a.ticket.short_code || '').localeCompare(b.ticket.id || b.ticket.short_code || '');
     });
 
     return items;
@@ -130,7 +167,7 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
         </div>
         <div className="text-xs text-emerald-700 font-medium flex items-center space-x-1.5 pl-12 sm:pl-0">
           <Sparkles className="w-4 h-4 text-emerald-500" />
-          <span>SLA Health 100% Verified</span>
+          <span>{safeTickets.length === 0 ? 'SLA Active • No Incidents Ingested' : 'SLA Health 100% Verified'}</span>
         </div>
       </div>
     );

@@ -61,7 +61,9 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
         ? (newTriageCount > 0 ? 'Pending triage' : inDevCount > 0 ? 'In Dev triage' : 'Active triage') 
         : 'Queue clear',
       dotColor: safeOpen > 0 ? 'bg-teal-400' : 'bg-emerald-400',
-      parenthesisCount: safeOpen,
+      substateText: safeOpen > 0 
+        ? (inDevCount > 0 ? `(${inDevCount} in dev)` : newTriageCount > 0 ? `(${newTriageCount} new)` : null)
+        : null,
       icon: AlertCircle,
       iconBg: 'bg-purple-50 text-purple-600 border border-purple-100',
       activeBorder: 'ring-2 ring-purple-600 border-purple-300'
@@ -76,7 +78,9 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       dotColor: safeUnassigned > 0 
         ? (unassignedUrgent > 0 ? 'bg-amber-500' : 'bg-slate-400') 
         : 'bg-emerald-400',
-      parenthesisCount: safeUnassigned,
+      substateText: safeUnassigned > 0 
+        ? (unassignedUrgent > 0 ? `(${unassignedUrgent} urgent)` : null)
+        : null,
       icon: UserPlus,
       iconBg: 'bg-amber-50 text-amber-600 border border-amber-100',
       activeBorder: 'ring-2 ring-amber-500 border-amber-300'
@@ -87,7 +91,9 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       count: safeUrgent,
       sublabel: safeUrgent > 0 ? 'Critical alerts' : 'No critical alerts',
       dotColor: safeUrgent > 0 ? 'bg-rose-500' : 'bg-teal-400',
-      parenthesisCount: safeUrgent,
+      substateText: safeUrgent > 0 
+        ? (unassignedUrgent > 0 ? `(${unassignedUrgent} unassigned)` : null)
+        : null,
       icon: ShieldAlert,
       iconBg: 'bg-rose-50 text-rose-600 border border-rose-100',
       activeBorder: 'ring-2 ring-rose-500 border-rose-300'
@@ -98,7 +104,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       count: safeResolved,
       sublabel: safeResolved > 0 ? 'Verified & closed' : 'Awaiting resolutions',
       dotColor: safeResolved > 0 ? 'bg-emerald-500' : 'bg-slate-300',
-      parenthesisCount: safeResolved,
+      substateText: safeResolved > 0 ? '(closed)' : null,
       icon: CheckCircle2,
       iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
       activeBorder: 'ring-2 ring-emerald-500 border-emerald-300'
@@ -160,9 +166,11 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
                 </div>
               </div>
 
-              <span className="font-poppins text-xs text-slate-400 font-medium">
-                ({card.parenthesisCount})
-              </span>
+              {card.substateText && (
+                <span className="font-poppins text-xs text-slate-400 font-medium">
+                  {card.substateText}
+                </span>
+              )}
             </div>
           </div>
         );

@@ -217,6 +217,60 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [selectedProductForSnippet, setSelectedProductForSnippet] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<{
+    orgName?: string;
+    webhookUrl?: string;
+    notificationEmail?: string;
+  }>({});
+
+  // Unsaved changes dirty tracking against initial tenant snapshot
+  const isProfileDirty = useMemo(() => {
+    if (!tenant) return false;
+    if (orgName.trim() !== (tenant.name || '').trim()) return true;
+    if (plan !== (tenant.plan || 'ENTERPRISE')) return true;
+    if (webhookUrl.trim() !== (tenant.webhook_url || '').trim()) return true;
+    if (notificationEmail.trim() !== (tenant.notification_email || '').trim()) return true;
+    if (defaultSquad !== (tenant.default_squad || 'Core Engineering Squad')) return true;
+    if (autoCaptureTelemetry !== (tenant.auto_capture_telemetry ?? true)) return true;
+    if (autoCaptureNetwork !== (tenant.auto_capture_network ?? true)) return true;
+    if (requireEmail !== (tenant.require_email ?? false)) return true;
+    
+    const currentDomains = [...allowedDomains].sort().join(',');
+    const initialDomains = [...(tenant.allowed_domains || [])].sort().join(',');
+    if (currentDomains !== initialDomains) return true;
+
+    return false;
+  }, [tenant, orgName, plan, webhookUrl, notificationEmail, defaultSquad, autoCaptureTelemetry, autoCaptureNetwork, requireEmail, allowedDomains]);
+
+  const isFormDirty = isProfileDirty || hasUnsavedPerms;
+
+  const handleDiscardChanges = () => {
+    if (tenant) {
+      setOrgName(tenant.name || '');
+      setPlan(tenant.plan || 'ENTERPRISE');
+      setAllowedDomains(tenant.allowed_domains || []);
+      setWebhookUrl(tenant.webhook_url || '');
+      setNotificationEmail(tenant.notification_email || '');
+      setDefaultSquad(tenant.default_squad || 'Core Engineering Squad');
+      setAutoCaptureTelemetry(tenant.auto_capture_telemetry ?? true);
+      setAutoCaptureNetwork(tenant.auto_capture_network ?? true);
+      setRequireEmail(tenant.require_email ?? false);
+    }
+    setValidationErrors({});
+    setErrorMessage(null);
+    loadTenantSettings();
+  };
+
+  const handleSelectTab = (newTab: SettingsTab) => {
+    if (newTab === activeTab) return;
+    if (isFormDirty) {
+      if (!confirm('You have unsaved changes. Are you sure you want to switch tabs and discard unsaved modifications?')) {
+        return;
+      }
+      handleDiscardChanges();
+    }
+    setActiveTab(newTab);
+  };
 
   // Dynamic Granular Permissions derived from active tenant matrix and role
   // Strict Security Rule: Only Admin (super_admin, tenant_admin) and Lead Manager (squad_lead) can make changes in settings.
@@ -268,21 +322,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (data.tenant) {
           const t: Tenant = data.tenant;
           setTenant(t);
           setOrgName(t.name || '');
           setPlan(t.plan || 'ENTERPRISE');
-          setAllowedDomains(t.allowed_domains || []);
+          setAllowedDomains(Array.isArray(t.allowed_domains) ? t.allowed_domains : []);
           setWebhookUrl(t.webhook_url || '');
           setNotificationEmail(t.notification_email || '');
-          setDefaultSquad(t.default_squad || 'Core Platform & API Squad');
+          setDefaultSquad(t.default_squad || 'Core Engineering Squad');
           setAutoCaptureTelemetry(t.auto_capture_telemetry ?? true);
           setAutoCaptureNetwork(t.auto_capture_network ?? true);
           setRequireEmail(t.require_email ?? false);
         }
-        if (data.products) {
+        if (data.products && Array.isArray(data.products)) {
           setProducts(data.products);
           if (data.products.length > 0 && !selectedProductForSnippet) {
             setSelectedProductForSnippet(data.products[0].id);
@@ -292,8 +346,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           setPermissionsMatrix(data.permissions_matrix);
         }
       } else {
-        const err = await res.json();
-        setErrorMessage(err.error || 'Failed to load tenant configuration');
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage(err.error || err.message || 'Failed to load tenant configuration');
       }
 
       // Also fetch full permission definitions
@@ -307,7 +361,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
       });
       if (permRes.ok) {
-        const permData = await permRes.json();
+        const permData = await permRes.json().catch(() => ({}));
         if (permData.definitions) setPermissionDefinitions(permData.definitions);
         if (permData.matrix) setPermissionsMatrix(permData.matrix);
         setHasUnsavedPerms(false);
@@ -334,19 +388,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       setTimeout(() => setErrorMessage(null), 4000);
       return;
     }
+
+    const newErrors: { orgName?: string; webhookUrl?: string; notificationEmail?: string } = {};
+
     if (!orgName.trim()) {
+      newErrors.orgName = 'Organization name cannot be empty.';
       setErrorMessage('Organization name cannot be empty.');
+      setValidationErrors(newErrors);
       return;
     }
 
+    if (webhookUrl.trim()) {
+      try {
+        const parsed = new URL(webhookUrl.trim());
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          throw new Error();
+        }
+      } catch {
+        newErrors.webhookUrl = 'Webhook URL protocol must be http:// or https://';
+        setErrorMessage('Invalid Webhook URL format. URL must start with http:// or https://');
+        setValidationErrors(newErrors);
+        return;
+      }
+    }
+
+    if (notificationEmail.trim()) {
+      const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!EMAIL_REGEX.test(notificationEmail.trim())) {
+        newErrors.notificationEmail = 'Invalid Escalation Email format.';
+        setErrorMessage('Invalid Escalation Email format. Must be a valid email address (e.g. alerts@company.com).');
+        setValidationErrors(newErrors);
+        return;
+      }
+    }
+
+    setValidationErrors({});
     setIsSaving(true);
     setSaveSuccessMessage(null);
     setErrorMessage(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
       if (canSaveAnyTenantSettings) {
         const res = await authFetch('/api/v1/tenants/current', {
           method: 'PUT',
+          signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
             'x-tenant-id': currentTenantId,
@@ -366,10 +454,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         });
 
         if (res.ok) {
-          const data = await res.json();
-          setTenant(data.tenant);
+          const data = await res.json().catch(() => ({}));
+          if (data.tenant) setTenant(data.tenant);
         } else {
-          const err = await res.json();
+          const err = await res.json().catch(() => ({}));
           throw new Error(err.message || err.error || 'Server error saving settings');
         }
       }
@@ -384,8 +472,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       if (onTenantUpdated) onTenantUpdated();
     } catch (err: any) {
-      setErrorMessage('Failed to save settings: ' + err.message);
+      const isAbort = err.name === 'AbortError';
+      setErrorMessage(
+        isAbort 
+          ? 'Failed to save settings: Request timed out. Your changes are preserved locally.' 
+          : 'Failed to save settings: ' + (err.message || 'Network connection error. Your changes are preserved locally.')
+      );
     } finally {
+      clearTimeout(timeoutId);
       setIsSaving(false);
     }
   };
@@ -393,8 +487,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // 3. Add Domain to Whitelist
   const handleAddDomain = (e: React.FormEvent) => {
     e.preventDefault();
-    const domainClean = newDomain.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0];
+    let raw = newDomain.trim().toLowerCase();
+    if (!raw) return;
+
+    const domainClean = raw.replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
     if (!domainClean) return;
+
+    if (domainClean.includes('*')) {
+      const isValidWildcard = domainClean === '*' || /^\*\.[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(domainClean);
+      if (!isValidWildcard) {
+        setErrorMessage('Invalid wildcard domain format. Use "*.example.com" or "*". Multiple asterisks (*.*) are not permitted.');
+        setTimeout(() => setErrorMessage(null), 4000);
+        return;
+      }
+    }
 
     if (allowedDomains.includes(domainClean)) {
       setErrorMessage('This domain is already in your whitelist.');
@@ -417,6 +523,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     e.preventDefault();
     if (!newProductName.trim()) return;
 
+    if (products.some(p => p.name.trim().toLowerCase() === newProductName.trim().toLowerCase())) {
+      setErrorMessage(`A product named '${newProductName.trim()}' already exists in this tenant.`);
+      setTimeout(() => setErrorMessage(null), 4000);
+      return;
+    }
+
     setIsSaving(true);
     setErrorMessage(null);
 
@@ -436,16 +548,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setProducts([...products, data.product]);
-        setNewProductName('');
-        setNewProductDesc('');
-        setIsAddingProduct(false);
-        setSaveSuccessMessage(`Product '${data.product.name}' registered with active ingestion key.`);
-        setTimeout(() => setSaveSuccessMessage(null), 5000);
+        const data = await res.json().catch(() => ({}));
+        if (data.product) {
+          setProducts([...products, data.product]);
+          setNewProductName('');
+          setNewProductDesc('');
+          setIsAddingProduct(false);
+          setSaveSuccessMessage(`Product '${data.product.name}' registered with active ingestion key.`);
+          setTimeout(() => setSaveSuccessMessage(null), 5000);
+        }
       } else {
-        const err = await res.json();
-        setErrorMessage('Failed to add product: ' + err.error);
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage('Failed to add product: ' + (err.error || err.message || 'Server error'));
       }
     } catch (err: any) {
       setErrorMessage('Network error: ' + err.message);
@@ -486,14 +600,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setProducts(products.map(p => p.id === productId ? data.product : p));
+        const data = await res.json().catch(() => ({}));
+        if (data.product) {
+          setProducts(products.map(p => p.id === productId ? data.product : p));
+        }
         setEditingProductId(null);
-        setSaveSuccessMessage(`Product '${data.product.name}' updated successfully.`);
+        setSaveSuccessMessage(`Product '${editProductName}' updated successfully.`);
         setTimeout(() => setSaveSuccessMessage(null), 4000);
       } else {
-        const err = await res.json();
-        setErrorMessage(err.error || 'Failed to update product');
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage(err.error || err.message || 'Failed to update product');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Network error updating product');
@@ -521,12 +637,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setProducts(products.map(p => p.id === productId ? data.product : p));
+        const data = await res.json().catch(() => ({}));
+        if (data.product) {
+          setProducts(products.map(p => p.id === productId ? data.product : p));
+        }
         setSaveSuccessMessage(`API Key rotated successfully for '${productName}'.`);
         setTimeout(() => setSaveSuccessMessage(null), 5000);
       } else {
-        setErrorMessage('Failed to rotate API key');
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage(err.error || err.message || 'Failed to rotate API key');
       }
     } catch (err: any) {
       setErrorMessage('Error: ' + err.message);
@@ -561,8 +680,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setSaveSuccessMessage(`Product '${productName}' removed successfully.`);
         setTimeout(() => setSaveSuccessMessage(null), 5000);
       } else {
-        const err = await res.json();
-        setErrorMessage(err.error || 'Failed to remove product');
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage(err.error || err.message || 'Failed to remove product');
       }
     } catch (err: any) {
       setErrorMessage('Error: ' + err.message);
@@ -584,7 +703,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
       const latency = Date.now() - startTime;
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setPingStatus({
           tested: true,
           loading: false,
@@ -593,11 +712,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           details: data
         });
       } else {
+        const err = await res.json().catch(() => ({}));
         setPingStatus({
           tested: true,
           loading: false,
           online: false,
-          error: `HTTP ${res.status}`
+          error: err.error || `HTTP ${res.status}`
         });
       }
     } catch (err: any) {
@@ -635,7 +755,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         const serverMatrix = data.matrix || updatedMatrix;
         setPermissionsMatrix(serverMatrix);
         onPermissionsUpdated?.(serverMatrix);
@@ -644,7 +764,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setTimeout(() => setPermsSuccessMessage(null), 4000);
         if (onTenantUpdated) onTenantUpdated();
       } else {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         setErrorMessage(err.message || err.error || 'Failed to update permissions');
       }
     } catch (err: any) {
@@ -685,7 +805,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (data.matrix) {
           setPermissionsMatrix(data.matrix);
           onPermissionsUpdated?.(data.matrix);
@@ -695,7 +815,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setTimeout(() => setPermsSuccessMessage(null), 5000);
         if (onTenantUpdated) onTenantUpdated();
       } else {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         setErrorMessage(err.message || err.error || 'Failed to reset permissions');
       }
     } catch (err: any) {
@@ -707,8 +827,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // 12. RBAC: Toggle Single Permission (Auto-persisted to Database)
   const handleTogglePermission = async (role: UserRole, key: PermissionKey) => {
-    // Protection against losing governance permission for admins & lead
-    if ((role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && key === 'permissions:edit') {
+    // Protection against losing governance permission for admins & lead (Self-lockout guard)
+    if ((role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && (key === 'permissions:edit' || key === 'tenant:edit_profile')) {
       return;
     }
 
@@ -893,10 +1013,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
 
   const activeSnippetProduct = products.find(p => p.id === selectedProductForSnippet) || products[0];
-  const snippetKey = activeSnippetProduct?.raw_api_key || activeSnippetProduct?.api_key_hash || 'fb_live_key';
-  const embedSnippet = `<script 
-  src="http://localhost:5001/v1/sdk.js" 
-  data-product-key="${snippetKey}"
+  const snippetKey = activeSnippetProduct?.raw_api_key || activeSnippetProduct?.api_key_hash;
+  const embedSnippet = products.length === 0
+    ? '<!-- No monitored products registered yet. Register a product to generate an embed script. -->'
+    : `<script 
+  src="${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5001'}/v1/sdk.js" 
+  data-product-key="${snippetKey || 'fb_live_key'}"
   async>
 </script>`;
 
@@ -974,7 +1096,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* Settings Navigation Tabs Strip */}
-      <div className="bg-white border border-slate-200 rounded-md card-subtle p-2 flex items-center flex-wrap gap-1.5 shadow-2xs font-mono text-xs">
+      <div className="bg-white border border-slate-200 rounded-md card-subtle p-2 flex items-center flex-wrap gap-1.5 shadow-2xs font-mono text-xs overflow-x-auto">
         {[
           { id: 'profile' as SettingsTab, label: 'Profile & Identity', icon: Building },
           { id: 'products' as SettingsTab, label: 'Monitored Products', icon: Key, badge: products.length },
@@ -989,7 +1111,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleSelectTab(tab.id)}
               className={`px-3.5 py-2 flex items-center space-x-2 font-medium text-xs transition-all cursor-pointer border rounded-md ${
                 isActive
                   ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-2xs'
@@ -1086,26 +1208,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <input
               type="text"
               value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
+              onChange={(e) => {
+                setOrgName(e.target.value);
+                if (validationErrors.orgName) setValidationErrors(prev => ({ ...prev, orgName: undefined }));
+              }}
               disabled={!canEditTenantProfile || isSaving}
               placeholder="Enter organization name"
-              className={`w-full border px-2.5 py-1.5 font-medium text-xs rounded-md focus:outline-none transition-colors ${
-                !canEditTenantProfile 
+              title={orgName || "Organization Name"}
+              className={`w-full border px-2.5 py-1.5 font-medium text-xs rounded-md focus:outline-none transition-colors truncate ${
+                validationErrors.orgName
+                  ? 'border-red-400 bg-red-50/40 text-red-900 focus:border-red-600'
+                  : !canEditTenantProfile 
                   ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
                   : 'bg-white border-slate-300 focus:border-indigo-600 text-slate-900'
               }`}
             />
+            {validationErrors.orgName && (
+              <p className="text-[11px] text-red-600 mt-1 font-sans font-normal">{validationErrors.orgName}</p>
+            )}
           </div>
 
           {/* Tenant ID (Immutable UUID boundary) */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1.5">
             <span className="text-slate-500 uppercase text-[10px] font-medium block">Tenant ID (UUID Boundary)</span>
             <div className="flex items-center justify-between">
-              <p className="text-indigo-700 truncate font-medium text-xs">{currentTenantId}</p>
+              <p className="text-indigo-700 truncate font-medium text-xs" title={currentTenantId}>{currentTenantId}</p>
               <button
                 type="button"
                 onClick={() => handleCopy(currentTenantId, 'tenantId')}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-md cursor-pointer transition-colors"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-md cursor-pointer transition-colors shrink-0"
                 title="Copy Tenant ID"
               >
                 {copiedKey === 'tenantId' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -1145,15 +1276,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <input
               type="url"
               value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
+              onChange={(e) => {
+                setWebhookUrl(e.target.value);
+                if (validationErrors.webhookUrl) setValidationErrors(prev => ({ ...prev, webhookUrl: undefined }));
+              }}
               disabled={!canEditTenantProfile || isSaving}
               placeholder="https://api.yourcompany.com/v1/webhooks/incidents"
-              className={`w-full border px-2.5 py-1.5 text-xs rounded-md focus:outline-none transition-colors ${
-                !canEditTenantProfile 
+              title={webhookUrl || "Incident Alert Webhook URL"}
+              className={`w-full border px-2.5 py-1.5 text-xs rounded-md focus:outline-none transition-colors truncate ${
+                validationErrors.webhookUrl
+                  ? 'border-red-400 bg-red-50/40 text-red-900 focus:border-red-600'
+                  : !canEditTenantProfile 
                   ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
                   : 'bg-white border-slate-300 focus:border-indigo-600 text-slate-800'
               }`}
             />
+            {validationErrors.webhookUrl && (
+              <p className="text-[11px] text-red-600 mt-1 font-sans font-normal">{validationErrors.webhookUrl}</p>
+            )}
           </div>
 
           {/* Security Alert Email */}
@@ -1165,15 +1305,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <input
               type="email"
               value={notificationEmail}
-              onChange={(e) => setNotificationEmail(e.target.value)}
+              onChange={(e) => {
+                setNotificationEmail(e.target.value);
+                if (validationErrors.notificationEmail) setValidationErrors(prev => ({ ...prev, notificationEmail: undefined }));
+              }}
               disabled={!canEditTenantProfile || isSaving}
               placeholder="alerts@yourcompany.com"
-              className={`w-full border px-2.5 py-1.5 text-xs rounded-md focus:outline-none transition-colors ${
-                !canEditTenantProfile 
+              title={notificationEmail || "Escalation Email"}
+              className={`w-full border px-2.5 py-1.5 text-xs rounded-md focus:outline-none transition-colors truncate ${
+                validationErrors.notificationEmail
+                  ? 'border-red-400 bg-red-50/40 text-red-900 focus:border-red-600'
+                  : !canEditTenantProfile 
                   ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' 
                   : 'bg-white border-slate-300 focus:border-indigo-600 text-slate-800'
               }`}
             />
+            {validationErrors.notificationEmail && (
+              <p className="text-[11px] text-red-600 mt-1 font-sans font-normal">{validationErrors.notificationEmail}</p>
+            )}
           </div>
 
         </div>
@@ -1303,9 +1452,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Product Cards List */}
         <div className="space-y-3">
           {products.length === 0 ? (
-            <p className="p-6 text-center text-xs font-mono text-slate-500 bg-slate-50 border border-slate-200 rounded-md">
-              No monitored products registered yet. Click '+ ADD PRODUCT' to generate your first client ingestion key.
-            </p>
+            <div className="p-6 text-center space-y-1.5 bg-slate-50 border border-slate-200 rounded-md">
+              <p className="text-xs font-mono font-medium text-slate-700">
+                No monitored products configured
+              </p>
+              <p className="text-[11px] font-mono text-slate-500">
+                Click '+ ADD PRODUCT' above to register your first product and generate an enterprise client ingestion key.
+              </p>
+            </div>
           ) : (
             products.map((prod) => {
               const currentKey = prod.raw_api_key || prod.api_key_hash;
@@ -2026,7 +2180,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                       {defs.map((def) => {
                         const isGranted = Boolean(permissionsMatrix?.[selectedRoleForPerms]?.[def.key]);
-                        const isGovernanceLock = (selectedRoleForPerms === 'super_admin' || selectedRoleForPerms === 'tenant_admin' || selectedRoleForPerms === 'squad_lead') && def.key === 'permissions:edit';
+                        const isGovernanceLock = (selectedRoleForPerms === 'super_admin' || selectedRoleForPerms === 'tenant_admin' || selectedRoleForPerms === 'squad_lead') && (def.key === 'permissions:edit' || def.key === 'tenant:edit_profile');
 
                         return (
                           <div
@@ -2041,7 +2195,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 ? 'bg-blue-50/20 border-blue-200'
                                 : 'bg-white border-slate-200 hover:border-slate-300'
                             } ${!isGovernanceLock && canEditPermissions ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
-                            title={isGovernanceLock ? "Admin and Lead governance permission cannot be revoked" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : isGranted ? "Click to revoke" : "Click to grant"}
+                            title={isGovernanceLock ? "Cannot revoke governance permissions for active administrative role" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : isGranted ? "Click to revoke" : "Click to grant"}
                           >
                             {/* Blue Checkbox */}
                             <div className="shrink-0 mt-0.5">
@@ -2148,7 +2302,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                           {ALL_SYSTEM_ROLES.map((role) => {
                             const isGranted = Boolean(permissionsMatrix?.[role]?.[def.key]);
-                            const isGovernanceLock = (role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && def.key === 'permissions:edit';
+                            const isGovernanceLock = (role === 'super_admin' || role === 'tenant_admin' || role === 'squad_lead') && (def.key === 'permissions:edit' || def.key === 'tenant:edit_profile');
 
                             return (
                               <td key={role} className="p-3 text-center align-middle">
@@ -2165,7 +2319,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                       ? 'bg-emerald-600 border-emerald-700 text-white shadow-2xs'
                                       : 'bg-slate-100 border-slate-200 text-slate-400 hover:border-slate-300'
                                   } ${!isGovernanceLock && canEditPermissions ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
-                                  title={isGovernanceLock ? "Admin and Lead governance permission cannot be revoked" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : `${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
+                                  title={isGovernanceLock ? "Cannot revoke governance permissions for active administrative role" : !canEditPermissions ? "Read-only: Your role cannot edit permissions" : `${isGranted ? 'Granted' : 'Denied'} for ${ROLE_METADATA[role].label}`}
                                 >
                                   {isGovernanceLock ? (
                                     <Lock className="w-3.5 h-3.5 text-white" />
@@ -2328,7 +2482,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
 
           <div className="flex items-center space-x-3 text-xs font-mono">
-            {products.length > 1 && (
+            {products.length === 0 ? (
+              <div className="flex items-center space-x-1.5">
+                <span className="text-slate-500 text-[11px]">Product:</span>
+                <span className="text-slate-400 italic bg-slate-50 border border-slate-200 px-2 py-1 rounded-[8px] text-xs">
+                  (No products available)
+                </span>
+              </div>
+            ) : products.length > 1 ? (
               <div className="flex items-center space-x-1.5">
                 <span className="text-slate-500 text-[11px]">Product:</span>
                 <CustomSelect
@@ -2341,7 +2502,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   buttonClassName="bg-white border border-slate-300 text-indigo-700 px-2 py-1 rounded-[8px]"
                 />
               </div>
-            )}
+            ) : null}
 
             {/* Test Ping Diagnostic Button */}
             <button
@@ -2369,12 +2530,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <button
               type="button"
+              disabled={products.length === 0}
               onClick={() => {
+                if (products.length === 0) return;
                 navigator.clipboard.writeText(embedSnippet);
                 setCopiedSnippet(true);
                 setTimeout(() => setCopiedSnippet(false), 2000);
               }}
-              className="absolute top-2.5 right-2.5 px-3 py-1.5 bg-[#152042] border border-[#23356D] hover:border-slate-500 text-slate-200 hover:text-white text-xs flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer font-medium rounded-md"
+              className="absolute top-2.5 right-2.5 px-3 py-1.5 bg-[#152042] border border-[#23356D] hover:border-slate-500 text-slate-200 hover:text-white text-xs flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer font-medium rounded-md disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedSnippet ? 'COPIED' : 'COPY SCRIPT'}</span>
@@ -2424,9 +2587,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex items-center space-x-3">
           <button
             type="button"
-            onClick={loadTenantSettings}
-            disabled={isSaving}
-            className="px-4 py-2 border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 bg-white flex items-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs rounded-md"
+            onClick={handleDiscardChanges}
+            disabled={isSaving || !isFormDirty}
+            className="px-4 py-2 border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 bg-white flex items-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs rounded-md"
+            title={!isFormDirty ? "No unsaved changes to discard" : "Discard unsaved changes and restore original settings"}
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Discard Changes</span>
@@ -2434,9 +2598,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={() => handleSaveChanges()}
-            disabled={isSaving || (!canSaveAnyTenantSettings && !hasUnsavedPerms)}
+            disabled={isSaving || !isFormDirty || (!canSaveAnyTenantSettings && !hasUnsavedPerms)}
             className="px-6 py-2.5 bg-[#0066FF] hover:bg-blue-600 text-white font-medium flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
-            title={!canSaveAnyTenantSettings && !hasUnsavedPerms ? "Settings modification restricted to Admin and Lead Manager" : undefined}
+            title={!canSaveAnyTenantSettings && !hasUnsavedPerms ? "Settings modification restricted to Admin and Lead Manager" : !isFormDirty ? "No unsaved changes to save" : undefined}
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'SAVING CHANGES...' : 'UPDATE & SAVE CHANGES'}</span>

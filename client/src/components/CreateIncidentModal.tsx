@@ -34,6 +34,16 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
   const [reporterEmail, setReporterEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Modal Scrollbar Trapping Prevention: Lock background body scroll while modal is mounted
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
   // Close dialog on Escape key press (Nested Dialog ESC Dismiss)
   useEffect(() => {
     if (!isOpen) return;

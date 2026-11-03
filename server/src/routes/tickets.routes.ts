@@ -597,6 +597,13 @@ ticketRouter.patch('/:id/assignee', requirePermission('tickets:assign'), async (
 
   if (ticket) {
     broadcastTicketEvent(tenantId, 'TICKET_UPDATED', { ticket, event });
+    broadcastTicketEvent(tenantId, 'TICKET_ASSIGNED', { 
+      tenantId, 
+      tenant_id: tenantId, 
+      ticket, 
+      event, 
+      message: assigneeName ? `Ticket ${ticket.short_code} assigned to ${assigneeName}.` : `Ticket ${ticket.short_code} unassigned.` 
+    });
   }
 
   res.json({

@@ -12,6 +12,7 @@ import { safeNumber } from './utils/edgeCaseHelpers';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { DashboardHeader, HeaderUser } from './components/DashboardHeader';
 import { SummaryCards } from './components/SummaryCards';
+import { FeedbackChannelsSection } from './components/FeedbackChannelsSection';
 import { TicketsTable, SortField, SortDirection } from './components/TicketsTable';
 import { TicketDetailModal } from './components/TicketDetailModal';
 import { CreateIncidentModal } from './components/CreateIncidentModal';
@@ -108,9 +109,11 @@ const Dashboard: React.FC = () => {
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState<boolean>(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState<boolean>(false);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Modal Scrollbar Trapping: Lock document.body and main scroll container overflow when any modal is open
-  const isAnyModalOpen = Boolean(selectedTicket || isCreateModalOpen || isSimulatorOpen || isLogoutModalOpen);
+  const isAnyModalOpen = Boolean(selectedTicket || isCreateModalOpen || isSimulatorOpen || isLogoutModalOpen || isClearConfirmOpen);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -160,6 +163,7 @@ const Dashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [activeCardFilter, setActiveCardFilter] = useState<'OPEN' | 'UNASSIGNED' | 'URGENT' | 'RESOLVED' | null>(null);
 
   // Sorting state
@@ -187,7 +191,7 @@ const Dashboard: React.FC = () => {
     localStorage.setItem('fb_current_view', currentView);
   }, [currentView]);
 
-  // 1. Fetch Dynamic Tickets from live Backend API with real latency measurement
+  // 1. Fetch Dynamic Tickets from live Backend API with real latency measurement and resilient retry
   const fetchTickets = useCallback(async () => {
     setIsLoading(true);
     const start = performance.now();
@@ -205,12 +209,23 @@ const Dashboard: React.FC = () => {
       const elapsed = Math.round(performance.now() - start);
       setApiLatencyMs(elapsed);
       if (res.ok) {
-        const data = await res.json();
-        setTickets(data.tickets || []);
+        const data = await res.json().catch(() => ({}));
+        setTickets(data?.tickets || []);
         setLastUpdated(new Date());
+        setAlertBanner(curr => (curr && curr.includes('Network connection interrupted') ? null : curr));
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.warn('API returned non-OK status on fetchTickets:', res.status, err);
       }
     } catch (err) {
       console.error('Failed to fetch dynamic tickets:', err);
+      setAlertBanner('Network connection interrupted. Retrying live sync...');
+      if (!retryTimeoutRef.current) {
+        retryTimeoutRef.current = setTimeout(() => {
+          retryTimeoutRef.current = null;
+          fetchTickets();
+        }, 4000);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -231,8 +246,8 @@ const Dashboard: React.FC = () => {
         headers
       });
       if (res.ok) {
-        const data = await res.json();
-        if (data.tenants) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.tenants) {
           setTenants(data.tenants);
         }
       }
@@ -252,10 +267,10 @@ const Dashboard: React.FC = () => {
         headers
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         
         // For non-super_admin users, populate the active tenant so tenant switcher and header have valid data
-        if (data.tenant && currentRole !== 'super_admin') {
+        if (data?.tenant && currentRole !== 'super_admin') {
           setTenants([data.tenant]);
         }
 
@@ -334,8 +349,8 @@ const Dashboard: React.FC = () => {
         headers
       });
       if (res.ok) {
-        const data = await res.json();
-        if (data.matrix) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.matrix) {
           setPermissionsMatrix(data.matrix);
         }
       }
@@ -487,22 +502,60 @@ const Dashboard: React.FC = () => {
       fetchTickets();
     });
 
-    socket.on('SETTINGS_UPDATED', () => {
+    socket.on('SETTINGS_UPDATED', (data?: { tenant_id?: string; tenantId?: string; message?: string }) => {
+      const incomingTenant = data?.tenant_id || data?.tenantId;
+      if (incomingTenant && incomingTenant !== currentTenantIdRef.current) {
+        return; // Defensively discard cross-tenant settings update
+      }
       fetchTenantMetadata();
       fetchAllTenants();
       fetchTickets();
     });
 
-    socket.on('PERMISSIONS_UPDATED', (data: { matrix?: RolePermissionsMatrix; message?: string }) => {
-      if (data.matrix) {
+    socket.on('PERMISSIONS_UPDATED', (data?: { tenant_id?: string; tenantId?: string; matrix?: RolePermissionsMatrix; message?: string }) => {
+      const incomingTenant = data?.tenant_id || data?.tenantId;
+      if (incomingTenant && incomingTenant !== currentTenantIdRef.current) {
+        return; // Defensively discard cross-tenant permissions update
+      }
+      if (data?.matrix) {
         setPermissionsMatrix(data.matrix);
       }
-      if (data.message) {
+      if (data?.message) {
         setAlertBanner(data.message);
         setTimeout(() => setAlertBanner(null), 5000);
       }
       fetchTickets();
       fetchTenantMetadata();
+    });
+
+    socket.on('STAFF_UPDATED', (data: { tenant_id?: string; tenantId?: string; staff?: any; message?: string }) => {
+      const incomingTenant = data?.tenant_id || data?.tenantId;
+      if (incomingTenant && incomingTenant !== currentTenantIdRef.current) {
+        return; // Defensively discard cross-tenant staff broadcast packet
+      }
+      fetchTenantMetadata();
+      fetchAllTenants();
+      fetchTickets();
+      if (data?.message) {
+        setAlertBanner(data.message);
+        setTimeout(() => setAlertBanner(null), 5000);
+      }
+    });
+
+    socket.on('TICKET_ASSIGNED', (data: { tenant_id?: string; tenantId?: string; ticket?: Ticket; message?: string }) => {
+      const incomingTenant = data?.tenant_id || data?.tenantId || data?.ticket?.tenant_id;
+      if (incomingTenant && incomingTenant !== currentTenantIdRef.current) {
+        return; // Defensively discard cross-tenant assignment packet
+      }
+      if (data?.ticket) {
+        handleIncomingUpdatedTicket(data.ticket);
+      } else {
+        fetchTickets();
+      }
+      if (data?.message) {
+        setAlertBanner(data.message);
+        setTimeout(() => setAlertBanner(null), 5000);
+      }
     });
 
     return () => {
@@ -577,7 +630,7 @@ const Dashboard: React.FC = () => {
     setActiveCardFilter(type);
     switch (type) {
       case 'OPEN':
-        setStatusFilter('Open');
+        setStatusFilter('NON_RESOLVED');
         setAssigneeFilter('ALL');
         setPriorityFilter('ALL');
         break;
@@ -625,6 +678,7 @@ const Dashboard: React.FC = () => {
     setStatusFilter('ALL');
     setAssigneeFilter('ALL');
     setPriorityFilter('ALL');
+    setCategoryFilter('ALL');
     setActiveCardFilter(null);
   }, []);
 
@@ -884,20 +938,20 @@ const Dashboard: React.FC = () => {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        if (data.ticket) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.ticket) {
           setTickets(prev => [data.ticket, ...prev]);
           setAlertBanner(`Incident ${data.ticket.short_code} logged dynamically.`);
           setTimeout(() => setAlertBanner(null), 5000);
         }
       } else {
-        const err = await res.json();
-        setAlertBanner(err.message || err.error || 'Failed to create incident');
+        const err = await res.json().catch(() => ({}));
+        setAlertBanner(err?.message || err?.error || 'Failed to create incident');
         setTimeout(() => setAlertBanner(null), 5000);
       }
     } catch (err: any) {
       console.error('Failed to create ticket:', err);
-      setAlertBanner(err.message || 'Network error creating ticket');
+      setAlertBanner(err?.message || 'Network error creating ticket');
       setTimeout(() => setAlertBanner(null), 5000);
     }
   };
@@ -926,11 +980,8 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Clear all tickets for clean workspace state
-  const handleClearTickets = async () => {
-    if (!window.confirm('Clear all incidents for this tenant? (Resets workspace to 0 tickets)')) {
-      return;
-    }
+  // Clear all tickets for clean workspace state (dispatches confirmed deletion)
+  const executeClearTickets = async () => {
     setIsLoading(true);
     try {
       const headers: Record<string, string> = {
@@ -962,6 +1013,10 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleClearTickets = () => {
+    setIsClearConfirmOpen(true);
   };
 
   // Handle confirmed logout
@@ -1010,7 +1065,6 @@ const Dashboard: React.FC = () => {
           permissionsMatrix={permissionsMatrix}
           onNewIncidentClick={() => setIsSimulatorOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
-          onSeedDemo={handleSeedDemo}
           onClearTickets={handleClearTickets}
           onSelectTicket={(ticket) => setSelectedTicket(ticket)}
           onSelectView={(view) => setCurrentView(view)}
@@ -1058,7 +1112,7 @@ const Dashboard: React.FC = () => {
                     <span className={`w-1.5 h-1.5 rounded-full inline-block ${
                       isConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
                     }`} />
-                    <span className="font-poppins">{isConnected ? 'Live WebSockets Connected' : 'Syncing Live Engine'}</span>
+                    <span className="font-poppins">{isConnected ? 'Live WebSockets Connected' : 'Offline (Polling Mode Active)'}</span>
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-poppins">
@@ -1070,9 +1124,10 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                 <button
                   type="button"
+                  disabled={isLoading}
                   onClick={() => setIsSimulatorOpen(true)}
                   title="Test live client SDK crash / error telemetry"
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-300 text-blue-700 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-300 text-blue-700 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Cpu className="w-3.5 h-3.5 text-blue-600" />
                   <span>Simulate Ingest</span>
@@ -1081,9 +1136,10 @@ const Dashboard: React.FC = () => {
                 {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
                   <button
                     type="button"
+                    disabled={isLoading}
                     onClick={handleSeedDemo}
                     title="Seed 3 dynamic test incidents"
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-amber-300 text-slate-700 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-amber-300 text-slate-700 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     <span>Quick Seed</span>
@@ -1093,9 +1149,10 @@ const Dashboard: React.FC = () => {
                 {tickets.length > 0 && hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete') && (
                   <button
                     type="button"
+                    disabled={isLoading}
                     onClick={handleClearTickets}
                     title="Clear all tickets in this workspace"
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Clear</span>
@@ -1104,9 +1161,10 @@ const Dashboard: React.FC = () => {
 
                 <button
                   type="button"
+                  disabled={isLoading}
                   onClick={fetchTickets}
                   title="Refresh live tickets from API"
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-blue-700 rounded-[8px] text-xs font-medium shadow-2xs hover:border-blue-200 transition-colors cursor-pointer font-poppins"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-blue-700 rounded-[8px] text-xs font-medium shadow-2xs hover:border-blue-200 transition-colors cursor-pointer font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -1132,6 +1190,15 @@ const Dashboard: React.FC = () => {
               onCardClick={handleCardClick}
             />
 
+            {/* 3.5 Feedback Channels & Triage Streams (Bugs, Ideas, Help, Ratings) */}
+            <FeedbackChannelsSection
+              tickets={tickets}
+              activeCategoryFilter={categoryFilter}
+              onSelectCategory={(cat) => {
+                setCategoryFilter(prev => prev === cat ? 'ALL' : cat);
+              }}
+            />
+
             {/* 4. Telemetry Observability & Triage Velocity Graphs */}
             <ObservabilityGraphs
               tickets={tickets}
@@ -1141,8 +1208,7 @@ const Dashboard: React.FC = () => {
               onSimulateTelemetry={() => setIsSimulatorOpen(true)}
               apiLatencyMs={apiLatencyMs}
               onSelectCategory={(cat) => {
-                setSearchQuery(cat);
-                setActiveCardFilter(null);
+                setCategoryFilter(prev => prev === cat ? 'ALL' : cat);
               }}
             />
 
@@ -1155,6 +1221,8 @@ const Dashboard: React.FC = () => {
                 teamMembers={teamMembers}
                 currentRole={currentRole}
                 permissionsMatrix={permissionsMatrix}
+                categoryFilter={categoryFilter}
+                onCategoryFilterChange={setCategoryFilter}
                 searchQuery={searchQuery}
                 onSearchChange={(q) => {
                   setSearchQuery(q);
@@ -1221,14 +1289,14 @@ const Dashboard: React.FC = () => {
                       className="px-4 py-2 bg-[#0b1b36] hover:bg-[#12284c] text-white text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>New Incident</span>
+                      <span className="hidden sm:inline">New Incident</span>
                     </button>
                     <button
                       onClick={() => setIsSimulatorOpen(true)}
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Simulate Ingest</span>
+                      <span className="hidden sm:inline">Simulate Ingest</span>
                     </button>
                   </>
                 )}
@@ -1238,13 +1306,14 @@ const Dashboard: React.FC = () => {
                   className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs rounded-[8px] font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
+                  <span className="hidden sm:inline">Refresh</span>
                 </button>
               </div>
             </div>
 
             {/* Main Ticket Queue */}
             <TicketList
+              key={currentTenantId}
               tickets={tickets}
               teamMembers={teamMembers}
               onSelectTicket={setSelectedTicket}
@@ -1285,13 +1354,14 @@ const Dashboard: React.FC = () => {
                   className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs rounded-[8px] font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
+                  <span className="hidden sm:inline">Refresh</span>
                 </button>
               </div>
             </div>
 
             {/* Main Ticket Queue for Resolved */}
             <TicketList
+              key={`resolved-${currentTenantId}`}
               tickets={resolvedTickets}
               teamMembers={teamMembers}
               onSelectTicket={setSelectedTicket}
@@ -1309,6 +1379,7 @@ const Dashboard: React.FC = () => {
         {/* VIEW 4: STAFF MEMBERS & ACTIVE LOAD MODULE */}
         {currentView === 'staff-members' && (
           <StaffWorkloadView
+            key={currentTenantId}
             currentTenantId={currentTenantId}
             currentRole={currentRole}
             teamMembers={teamMembers}
@@ -1336,6 +1407,7 @@ const Dashboard: React.FC = () => {
         {currentView === 'settings' && (
           <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
             <SettingsView 
+              key={currentTenantId}
               currentTenantId={currentTenantId}
               currentRole={currentRole}
               permissionsMatrix={permissionsMatrix}
@@ -1411,6 +1483,46 @@ const Dashboard: React.FC = () => {
         user={currentUser}
         tenantName={tenants.find(t => t.id === currentTenantId)?.name}
       />
+
+      {/* Localized Destructive Clear Workspace Confirmation Dialog */}
+      {isClearConfirmOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-[12px] p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 font-poppins">
+            <div className="flex items-center space-x-3 text-rose-600">
+              <div className="w-10 h-10 rounded-[8px] bg-rose-50 border border-rose-200 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Clear Workspace Incidents</h3>
+                <p className="text-xs text-slate-500">Destructive workspace action</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to permanently clear all <strong>{tickets.length}</strong> incident(s) for <strong>{tenants.find(t => t.id === currentTenantId)?.name || 'this workspace'}</strong>? This resets the tenant telemetry queue to zero and cannot be undone.
+            </p>
+            <div className="flex items-center justify-end space-x-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsClearConfirmOpen(false)}
+                className="px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-[8px] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={async () => {
+                  setIsClearConfirmOpen(false);
+                  await executeClearTickets();
+                }}
+                className="px-4 py-2 text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-[8px] transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isLoading ? 'Clearing...' : 'Confirm Clear'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

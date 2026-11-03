@@ -155,6 +155,45 @@ export function safeTimeDiff(dateString?: string | null, referenceNow = getSynce
   return Math.max(0, referenceNow - timestamp);
 }
 
+/**
+ * Safely computes resolution duration in milliseconds.
+ * Protects against null, undefined, invalid dates, and client/server clock skew.
+ */
+export function getSafeResolutionDuration(ticket: {
+  created_at?: string | null;
+  resolved_at?: string | null;
+  closed_at?: string | null;
+  updated_at?: string | null;
+}): number | null {
+  const endTimestamp = ticket.resolved_at || ticket.closed_at || ticket.updated_at;
+  if (!endTimestamp) return null;
+  const startMs = parseSafeDate(ticket.created_at, 0);
+  const endMs = parseSafeDate(endTimestamp, 0);
+  if (startMs === 0 || endMs === 0) return null;
+  return Math.max(0, endMs - startMs);
+}
+
+/**
+ * Safely formats resolution duration into human-readable text.
+ * Falls back to "Resolution time unavailable" if timestamps are missing or invalid.
+ */
+export function formatResolutionDuration(durationMs: number | null): string {
+  if (durationMs === null || !Number.isFinite(durationMs)) {
+    return 'Resolution time unavailable';
+  }
+  const totalMins = Math.floor(durationMs / 60000);
+  if (totalMins < 1) return '< 1m to resolve';
+  if (totalMins < 60) return `${totalMins}m to resolve`;
+  const hours = Math.floor(totalMins / 60);
+  const remainingMins = totalMins % 60;
+  if (hours < 24) {
+    return remainingMins > 0 ? `${hours}h ${remainingMins}m to resolve` : `${hours}h to resolve`;
+  }
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return remainingHours > 0 ? `${days}d ${remainingHours}h to resolve` : `${days}d to resolve`;
+}
+
 export interface ProcessedLogs {
   rawText: string;
   truncatedText: string;

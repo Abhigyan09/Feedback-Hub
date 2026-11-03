@@ -191,10 +191,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   const numericSla = totalTickets > 0
     ? Math.max(0, Math.min(100, Math.round(((totalTickets - breachedCount) / totalTickets) * 10000) / 100))
-    : 100;
-  const slaScore = numericSla.toFixed(2);
-  const slaStatusLabel = numericSla >= 99 ? 'HEALTHY' : numericSla >= 90 ? 'WARNING' : 'BREACHED';
-  const slaStatusColor = numericSla >= 99 ? 'text-emerald-600' : numericSla >= 90 ? 'text-amber-600' : 'text-red-600 font-medium';
+    : null;
+  const slaScore = numericSla !== null ? numericSla.toFixed(2) : null;
+  const slaStatusLabel = numericSla !== null 
+    ? (numericSla >= 99 ? 'HEALTHY' : numericSla >= 90 ? 'WARNING' : 'BREACHED')
+    : 'NO INCIDENTS';
+  const slaStatusColor = numericSla !== null 
+    ? (numericSla >= 99 ? 'text-emerald-600' : numericSla >= 90 ? 'text-amber-600' : 'text-red-600 font-medium')
+    : 'text-slate-500 font-medium';
   // Dynamic RBAC Permission Checks
   const canCreateTicket = hasRolePermission(permissionsMatrix, currentRole, 'tickets:create');
 
@@ -304,9 +308,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
             {/* Dynamic SLA / Health Pill */}
             <div className="hidden xl:flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-[6px] text-xs text-slate-600 shadow-2xs whitespace-nowrap shrink-0">
-              <Sun className={`w-3.5 h-3.5 shrink-0 ${numericSla >= 99 ? 'text-amber-500' : numericSla >= 90 ? 'text-amber-600' : 'text-red-500'}`} />
-              <span className="font-medium text-slate-800 text-xs font-poppins whitespace-nowrap">{slaScore}% SLA</span>
-              <span className={`text-[10px] font-medium whitespace-nowrap hidden 2xl:inline ${slaStatusColor}`}>{slaStatusLabel}</span>
+              <Sun className={`w-3.5 h-3.5 shrink-0 ${numericSla === null ? 'text-amber-500' : numericSla >= 99 ? 'text-amber-500' : numericSla >= 90 ? 'text-amber-600' : 'text-red-500'}`} />
+              {numericSla !== null ? (
+                <>
+                  <span className="font-medium text-slate-800 text-xs font-poppins whitespace-nowrap">{slaScore}% SLA</span>
+                  <span className={`text-[10px] font-medium whitespace-nowrap hidden 2xl:inline ${slaStatusColor}`}>{slaStatusLabel}</span>
+                </>
+              ) : (
+                <span className="font-medium text-slate-700 text-xs font-poppins whitespace-nowrap">SLA Active • No Incidents Ingested</span>
+              )}
             </div>
 
             {/* Live Time Pill */}

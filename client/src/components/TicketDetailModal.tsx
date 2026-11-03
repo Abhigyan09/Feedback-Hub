@@ -60,11 +60,18 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   const { authFetch } = useAuth();
   const safeTeam = safeArray(teamMembers);
   const activeRoster = React.useMemo(() => {
-    return [
+    const list = [
       { id: '', name: 'Unassigned' },
       ...safeTeam.map(m => ({ id: m.id, name: m.role ? `${m.name} (${m.role})` : m.name }))
     ];
-  }, [safeTeam]);
+    if (ticket?.assigned_to && !safeTeam.some(m => m.id === ticket.assigned_to)) {
+      list.push({
+        id: ticket.assigned_to,
+        name: ticket.assigned_to_name ? `${ticket.assigned_to_name} (Former Staff)` : 'Former Staff'
+      });
+    }
+    return list;
+  }, [safeTeam, ticket?.assigned_to, ticket?.assigned_to_name]);
   const processedLogs = useMemo(
     () => processLogTraces(ticket?.telemetry?.console_logs),
     [ticket?.telemetry?.console_logs]
@@ -90,6 +97,15 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   // Delete Confirmation State
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Modal Scrollbar Trapping Prevention: Lock background body scroll while modal is mounted
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   // Close modal on Escape key press (nested CustomSelect dropdowns stopPropagation so only dropdown closes first)
   useEffect(() => {
@@ -249,7 +265,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               )}
               <span className="px-2 py-0.5 border border-indigo-200/80 bg-indigo-50/60 text-indigo-700 flex items-center gap-1 rounded-[6px] font-medium">
                 <User className="w-3 h-3 text-indigo-500" />
-                <span>{ticket.assigned_to_name ? ticket.assigned_to_name.split(' (')[0] : 'Unassigned'}</span>
+                <span>{ticket.assigned_to_name ? ticket.assigned_to_name.split(' (')[0] : (ticket.assigned_to ? 'Former Staff' : 'Unassigned')}</span>
               </span>
               <span className={`px-2 py-0.5 border font-medium rounded-[6px] ${
                 ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'
@@ -317,7 +333,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
           <div className="bg-red-50 border-b border-red-200 p-3 px-5 flex items-center justify-between text-xs text-red-800">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-              <span>Permanently delete ticket <strong>{ticket.short_code}</strong>? This cannot be undone.</span>
+              <span>Permanently delete ticket <strong>{ticket.short_code || (ticket.id ? `FH-${ticket.id.slice(0, 4).toUpperCase()}` : 'INC')}</strong>? This cannot be undone.</span>
             </div>
             <div className="flex items-center gap-2">
               <button
