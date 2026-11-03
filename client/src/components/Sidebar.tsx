@@ -89,14 +89,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="h-16 border-b border-[#152042] px-4 flex items-center justify-between">
           <div className="flex items-center space-x-3 overflow-hidden">
             {/* Logo Box */}
-            <div className="w-8 h-8 rounded-[8px] bg-[#6366F1] flex items-center justify-center font-mono font-medium text-white text-xs shrink-0 shadow-sm">
+            <div className="w-8 h-8 rounded-md bg-[#6366F1] flex items-center justify-center font-mono font-bold text-white text-xs shrink-0 shadow-sm">
               FH
             </div>
 
             {!isCollapsed && (
               <div className="leading-tight truncate animate-in fade-in duration-200">
-                <span className="font-medium text-white text-sm tracking-wide font-poppins">FEEDBACK-HUB</span>
-                <p className="text-[10px] font-mono text-indigo-400 tracking-wider uppercase font-medium">
+                <span className="font-bold text-white text-sm tracking-wide">FEEDBACK-HUB</span>
+                <p className="text-[10px] font-mono text-indigo-400 tracking-wider uppercase font-semibold">
                   ENTERPRISE BRIDGE
                 </p>
               </div>
@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onToggleCollapse}
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="w-7 h-7 rounded-[8px] bg-[#152042] hover:bg-[#1E2D5A] text-slate-400 hover:text-white border border-[#23356D] flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-sm bg-[#152042] hover:bg-[#1E2D5A] text-slate-400 hover:text-white border border-[#23356D] flex items-center justify-center transition-colors cursor-pointer"
           >
             {isCollapsed ? (
               <ChevronRight className="w-4 h-4" />
@@ -127,25 +127,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectView(item.id)}
-className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-medium rounded-[8px] transition-all group cursor-pointer font-poppins ${
-                  isActive
-                    ? 'bg-[#0066FF] text-white shadow-sm shadow-blue-600/25 font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-[#152042]'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-md transition-all group cursor-pointer ${isActive
+                    ? 'bg-[#0066FF] text-white shadow-md shadow-blue-600/30 font-semibold'
                     : 'text-slate-400 hover:text-white hover:bg-[#152042]'
                   }`}
               >
                 <div className="flex items-center space-x-3 min-w-0">
                   {/* Item index */}
                   <span
-<<<<<<< HEAD
                     className={`font-mono text-[11px] ${isActive ? 'text-blue-100 font-bold' : 'text-slate-500 group-hover:text-slate-400'
                       }`}
-=======
-                    className={`font-mono text-[11px] ${
-                      isActive ? 'text-blue-100 font-medium' : 'text-slate-500 group-hover:text-slate-400'
-                    }`}
->>>>>>> origin/main
                   >
                     {item.index}
                   </span>
@@ -162,11 +153,8 @@ className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-
                 {/* Badge count if present */}
                 {!isCollapsed && item.badge !== null && (
                   <span
-className={`px-2 py-0.5 text-[10px] font-mono font-semibold rounded-[6px] ${
-                      isActive 
-                        ? 'bg-blue-700/90 text-white' 
-                        : 'bg-[#152042] text-slate-300 border border-[#23356D]'
-                    }`}
+                    className={`px-2 py-0.5 text-[10px] font-mono font-semibold rounded-sm ${isActive
+                        ? 'bg-blue-700/90 text-white'
                         : 'bg-[#152042] text-slate-300 border border-[#23356D]'
                       }`}
                   >
@@ -183,7 +171,7 @@ className={`px-2 py-0.5 text-[10px] font-mono font-semibold rounded-[6px] ${
       <div className="p-3 border-t border-[#152042]">
         {!isCollapsed && (
           <div className="px-3 pb-2">
-            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-medium">
+            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-semibold">
               SYSTEM
             </span>
           </div>
@@ -192,14 +180,8 @@ className={`px-2 py-0.5 text-[10px] font-mono font-semibold rounded-[6px] ${
         {/* Logout Button */}
         <button
           onClick={onLogout}
-<<<<<<< HEAD
           className={`w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 rounded-md transition-all cursor-pointer ${isCollapsed ? 'justify-center' : ''
             }`}
-=======
-          className={`w-full flex items-center space-x-3 px-3.5 py-2.5 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 rounded-[8px] transition-all cursor-pointer font-poppins ${
-            isCollapsed ? 'justify-center' : ''
-          }`}
->>>>>>> origin/main
           title="Logout"
         >
           <LogOut className="w-4 h-4 shrink-0 text-rose-400" />

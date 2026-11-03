@@ -926,7 +926,7 @@ const Dashboard: React.FC = () => {
               </section>
 
             </main>
-          )
+          )}
 
           {/* VIEW 2: TOTAL TICKETS */}
           {currentView === 'total-tickets' && (
@@ -1022,22 +1022,7 @@ const Dashboard: React.FC = () => {
                     <span>Refresh</span>
                   </button>
                 </div>
-              </div>
 
-              {/* Main Ticket Queue for Resolved */}
-              <TicketList
-                tickets={resolvedTickets}
-                onSelectTicket={setSelectedTicket}
-                currentRole={currentRole}
-                isLoading={isLoading}
-                onOpenWidgetSimulator={() => setIsSimulatorOpen(true)}
-                onUpdateStatus={handleUpdateStatus}
-                onDeleteTicket={handleDeleteTicket}
-                isResolvedOnly={true}
-                permissionsMatrix={permissionsMatrix}
-              />
-            </main>
-          )}
               </div>
 
               {/* Main Ticket Queue for Resolved */}

@@ -540,19 +540,6 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               </p>
             </div>
             <div className="flex items-center justify-center space-x-2.5 pt-2 flex-wrap gap-y-2">
-<<<<<<< HEAD
-=======
-              {onSeedDemo && (
-                <button
-                  type="button"
-                  onClick={onSeedDemo}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-[8px] shadow-xs transition-colors"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Quick Seed Demo Incidents</span>
-                </button>
-              )}
->>>>>>> origin/main
               {onOpenSimulatorModal && (
                 <button
                   type="button"
