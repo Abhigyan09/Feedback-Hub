@@ -292,7 +292,7 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
     'tickets:view': true,
     'tickets:create': true,
     'tickets:edit': true,
-    'tickets:delete': false,
+    'tickets:delete': true,
     'tickets:change_status': true,
     'tickets:assign': true,
     'tickets:view_telemetry_internal': true,

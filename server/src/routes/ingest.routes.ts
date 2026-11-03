@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { tenantStore } from '../config/db.js';
+import { tenantStore, isPostgresConnected, pool, toTenantUuid } from '../config/db.js';
 import { broadcastTicketEvent } from '../services/socket.js';
 import { encryptSensitiveData } from '../services/crypto.js';
 import { Ticket, TicketEvent } from '../types/index.js';
@@ -7,7 +7,7 @@ import { Ticket, TicketEvent } from '../types/index.js';
 export const ingestRouter = Router();
 
 // PUBLIC ENDPOINT FOR EMBEDDED WIDGET / SDK
-ingestRouter.post('/ticket', (req: Request, res: Response) => {
+ingestRouter.post('/ticket', async (req: Request, res: Response) => {
   const productKey = (req.headers['x-product-key'] as string) || (req.body.product_key as string);
   const { 
     title, 
@@ -87,9 +87,77 @@ ingestRouter.post('/ticket', (req: Request, res: Response) => {
     encryptedData = encryptSensitiveData(typeof sensitive_data === 'string' ? sensitive_data : JSON.stringify(sensitive_data));
   }
 
-  // 6. Build New Ticket Model
+  let ticketId = `ticket-${Date.now()}`;
+
+  // 6. Persist to Supabase if connected
+  if (isPostgresConnected) {
+    try {
+      const targetTenantUuid = toTenantUuid(tenant.id);
+      const prodRes = await pool.query(
+        `SELECT id FROM products WHERE (raw_api_key = $1 OR api_key_hash = $1 OR id::text = $2) AND tenant_id = $3 LIMIT 1`,
+        [productKey, product.id, targetTenantUuid]
+      );
+      const dbProductId = prodRes.rows[0]?.id || product.id;
+
+      const ticketInsert = await pool.query(
+        `INSERT INTO tickets (tenant_id, product_id, short_code, title, description, category, severity, status, reporter_email, assigned_squad, domain_origin, rating, sla_due_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+         RETURNING id, short_code, created_at`,
+        [
+          targetTenantUuid,
+          dbProductId,
+          shortCode,
+          title || `${normalizedCategory}: Client Feedback from ${domainOrigin}`,
+          description || 'No additional details provided.',
+          normalizedCategory,
+          normalizedSeverity,
+          'OPEN',
+          reporter_email || 'client-user@enterprise.com',
+          assignedSquad,
+          domainOrigin,
+          rating ? Number(rating) : null,
+          new Date(Date.now() + slaMinutes * 60000).toISOString()
+        ]
+      );
+      if (ticketInsert.rows.length > 0) {
+        ticketId = ticketInsert.rows[0].id;
+      }
+
+      if (telemetry) {
+        await pool.query(
+          `INSERT INTO ticket_telemetry (ticket_id, tenant_id, page_url, app_version, user_agent, viewport_dimensions, console_logs, network_errors, encrypted_sensitive_data)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            ticketId,
+            targetTenantUuid,
+            telemetry.page_url || null,
+            telemetry.app_version || null,
+            telemetry.user_agent || null,
+            telemetry.viewport_dimensions || null,
+            JSON.stringify(telemetry.console_logs || []),
+            JSON.stringify(telemetry.network_errors || []),
+            encryptedData || null
+          ]
+        );
+      }
+
+      await pool.query(
+        `INSERT INTO ticket_events (ticket_id, tenant_id, event_type, content, is_internal_only, created_at)
+         VALUES ($1, $2, 'STATUS_CHANGE', $3, false, NOW())`,
+        [
+          ticketId,
+          targetTenantUuid,
+          `Ticket automatically ingested for product '${product.name}' from domain '${domainOrigin}'. Routed to squad [${assignedSquad}].`
+        ]
+      );
+    } catch (err) {
+      console.error('[Supabase Ingest Insert Error]', err);
+    }
+  }
+
+  // 7. Build In-Memory Ticket Model
   const newTicket: Ticket = {
-    id: `ticket-${Date.now()}`,
+    id: ticketId,
     tenant_id: tenant.id,
     product_id: product.id,
     product_name: product.name,
@@ -117,7 +185,7 @@ ingestRouter.post('/ticket', (req: Request, res: Response) => {
 
   tenantStore.tickets.unshift(newTicket);
 
-  // 7. Initial System Timeline Event
+  // Initial System Timeline Event in memory
   const initialEvent: TicketEvent = {
     id: `ev-${Date.now()}`,
     ticket_id: newTicket.id,

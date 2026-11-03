@@ -12,14 +12,14 @@
         "localhost:3000",
         "newdomain.io"
       ],
-      "webhook_url": "https://api.acme.com/v1/webhooks/incident-bridge",
-      "notification_email": "security-alerts@acme.com",
+      "webhook_url": "",
+      "notification_email": "",
       "auto_capture_telemetry": true,
       "auto_capture_network": true,
-      "require_email": true,
-      "default_squad": "Checkout & Billing Squad",
+      "require_email": false,
+      "default_squad": "Core Platform & API Squad",
       "created_at": "2026-09-27T16:48:10.141Z",
-      "updated_at": "2026-10-29T15:33:33.361Z"
+      "updated_at": "2026-11-02T15:14:21.491Z"
     },
     {
       "id": "tenant-medsync-002",
@@ -215,1458 +215,482 @@
   ],
   "tickets": [
     {
-      "id": "ticket-1793381527416",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "client.app",
-      "short_code": "FB-1060",
-      "title": "RBAC verification test incident",
-      "description": "Testing public ingest telemetry",
-      "category": "BUG",
-      "severity": "LOW",
-      "status": "OPEN",
-      "reporter_email": "client-user@enterprise.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-30T19:32:07.416Z",
-      "created_at": "2026-10-30T17:32:07.416Z",
-      "updated_at": "2026-10-30T17:32:07.416Z",
-      "telemetry": {
-        "domain_origin": "client.app"
-      }
-    },
-    {
-      "id": "ticket-1793379996291",
+      "id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
       "tenant_id": "tenant-acme-corp-001",
       "product_id": "prod-checkout-gateway",
       "product_name": "Checkout Gateway API & SDK",
       "domain_origin": "checkout.acme.com",
-      "short_code": "FB-1059",
-      "title": "bug",
-      "description": "bug",
-      "category": "BUG",
-      "severity": "MEDIUM",
-      "status": "OPEN",
-      "reporter_email": "sarah.jenkins@clientops.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-30T19:06:36.291Z",
-      "created_at": "2026-10-30T17:06:36.291Z",
-      "updated_at": "2026-10-30T17:06:36.291Z",
-      "telemetry": {
-        "page_url": "https://checkout.acme.com/v2/pay/upi",
-        "domain_origin": "checkout.acme.com",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
-        "viewport_dimensions": "1358x636",
-        "console_logs": [
-          {
-            "type": "info",
-            "message": "Initialized client on checkout.acme.com",
-            "timestamp": "22:36:36"
-          },
-          {
-            "type": "error",
-            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
-            "timestamp": "22:36:36"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
-            "status": 500,
-            "method": "POST",
-            "timestamp": "22:36:36"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ticket-1793366486183",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "client.app",
-      "short_code": "FB-1058",
-      "title": "RBAC verification test incident",
-      "description": "Testing public ingest telemetry",
-      "category": "BUG",
-      "severity": "LOW",
-      "status": "OPEN",
-      "reporter_email": "client-user@enterprise.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-30T15:21:26.183Z",
-      "created_at": "2026-10-30T13:21:26.183Z",
-      "updated_at": "2026-10-30T13:21:26.183Z",
-      "telemetry": {
-        "domain_origin": "client.app"
-      }
-    },
-    {
-      "id": "ticket-1041",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FB-1041",
-      "title": "BUG: Feedback from checkout.acme.com",
-      "description": "Customer encountered error during checkout payment flow. Form validation and payment token gateway threw HTTP 500.",
-      "category": "BUG",
-      "severity": "MEDIUM",
-      "status": "OPEN",
-      "assigned_to": null,
-      "assigned_to_name": null,
-      "reporter_email": "sarah.jenkins@clientops.acme.com",
-      "assigned_squad": "Checkout & Billing Squad",
-      "domain_origin": "checkout.acme.com",
-      "telemetry": {
-        "page_url": "https://checkout.acme.com/pay",
-        "domain_origin": "checkout.acme.com",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "viewport_dimensions": "1358x636",
-        "console_logs": [
-          {
-            "type": "error",
-            "message": "Failed to load resource: the server responded with a status of 500",
-            "timestamp": "18:31:01"
-          },
-          {
-            "type": "warn",
-            "message": "Transaction state reset to unconfirmed",
-            "timestamp": "18:31:02"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "https://checkout.acme.com/api/v1/payments/charge",
-            "status": 500,
-            "method": "POST",
-            "timestamp": "18:31:02"
-          }
-        ]
-      },
-      "sla_due_at": "2026-10-29T15:31:58.404Z",
-      "created_at": "2026-10-29T13:24:58.405Z",
-      "updated_at": "2026-10-29T13:24:58.405Z"
-    },
-    {
-      "id": "ticket-2001",
-      "tenant_id": "tenant-medsync-002",
-      "product_id": "prod-telehealth-portal",
-      "product_name": "MedSync Telehealth Patient Web",
-      "short_code": "FB-2001",
-      "title": "EHR FHIR API Integration Timeout During Patient Discharge",
-      "description": "Discharge summary sync fails intermittently with 504 Gateway Timeout when synchronizing HL7 records to hospital server.",
-      "category": "BUG",
-      "severity": "CRITICAL",
-      "status": "OPEN",
-      "reporter_email": "clinical-ops@medsync.io",
-      "assigned_squad": "Clinical Telehealth Squad",
-      "domain_origin": "portal.medsync.io",
-      "created_at": "2026-10-27T14:48:10.154Z",
-      "updated_at": "2026-10-27T14:48:10.154Z"
-    },
-    {
-      "id": "ticket-1793361125574",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "client.app",
-      "short_code": "FB-1057",
-      "title": "RBAC verification test incident",
-      "description": "Testing public ingest telemetry",
-      "category": "BUG",
-      "severity": "LOW",
-      "status": "OPEN",
-      "reporter_email": "client-user@enterprise.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-30T13:52:05.574Z",
-      "created_at": "2026-10-30T11:52:05.574Z",
-      "updated_at": "2026-10-30T11:52:05.574Z",
-      "telemetry": {
-        "domain_origin": "client.app"
-      }
-    },
-    {
-      "id": "ticket-1793361038013",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "client.app",
-      "short_code": "FB-1056",
-      "title": "RBAC verification test incident",
-      "description": "Testing public ingest telemetry",
-      "category": "BUG",
-      "severity": "LOW",
-      "status": "OPEN",
-      "reporter_email": "client-user@enterprise.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-30T13:50:38.013Z",
-      "created_at": "2026-10-30T11:50:38.013Z",
-      "updated_at": "2026-10-30T11:50:38.013Z",
-      "telemetry": {
-        "domain_origin": "client.app"
-      }
-    },
-    {
-      "id": "ticket-1793299913311",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "client.app",
-      "short_code": "FB-1055",
-      "title": "RBAC verification test incident",
-      "description": "Testing public ingest telemetry",
-      "category": "BUG",
-      "severity": "LOW",
-      "status": "OPEN",
-      "reporter_email": "client-user@enterprise.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-29T20:51:53.311Z",
-      "created_at": "2026-10-29T18:51:53.311Z",
-      "updated_at": "2026-10-29T18:51:53.311Z",
-      "telemetry": {
-        "domain_origin": "client.app"
-      }
-    },
-    {
-      "id": "ticket-1793299881847",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "client.app",
-      "short_code": "FB-1054",
-      "title": "RBAC verification test incident",
-      "description": "Testing public ingest telemetry",
-      "category": "BUG",
-      "severity": "LOW",
-      "status": "OPEN",
-      "reporter_email": "client-user@enterprise.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-29T20:51:21.847Z",
-      "created_at": "2026-10-29T18:51:21.847Z",
-      "updated_at": "2026-10-29T18:51:21.847Z",
-      "telemetry": {
-        "domain_origin": "client.app"
-      }
-    },
-    {
-      "id": "ticket-1793285504152",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "checkout.acme.com",
-      "short_code": "FB-1043",
-      "title": "BUG: Feedback from checkout.acme.com",
-      "description": "api failure",
-      "category": "BUG",
-      "severity": "MEDIUM",
-      "status": "RESOLVED",
-      "reporter_email": "sarah.jenkins@clientops.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-29T16:51:44.153Z",
-      "created_at": "2026-10-29T14:51:44.153Z",
-      "updated_at": "2026-10-29T16:51:35.633Z",
-      "telemetry": {
-        "page_url": "https://checkout.acme.com/v2/pay/upi",
-        "domain_origin": "checkout.acme.com",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
-        "viewport_dimensions": "1358x636",
-        "console_logs": [
-          {
-            "type": "info",
-            "message": "Initialized client on checkout.acme.com",
-            "timestamp": "20:21:44"
-          },
-          {
-            "type": "error",
-            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
-            "timestamp": "20:21:44"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
-            "status": 500,
-            "method": "POST",
-            "timestamp": "20:21:44"
-          }
-        ]
-      },
-      "assigned_to": "user-lead-01",
-      "assigned_to_name": "Vikram Mehta (API Squad Lead)"
-    },
-    {
-      "id": "ticket-1793285163114",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "checkout.acme.com",
-      "short_code": "FB-1042",
-      "title": "BUG: Feedback from checkout.acme.com",
-      "description": "api failure",
-      "category": "BUG",
-      "severity": "MEDIUM",
-      "status": "RESOLVED",
-      "reporter_email": "sarah.jenkins@clientops.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-29T16:46:03.114Z",
-      "created_at": "2026-10-29T14:46:03.115Z",
-      "updated_at": "2026-10-29T17:13:07.164Z",
-      "telemetry": {
-        "page_url": "https://checkout.acme.com/v2/pay/upi",
-        "domain_origin": "checkout.acme.com",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
-        "viewport_dimensions": "1358x636",
-        "console_logs": [
-          {
-            "type": "info",
-            "message": "Initialized client on checkout.acme.com",
-            "timestamp": "20:16:02"
-          },
-          {
-            "type": "error",
-            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
-            "timestamp": "20:16:02"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
-            "status": 500,
-            "method": "POST",
-            "timestamp": "20:16:02"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ticket-1793279039229",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "domain_origin": "checkout.acme.com",
-      "short_code": "FB-1041",
-      "title": "BUG: Feedback from checkout.acme.com",
-      "description": "bug",
-      "category": "BUG",
-      "severity": "MEDIUM",
-      "status": "RESOLVED",
-      "reporter_email": "sarah.jenkins@clientops.com",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "sla_due_at": "2026-10-29T15:03:59.231Z",
-      "created_at": "2026-10-29T13:03:59.236Z",
-      "updated_at": "2026-10-29T14:45:14.590Z",
-      "telemetry": {
-        "page_url": "https://checkout.acme.com/v2/pay/upi",
-        "domain_origin": "checkout.acme.com",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
-        "viewport_dimensions": "1358x636",
-        "console_logs": [
-          {
-            "type": "info",
-            "message": "Initialized client on checkout.acme.com",
-            "timestamp": "18:33:51"
-          },
-          {
-            "type": "error",
-            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
-            "timestamp": "18:33:51"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
-            "status": 500,
-            "method": "POST",
-            "timestamp": "18:33:51"
-          }
-        ]
-      },
-      "assigned_to": "user-dev-01",
-      "assigned_to_name": "Rahul Sharma (Senior Backend Dev) (Senior Engineer)"
-    },
-    {
-      "id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FB-1042",
-      "title": "HTTP 504 Gateway Timeout during UPI Webhook settlement",
-      "description": "Production checkout failed for 14 enterprise transactions during peak settlement hour. Merchant receives blank loading state.",
-      "category": "API_FAILURE",
-      "severity": "CRITICAL",
-      "status": "CLOSED",
-      "reporter_email": "operations@partner-client.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-01",
-      "assigned_to_name": "Rahul Sharma (Senior Backend Dev)",
-      "sla_due_at": "2026-10-29T19:13:06.691Z",
-      "created_at": "2026-10-29T17:53:06.691Z",
-      "updated_at": "2026-10-30T17:32:07.044Z",
-      "telemetry": {
-        "page_url": "https://checkout.acme.com/v2/pay/upi/intent?session=sess_982b",
-        "app_version": "v2.14.0-prod",
-        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15",
-        "viewport_dimensions": "390x844",
-        "console_logs": [
-          {
-            "type": "info",
-            "message": "Initialized UPI SDK v2.4.1",
-            "timestamp": "18:12:02"
-          },
-          {
-            "type": "error",
-            "message": "Uncaught (in promise) Error: GatewayTimeout at fetchWithRetry (/bundle.js:842)",
-            "timestamp": "18:12:45"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "https://api.acme.com/v1/settlements/verify",
-            "status": 504,
-            "method": "POST",
-            "timestamp": "18:12:45"
-          }
-        ],
-        "encrypted_sensitive_data": "569ee55be62d360c2175f722:f65f15c8f5392e8ea0e322a0beba6ff5:4eb2de704efbe55393b798a2dcd5260634dd26c581be2dfebb9419c3dec1d47bad6b21c53c9e8a53175073769e79669c8b7ad7da4aa424e6d67dd7ef06eb1b83f0e0619e1def513573e0eec7d118ecc7534a7fa9"
-      }
-    },
-    {
-      "id": "ticket-fb-1043",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-dashboard",
-      "product_name": "Merchant Admin Portal",
-      "short_code": "FB-1043",
-      "title": "Tax invoice PDF download button unresponsive on Chrome iOS",
-      "description": "Clicking Download Invoice on billing portal triggers a spinner but never initiates file download stream.",
-      "category": "UI_GLITCH",
-      "severity": "HIGH",
-      "status": "OPEN",
-      "reporter_email": "finance@partner-client.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "sla_due_at": "2026-10-29T21:28:06.691Z",
-      "created_at": "2026-10-29T18:13:06.691Z",
-      "updated_at": "2026-10-29T18:13:06.691Z",
-      "telemetry": {
-        "page_url": "https://merchant.acme.com/billing/invoices/2026-Q1",
-        "app_version": "v4.1.2",
-        "user_agent": "Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15",
-        "viewport_dimensions": "820x1180",
-        "console_logs": [
-          {
-            "type": "warn",
-            "message": "Blob URL revoked before download triggered",
-            "timestamp": "18:20:11"
-          }
-        ],
-        "network_errors": []
-      }
-    },
-    {
-      "id": "ticket-medsync-2001",
-      "tenant_id": "tenant-medsync-002",
-      "product_id": "prod-telehealth-portal",
-      "product_name": "MedSync Telehealth Patient Web",
-      "short_code": "MS-2001",
-      "title": "HIPAA Audit Trail Sync Latency in Clinic Node",
-      "description": "Audit logs for patient record lookups are delayed by 180 seconds during batch record ingestion.",
-      "category": "PERFORMANCE",
-      "severity": "HIGH",
-      "status": "OPEN",
-      "reporter_email": "compliance@medsync.io",
-      "assigned_squad": "COMPLIANCE_ENG",
-      "assigned_to": "user-medsync-dev-01",
-      "assigned_to_name": "Elena Rostova",
-      "sla_due_at": "2026-10-29T20:28:06.691Z",
-      "created_at": "2026-10-29T17:28:06.691Z",
-      "updated_at": "2026-10-29T17:58:06.691Z",
-      "telemetry": {
-        "page_url": "https://ehr.medsync.io/audit/sync",
-        "app_version": "v1.8.0",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "viewport_dimensions": "1920x1080",
-        "console_logs": [],
-        "network_errors": []
-      }
-    },
-    {
-      "id": "ticket-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FB-1042",
-      "title": "Webhook HMAC Signature Fails on Idempotent Retry",
-      "description": "Timestamp drift causes HMAC-SHA256 signature verification to reject idempotent retry events sent by the automated retry queue.",
-      "category": "BUG",
-      "severity": "CRITICAL",
-      "status": "IN_DEV",
-      "reporter_email": "ops-monitoring@acme.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-lead-01",
-      "assigned_to_name": "Vikram Mehta (API Squad Lead)",
-      "domain_origin": "payments.acme.com",
-      "telemetry": {
-        "page_url": "https://payments.acme.com/v1/webhooks/health",
-        "domain_origin": "payments.acme.com",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0",
-        "viewport_dimensions": "1920x1080",
-        "console_logs": [
-          {
-            "type": "error",
-            "message": "CryptoSignatureMismatch: header x-signature does not match computed HMAC",
-            "timestamp": "11:15:22"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "https://payments.acme.com/v1/webhooks/verify",
-            "status": 502,
-            "method": "POST",
-            "timestamp": "11:15:22"
-          }
-        ]
-      },
-      "sla_due_at": "2026-10-29T19:28:06.691Z",
-      "created_at": "2026-10-29T16:28:06.691Z",
-      "updated_at": "2026-10-29T18:13:06.691Z"
-    },
-    {
-      "id": "ticket-1043",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-dashboard",
-      "product_name": "Merchant Admin Portal",
-      "short_code": "FB-1043",
-      "title": "Merchant Settlement Reconciliation Discrepancy in EUR/USD Export",
-      "description": "Rounding discrepancy of $0.01 observed on EUR/USD currency conversion when generating monthly settlement ledger CSV for European merchants.",
-      "category": "BUG",
-      "severity": "HIGH",
-      "status": "IN_QA",
-      "reporter_email": "accounting@merchant-partner.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-02",
-      "assigned_to_name": "Priya Nair (Frontend Platform Dev)",
-      "domain_origin": "merchant.acme.com",
-      "telemetry": {
-        "page_url": "https://merchant.acme.com/reports/settlement",
-        "domain_origin": "merchant.acme.com",
-        "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-        "viewport_dimensions": "1680x1050"
-      },
-      "sla_due_at": "2026-10-29T20:28:06.691Z",
-      "created_at": "2026-10-29T15:28:06.691Z",
-      "updated_at": "2026-10-29T17:48:06.691Z"
-    },
-    {
-      "id": "ticket-1044",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FB-1044",
-      "title": "Session Cookie SameSite Blocks 3DS Authentication Redirect",
-      "description": "Strict SameSite cookie attribute prevented bank OTP redirect from completing in embedded iframe. Hotfix deployed to use SameSite=None; Secure.",
-      "category": "BUG",
-      "severity": "HIGH",
-      "status": "RESOLVED",
-      "reporter_email": "qa-engineer@acme.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-01",
-      "assigned_to_name": "Rahul Sharma (Senior Backend Dev)",
-      "domain_origin": "checkout.acme.com",
-      "sla_due_at": "2026-10-29T16:48:06.691Z",
-      "created_at": "2026-10-29T13:28:06.691Z",
-      "updated_at": "2026-10-29T17:58:06.691Z"
-    },
-    {
-      "id": "ticket-1045",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-dashboard",
-      "product_name": "Merchant Admin Portal",
-      "short_code": "FB-1045",
-      "title": "Bulk Refund Processing via CSV Upload in Admin Portal",
-      "description": "Tier-1 merchants requesting ability to batch refund chargebacks by uploading standardized CSV template directly through the dashboard.",
-      "category": "IDEA",
-      "severity": "MEDIUM",
-      "status": "IN_DEV",
-      "reporter_email": "ops-manager@acme.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-03",
-      "assigned_to_name": "Amit Patel (Full-Stack Reliability Dev)",
-      "domain_origin": "merchant.acme.com",
-      "sla_due_at": "2026-10-30T18:28:06.691Z",
-      "created_at": "2026-10-29T11:48:06.691Z",
-      "updated_at": "2026-10-29T17:38:06.691Z"
-    },
-    {
-      "id": "ticket-1046",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FB-1046",
-      "title": "Native Dark Mode Theme for Embedded Widget",
-      "description": "Auto-detection of host application prefers-color-scheme media query for seamless dark UI embedding in modern applications.",
-      "category": "IDEA",
-      "severity": "LOW",
-      "status": "CLOSED",
-      "reporter_email": "design-systems@acme.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-02",
-      "assigned_to_name": "Priya Nair (Frontend Platform Dev)",
-      "domain_origin": "checkout.acme.com",
-      "sla_due_at": "2026-10-29T16:28:06.691Z",
-      "created_at": "2026-10-29T05:08:06.691Z",
-      "updated_at": "2026-10-29T16:28:06.691Z"
-    },
-    {
-      "id": "ticket-1047",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FB-1047",
-      "title": "Checkout Experience: 5 Star Review from Verified Buyer",
-      "description": "Instant UPI payment QR code generated and settled in under 280ms. Exceptional mobile checkout speed on iOS Safari.",
+      "short_code": "FB-1050",
+      "title": "RATING: Feedback from checkout.acme.com",
+      "description": "Excellent",
       "category": "RATING",
-      "rating": 5,
       "severity": "LOW",
-      "status": "RESOLVED",
-      "reporter_email": "buyer.verified@gmail.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-lead-01",
-      "assigned_to_name": "Vikram Mehta (API Squad Lead)",
-      "domain_origin": "checkout.acme.com",
-      "sla_due_at": "2026-10-29T17:28:06.691Z",
-      "created_at": "2026-10-29T14:18:06.691Z",
-      "updated_at": "2026-10-29T17:28:06.691Z"
+      "rating": 5,
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "CUSTOMER_SUCCESS_SQUAD",
+      "sla_due_at": "2026-11-04T12:46:15.063Z",
+      "created_at": "2026-11-03T12:46:15.063Z",
+      "updated_at": "2026-11-03T12:46:15.063Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:16:13"
+          }
+        ],
+        "network_errors": []
+      }
     },
     {
-      "id": "ticket-1048",
+      "id": "44bda3b6-e756-45fb-8751-b03f6e319988",
       "tenant_id": "tenant-acme-corp-001",
       "product_id": "prod-checkout-gateway",
       "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1049",
+      "title": "HELP: Feedback from checkout.acme.com",
+      "description": "Help",
+      "category": "HELP",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "CLIENT_SUPPORT_SQUAD",
+      "sla_due_at": "2026-11-03T13:45:52.756Z",
+      "created_at": "2026-11-03T12:45:52.756Z",
+      "updated_at": "2026-11-03T12:45:52.756Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:15:51"
+          }
+        ],
+        "network_errors": []
+      }
+    },
+    {
+      "id": "65e082d1-2f85-40d5-91a7-cb68925ca959",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
       "short_code": "FB-1048",
-      "title": "Custom Domain SSL Handshake DNS Records Assistance",
-      "description": "Need verification DNS TXT and CNAME records for enterprise custom domain routing SSL certificate automated provisioning.",
+      "title": "IDEA: Feedback from checkout.acme.com",
+      "description": "idea",
+      "category": "IDEA",
+      "severity": "LOW",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-10T12:45:31.873Z",
+      "created_at": "2026-11-03T12:45:31.873Z",
+      "updated_at": "2026-11-03T12:45:31.873Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:15:30"
+          }
+        ],
+        "network_errors": []
+      }
+    },
+    {
+      "id": "ticket-1793709462489",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1047",
+      "title": "IDEA: Feedback from checkout.acme.com",
+      "description": "Idea",
+      "category": "IDEA",
+      "severity": "LOW",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-10T12:37:44.447Z",
+      "created_at": "2026-11-03T12:37:44.448Z",
+      "updated_at": "2026-11-03T12:37:44.448Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:07:42"
+          }
+        ],
+        "network_errors": []
+      }
+    },
+    {
+      "id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1047",
+      "title": "RATING: Feedback from checkout.acme.com",
+      "description": "Excellent",
+      "category": "RATING",
+      "severity": "LOW",
+      "status": "RESOLVED",
+      "rating": 5,
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "CUSTOMER_SUCCESS_SQUAD",
+      "sla_due_at": "2026-11-03T18:16:09.825Z",
+      "created_at": "2026-11-02T18:16:10.220Z",
+      "updated_at": "2026-11-03T12:10:41.765Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "app_version": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "23:46:09"
+          }
+        ],
+        "network_errors": [],
+        "encrypted_sensitive_data": null
+      }
+    },
+    {
+      "id": "da3eb55e-7f45-47ba-a09a-09f54a6d21c2",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "merchant.acme.com",
+      "short_code": "HELP-201",
+      "title": "Webhook Signature Verification Question",
+      "description": "Need guidance on computing HMAC-SHA256 headers for sandbox test transactions.",
       "category": "HELP",
       "severity": "MEDIUM",
       "status": "OPEN",
-      "reporter_email": "infra-lead@acme.com",
-      "assigned_squad": "Core Platform & API Squad",
-      "assigned_to": "user-dev-03",
-      "assigned_to_name": "Amit Patel (Full-Stack Reliability Dev)",
-      "domain_origin": "payments.acme.com",
-      "sla_due_at": "2026-10-29T19:28:06.691Z",
-      "created_at": "2026-10-29T16:58:06.691Z",
-      "updated_at": "2026-10-29T16:58:06.691Z"
+      "reporter_email": "dev@clientstartup.io",
+      "assigned_squad": "CLIENT_SUPPORT_SQUAD",
+      "sla_due_at": "2026-11-02T19:11:30.284Z",
+      "created_at": "2026-11-02T18:11:30.284Z",
+      "updated_at": "2026-11-02T18:11:30.284Z"
+    },
+    {
+      "id": "8dc618e2-d219-4e53-80cb-bb0a87d67bfd",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "IDEA-101",
+      "title": "Quick Checkout 1-Click Payments",
+      "description": "Allow repeat customers to complete checkout using saved biometric authenticators.",
+      "category": "IDEA",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "reporter_email": "pm@partnercorp.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-09T18:11:29.960Z",
+      "created_at": "2026-11-02T18:11:29.960Z",
+      "updated_at": "2026-11-02T18:11:29.960Z"
+    },
+    {
+      "id": "9fcc8a68-7a89-4d0f-930a-5b0517abfb1f",
+      "tenant_id": "tenant-medsync-002",
+      "product_id": "f4d64a64-138c-42bc-a1e5-0a1912de97f5",
+      "product_name": "MedSync Telehealth Patient Web",
+      "domain_origin": "merchant.acme.com",
+      "short_code": "CSAT-301",
+      "title": "Smooth and intuitive dashboard onboarding",
+      "description": "Extremely satisfied with the developer telemetry and real-time incident notifications.",
+      "category": "RATING",
+      "severity": "LOW",
+      "status": "OPEN",
+      "rating": 5,
+      "reporter_email": "cto@fintechflow.com",
+      "assigned_squad": "CUSTOMER_SUCCESS_SQUAD",
+      "sla_due_at": "2026-11-03T18:10:27.176Z",
+      "created_at": "2026-11-02T18:10:27.176Z",
+      "updated_at": "2026-11-02T18:10:27.176Z"
+    },
+    {
+      "id": "849502bd-7b2a-46db-95ce-ad894901326a",
+      "tenant_id": "tenant-medsync-002",
+      "product_id": "f4d64a64-138c-42bc-a1e5-0a1912de97f5",
+      "product_name": "MedSync Telehealth Patient Web",
+      "domain_origin": "merchant.acme.com",
+      "short_code": "HELP-201",
+      "title": "Webhook Signature Verification Question",
+      "description": "Need guidance on computing HMAC-SHA256 headers for sandbox test transactions.",
+      "category": "HELP",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "reporter_email": "dev@clientstartup.io",
+      "assigned_squad": "CLIENT_SUPPORT_SQUAD",
+      "sla_due_at": "2026-11-02T19:10:26.786Z",
+      "created_at": "2026-11-02T18:10:26.786Z",
+      "updated_at": "2026-11-02T18:10:26.786Z"
+    },
+    {
+      "id": "d5594227-b28e-4054-bcb5-c896aa8ae1f6",
+      "tenant_id": "tenant-medsync-002",
+      "product_id": "f4d64a64-138c-42bc-a1e5-0a1912de97f5",
+      "product_name": "MedSync Telehealth Patient Web",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "IDEA-101",
+      "title": "Quick Checkout 1-Click Payments",
+      "description": "Allow repeat customers to complete checkout using saved biometric authenticators.",
+      "category": "IDEA",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "reporter_email": "pm@partnercorp.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-09T18:10:26.486Z",
+      "created_at": "2026-11-02T18:10:26.486Z",
+      "updated_at": "2026-11-02T18:10:26.486Z"
+    },
+    {
+      "id": "c4c39b2a-dd8a-4d7c-bfb7-8f781cf2cf1a",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1046",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "idea",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-11-02T19:57:59.186Z",
+      "created_at": "2026-11-02T17:57:59.577Z",
+      "updated_at": "2026-11-02T17:57:59.577Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "app_version": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "23:27:58"
+          },
+          {
+            "type": "error",
+            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
+            "timestamp": "23:27:58"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
+            "method": "POST",
+            "status": 500,
+            "timestamp": "23:27:58"
+          }
+        ],
+        "encrypted_sensitive_data": null
+      }
+    },
+    {
+      "id": "5d5dedf3-0106-421d-a65d-6d3e6dd7a5df",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1042",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "Bug",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-11-02T18:55:08.386Z",
+      "created_at": "2026-11-02T16:55:08.758Z",
+      "updated_at": "2026-11-02T16:55:08.758Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "app_version": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "22:25:08"
+          },
+          {
+            "type": "error",
+            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
+            "timestamp": "22:25:08"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
+            "method": "POST",
+            "status": 500,
+            "timestamp": "22:25:08"
+          }
+        ],
+        "encrypted_sensitive_data": null
+      }
     }
   ],
   "events": [
     {
-      "id": "ev-1793279039245",
-      "ticket_id": "ticket-1793279039229",
+      "id": "78cbd41c-66e6-43df-af10-1d89f7869745",
+      "ticket_id": "5d5dedf3-0106-421d-a65d-6d3e6dd7a5df",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Feedback-Hub Ingest Engine",
+      "author_name": "Team Member",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
       "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
       "is_internal_only": false,
-      "created_at": "2026-10-29T13:03:59.246Z"
+      "created_at": "2026-11-02T16:55:09.388Z"
     },
     {
-      "id": "ev-1793279959429",
-      "ticket_id": "ticket-1793279039229",
+      "id": "fe7a6401-7ceb-4676-977f-e31f87d959ee",
+      "ticket_id": "c4c39b2a-dd8a-4d7c-bfb7-8f781cf2cf1a",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Elena Rostova (Tenant Admin)",
-      "author_role": "tenant_admin",
-      "event_type": "ASSIGNED",
-      "content": "Ticket assigned to developer Priya Nair (Frontend Platform Dev) (Senior Engineer) by Elena Rostova (Tenant Admin).",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T13:19:19.429Z"
-    },
-    {
-      "id": "ev-1793279979684",
-      "ticket_id": "ticket-1793279039229",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
-      "author_role": "developer",
-      "event_type": "ASSIGNED",
-      "content": "Ticket assigned to developer Rahul Sharma (Senior Backend Dev) (Senior Engineer) by Rahul Sharma (Senior Backend Dev).",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T13:19:39.684Z"
-    },
-    {
-      "id": "ev-1793285114590",
-      "ticket_id": "ticket-1793279039229",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Incident resolved and verified.",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T14:45:14.590Z"
-    },
-    {
-      "id": "ev-1793285163115",
-      "ticket_id": "ticket-1793285163114",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Feedback-Hub Ingest Engine",
+      "author_name": "Team Member",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
       "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
       "is_internal_only": false,
-      "created_at": "2026-10-29T14:46:03.116Z"
+      "created_at": "2026-11-02T17:58:00.187Z"
     },
     {
-      "id": "ev-1793285400584",
-      "ticket_id": "ticket-1793285163114",
+      "id": "edc517e1-1dc8-41b6-a053-cb35c91c6733",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Elena Rostova (Tenant Admin)",
-      "author_role": "tenant_admin",
-      "event_type": "ASSIGNED",
-      "content": "Ticket assigned to developer Priya Nair (Frontend Platform Dev) (Senior Engineer) by Elena Rostova (Tenant Admin).",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T14:50:00.584Z"
-    },
-    {
-      "id": "ev-1793285419053",
-      "ticket_id": "ticket-1793285163114",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Elena Rostova (Tenant Admin)",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Status changed from IN_DEV to RESOLVED.",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T14:50:19.053Z"
-    },
-    {
-      "id": "ev-1793285504153",
-      "ticket_id": "ticket-1793285504152",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Feedback-Hub Ingest Engine",
+      "author_name": "Team Member",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [CUSTOMER_SUCCESS_SQUAD].",
       "is_internal_only": false,
-      "created_at": "2026-10-29T14:51:44.153Z"
+      "created_at": "2026-11-02T18:16:10.920Z"
     },
     {
-      "id": "ev-1793288152779",
-      "ticket_id": "ticket-1793285504152",
+      "id": "48ef726d-1dbb-4809-84fb-9a2bc0c40539",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_name": "Team Member",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
-      "content": "Status changed from OPEN to IN_DEV.",
+      "content": "Status changed from OPEN to RESOLVED.",
       "is_internal_only": false,
-      "created_at": "2026-10-29T15:35:52.779Z"
+      "created_at": "2026-11-03T12:10:40.750Z"
     },
     {
-      "id": "ev-1793290472403",
-      "ticket_id": "ticket-1793285504152",
+      "id": "131e2407-6194-4a9d-9063-37e1b16d6643",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_name": "Team Member",
       "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T16:14:32.403Z"
-    },
-    {
-      "id": "ev-1793292695444",
-      "ticket_id": "ticket-1793285504152",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Elena Rostova (Tenant Admin)",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Status changed from IN_DEV to RESOLVED.",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T16:51:35.444Z"
-    },
-    {
-      "id": "ev-1793292695489",
-      "ticket_id": "ticket-1793285504152",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Elena Rostova (Tenant Admin)",
-      "author_role": "tenant_admin",
       "event_type": "STATUS_CHANGE",
       "content": "Status changed from RESOLVED to RESOLVED.",
       "is_internal_only": false,
-      "created_at": "2026-10-29T16:51:35.489Z"
+      "created_at": "2026-11-03T12:10:41.488Z"
     },
     {
-      "id": "ev-1793292695550",
-      "ticket_id": "ticket-1793285504152",
+      "id": "7598da28-69c1-410d-a141-3140d2fe2677",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Elena Rostova (Tenant Admin)",
-      "author_role": "tenant_admin",
+      "author_name": "Team Member",
+      "author_role": "developer",
       "event_type": "STATUS_CHANGE",
       "content": "Status changed from RESOLVED to RESOLVED.",
       "is_internal_only": false,
-      "created_at": "2026-10-29T16:51:35.550Z"
+      "created_at": "2026-11-03T12:10:41.712Z"
     },
     {
-      "id": "ev-1793292695633",
-      "ticket_id": "ticket-1793285504152",
+      "id": "56d10e65-9b7a-4875-bda1-bd371a8caa40",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Elena Rostova (Tenant Admin)",
-      "author_role": "tenant_admin",
+      "author_name": "Team Member",
+      "author_role": "developer",
       "event_type": "STATUS_CHANGE",
       "content": "Status changed from RESOLVED to RESOLVED.",
       "is_internal_only": false,
-      "created_at": "2026-10-29T16:51:35.633Z"
+      "created_at": "2026-11-03T12:10:43.407Z"
     },
     {
-      "id": "ev-1793292748370",
-      "ticket_id": "ticket-1793285504152",
+      "id": "b802eea9-d92f-48c5-b7e7-f0a56b1660ef",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
       "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T16:52:28.370Z"
-    },
-    {
-      "id": "ev-1793293916525",
-      "ticket_id": "ticket-1793285504152",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T17:11:56.525Z"
-    },
-    {
-      "id": "ev-1",
-      "ticket_id": "ticket-1041",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Automated Ingestion Bridge",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Incident ingested via client SDK from checkout.acme.com. High-severity triage alert dispatched to Core Platform & API Squad.",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T17:43:06.691Z"
-    },
-    {
-      "id": "ev-2",
-      "ticket_id": "ticket-1041",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta (API Squad Lead)",
-      "author_role": "squad_lead",
-      "event_type": "ASSIGNED",
-      "content": "Ticket assigned to Rahul Sharma for urgent investigation on Safari 17.4 device lab.",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:08:06.691Z"
-    },
-    {
-      "id": "ev-3",
-      "ticket_id": "ticket-1044",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Root cause identified: Cookie attribute was missing partitioned flag for cross-site iframe embedding. Tested and deployed to production.",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T17:48:06.691Z"
-    },
-    {
-      "id": "ev-4",
-      "ticket_id": "ticket-1044",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_name": "Team Member",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
-      "content": "Status advanced from IN_QA to RESOLVED. Verified 100% 3DS conversion rate restored.",
+      "content": "Status changed from RESOLVED to RESOLVED.",
       "is_internal_only": false,
-      "created_at": "2026-10-29T17:58:06.691Z"
+      "created_at": "2026-11-03T12:10:44.625Z"
     },
     {
-      "id": "ev-01",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Investigated Redis connection pool in Settlement microservice. It timed out due to slow socket read on banking partner node. Rolling out pool sizing hotfix to staging.",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T18:08:06.691Z"
-    },
-    {
-      "id": "ev-02",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "CLIENT_REPLY",
-      "content": "Our core API team is actively applying a backend hotfix to resolve the gateway delay. Next status update in 20 minutes.",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:16:06.691Z"
-    },
-    {
-      "id": "ev-medsync-01",
-      "ticket_id": "ticket-medsync-2001",
-      "tenant_id": "tenant-medsync-002",
-      "author_name": "Elena Rostova",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Configured secondary Redis replica for HIPAA audit buffering.",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T18:03:06.691Z"
-    },
-    {
-      "id": "ev-1793299778466",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:49:38.466Z"
-    },
-    {
-      "id": "ev-1793299778515",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:49:38.516Z"
-    },
-    {
-      "id": "ev-1793299778526",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:49:38.526Z"
-    },
-    {
-      "id": "ev-1793299778538",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:49:38.538Z"
-    },
-    {
-      "id": "ev-1793299881364",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:21.364Z"
-    },
-    {
-      "id": "ev-1793299881397",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:21.397Z"
-    },
-    {
-      "id": "ev-1793299881412",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:21.412Z"
-    },
-    {
-      "id": "ev-1793299881421",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:21.421Z"
-    },
-    {
-      "id": "ev-1793299881543",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Sarah Jenkins",
-      "author_role": "client_user",
-      "event_type": "CLIENT_REPLY",
-      "content": "Client comment attempting internal flag",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:21.543Z"
-    },
-    {
-      "id": "ev-1793299881554",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Internal developer trace log note",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T18:51:21.554Z"
-    },
-    {
-      "id": "ev-1793299881847",
-      "ticket_id": "ticket-1793299881847",
+      "id": "ev-1793709464448",
+      "ticket_id": "ticket-1793709462489",
       "tenant_id": "tenant-acme-corp-001",
       "author_name": "Feedback-Hub Ingest Engine",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [PRODUCT_DESIGN_SQUAD].",
       "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:21.847Z"
+      "created_at": "2026-11-03T12:37:44.448Z"
     },
     {
-      "id": "ev-1793299912398",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:52.398Z"
-    },
-    {
-      "id": "ev-1793299912419",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:52.419Z"
-    },
-    {
-      "id": "ev-1793299912429",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:52.429Z"
-    },
-    {
-      "id": "ev-1793299912445",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:52.445Z"
-    },
-    {
-      "id": "ev-1793299912834",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Sarah Jenkins",
-      "author_role": "client_user",
-      "event_type": "CLIENT_REPLY",
-      "content": "Client comment attempting internal flag",
-      "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:52.834Z"
-    },
-    {
-      "id": "ev-1793299912865",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Internal developer trace log note",
-      "is_internal_only": true,
-      "created_at": "2026-10-29T18:51:52.865Z"
-    },
-    {
-      "id": "ev-1793299913311",
-      "ticket_id": "ticket-1793299913311",
+      "id": "ev-1793709931873",
+      "ticket_id": "65e082d1-2f85-40d5-91a7-cb68925ca959",
       "tenant_id": "tenant-acme-corp-001",
       "author_name": "Feedback-Hub Ingest Engine",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [PRODUCT_DESIGN_SQUAD].",
       "is_internal_only": false,
-      "created_at": "2026-10-29T18:51:53.311Z"
+      "created_at": "2026-11-03T12:45:31.873Z"
     },
     {
-      "id": "ev-1793360673905",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:44:33.905Z"
-    },
-    {
-      "id": "ev-1793360673925",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:44:33.925Z"
-    },
-    {
-      "id": "ev-1793360673934",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:44:33.934Z"
-    },
-    {
-      "id": "ev-1793360673943",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:44:33.943Z"
-    },
-    {
-      "id": "ev-1793361037397",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:50:37.397Z"
-    },
-    {
-      "id": "ev-1793361037414",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:50:37.414Z"
-    },
-    {
-      "id": "ev-1793361037424",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:50:37.424Z"
-    },
-    {
-      "id": "ev-1793361037432",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:50:37.432Z"
-    },
-    {
-      "id": "ev-1793361037605",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Sarah Jenkins",
-      "author_role": "client_user",
-      "event_type": "CLIENT_REPLY",
-      "content": "Client comment attempting internal flag",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:50:37.605Z"
-    },
-    {
-      "id": "ev-1793361037615",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Internal developer trace log note",
-      "is_internal_only": true,
-      "created_at": "2026-10-30T11:50:37.615Z"
-    },
-    {
-      "id": "ev-1793361038013",
-      "ticket_id": "ticket-1793361038013",
+      "id": "ev-1793709952757",
+      "ticket_id": "44bda3b6-e756-45fb-8751-b03f6e319988",
       "tenant_id": "tenant-acme-corp-001",
       "author_name": "Feedback-Hub Ingest Engine",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [CLIENT_SUPPORT_SQUAD].",
       "is_internal_only": false,
-      "created_at": "2026-10-30T11:50:38.013Z"
+      "created_at": "2026-11-03T12:45:52.757Z"
     },
     {
-      "id": "ev-1793361125186",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:52:05.186Z"
-    },
-    {
-      "id": "ev-1793361125199",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:52:05.199Z"
-    },
-    {
-      "id": "ev-1793361125231",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:52:05.231Z"
-    },
-    {
-      "id": "ev-1793361125241",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:52:05.241Z"
-    },
-    {
-      "id": "ev-1793361125379",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Sarah Jenkins",
-      "author_role": "client_user",
-      "event_type": "CLIENT_REPLY",
-      "content": "Client comment attempting internal flag",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T11:52:05.379Z"
-    },
-    {
-      "id": "ev-1793361125386",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Internal developer trace log note",
-      "is_internal_only": true,
-      "created_at": "2026-10-30T11:52:05.386Z"
-    },
-    {
-      "id": "ev-1793361125574",
-      "ticket_id": "ticket-1793361125574",
+      "id": "ev-1793709975063",
+      "ticket_id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
       "tenant_id": "tenant-acme-corp-001",
       "author_name": "Feedback-Hub Ingest Engine",
       "author_role": "developer",
       "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [CUSTOMER_SUCCESS_SQUAD].",
       "is_internal_only": false,
-      "created_at": "2026-10-30T11:52:05.574Z"
-    },
-    {
-      "id": "ev-1793366486003",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T13:21:26.003Z"
-    },
-    {
-      "id": "ev-1793366486014",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T13:21:26.014Z"
-    },
-    {
-      "id": "ev-1793366486021",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T13:21:26.021Z"
-    },
-    {
-      "id": "ev-1793366486028",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T13:21:26.028Z"
-    },
-    {
-      "id": "ev-1793366486096",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Sarah Jenkins",
-      "author_role": "client_user",
-      "event_type": "CLIENT_REPLY",
-      "content": "Client comment attempting internal flag",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T13:21:26.096Z"
-    },
-    {
-      "id": "ev-1793366486102",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Internal developer trace log note",
-      "is_internal_only": true,
-      "created_at": "2026-10-30T13:21:26.102Z"
-    },
-    {
-      "id": "ev-1793366486183",
-      "ticket_id": "ticket-1793366486183",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Feedback-Hub Ingest Engine",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T13:21:26.183Z"
-    },
-    {
-      "id": "ev-1793379996291",
-      "ticket_id": "ticket-1793379996291",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Feedback-Hub Ingest Engine",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T17:06:36.291Z"
-    },
-    {
-      "id": "ev-1793381527005",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Developer active on fix",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T17:32:07.005Z"
-    },
-    {
-      "id": "ev-1793381527027",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Vikram Mehta",
-      "author_role": "squad_lead",
-      "event_type": "STATUS_CHANGE",
-      "content": "Lead pushed to QA review",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T17:32:07.027Z"
-    },
-    {
-      "id": "ev-1793381527036",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Priya Sharma",
-      "author_role": "tenant_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Admin verified resolution",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T17:32:07.036Z"
-    },
-    {
-      "id": "ev-1793381527044",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Alex Vance",
-      "author_role": "super_admin",
-      "event_type": "STATUS_CHANGE",
-      "content": "Super Admin closed ticket",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T17:32:07.044Z"
-    },
-    {
-      "id": "ev-1793381527196",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Sarah Jenkins",
-      "author_role": "client_user",
-      "event_type": "CLIENT_REPLY",
-      "content": "Client comment attempting internal flag",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T17:32:07.196Z"
-    },
-    {
-      "id": "ev-1793381527206",
-      "ticket_id": "ticket-fb-1042",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Rahul Sharma",
-      "author_role": "developer",
-      "event_type": "DEV_NOTE",
-      "content": "Internal developer trace log note",
-      "is_internal_only": true,
-      "created_at": "2026-10-30T17:32:07.206Z"
-    },
-    {
-      "id": "ev-1793381527416",
-      "ticket_id": "ticket-1793381527416",
-      "tenant_id": "tenant-acme-corp-001",
-      "author_name": "Feedback-Hub Ingest Engine",
-      "author_role": "developer",
-      "event_type": "STATUS_CHANGE",
-      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'client.app'. Routed to squad [FRONTEND_PORTAL].",
-      "is_internal_only": false,
-      "created_at": "2026-10-30T17:32:07.416Z"
+      "created_at": "2026-11-03T12:46:15.063Z"
     }
   ],
   "refreshTokens": [
@@ -1775,9 +799,130 @@
       "tenant_id": "tenant-acme-corp-001",
       "token_hash": "d2e67f5dd9b28aa08b40c6b8caff1a55bfc9ea00e78364bd58b1bfc63b45ef09",
       "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
-      "is_revoked": false,
+      "is_revoked": true,
       "expires_at": "2026-11-06T18:24:36.090Z",
       "created_at": "2026-10-30T18:24:36.124Z",
+      "replaced_by_token_hash": "a8e94e9b9004316897dff7ab968d4e6ae1fc3b2330d7545eb13391a7253069c3"
+    },
+    {
+      "id": "rt-1793454374529-8p11zi",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "a8e94e9b9004316897dff7ab968d4e6ae1fc3b2330d7545eb13391a7253069c3",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T13:46:14.517Z",
+      "created_at": "2026-10-31T13:46:14.529Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793454436198-vn0nz8",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "750448b5b246c3098749699f49195c19298589073efed7b2f6710b0ef15a328d",
+      "family_id": "b4cbd4aa-d5ff-474c-bef5-072a63bfe887",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T13:47:16.182Z",
+      "created_at": "2026-10-31T13:47:16.290Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793454477615-q1tmx5",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "5d0a6cc38e9eba56a80fce17249a9e29b4119ced6ff7877762f838c87e027fd7",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T13:47:57.611Z",
+      "created_at": "2026-10-31T13:47:57.615Z",
+      "replaced_by_token_hash": "faff828e1ae8235280931d6b770eead0c29f29b534069173d5d96e90c65824c6"
+    },
+    {
+      "id": "rt-1793455313361-8ds803",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "faff828e1ae8235280931d6b770eead0c29f29b534069173d5d96e90c65824c6",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:01:53.240Z",
+      "created_at": "2026-10-31T14:01:53.369Z",
+      "replaced_by_token_hash": "2bf53f65a43a32c7d9b841774f8f2ba76384049c135dc7dae80ad0d68325ac36"
+    },
+    {
+      "id": "rt-1793456824008-c5h4fq",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "2bf53f65a43a32c7d9b841774f8f2ba76384049c135dc7dae80ad0d68325ac36",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:27:03.817Z",
+      "created_at": "2026-10-31T14:27:04.009Z",
+      "replaced_by_token_hash": "36b37bf6489c17001143fe0dc2673eb97ff550124ffd1ad3a1c56d72a3c13d01"
+    },
+    {
+      "id": "rt-1793457705318-dwdc0m",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "36b37bf6489c17001143fe0dc2673eb97ff550124ffd1ad3a1c56d72a3c13d01",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:41:45.169Z",
+      "created_at": "2026-10-31T14:41:45.340Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793457714062-q5wmx8",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "1de2945818c3bb4227a573e3c588b8b798f732081c32881fab1126107e5c5242",
+      "family_id": "44d3cf34-3cc5-46d7-b172-eb2670475c47",
+      "is_revoked": false,
+      "expires_at": "2026-11-07T14:41:54.061Z",
+      "created_at": "2026-10-31T14:41:54.062Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793635862551-qgkhbd",
+      "user_id": "user-lead-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "84b27a90156b1d2b7b3b747fdfbe6a727324b6cb06b8d5a1bcb33b178bbf4019",
+      "family_id": "448c720a-b9ad-406c-8e13-cb770242a785",
+      "is_revoked": false,
+      "expires_at": "2026-11-09T16:11:02.549Z",
+      "created_at": "2026-11-02T16:11:02.552Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793635903477-keoxz4",
+      "user_id": "user-lead-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "8f09f83d0f4b8f7bff1d816298419af1a0bc93020daa91af1ccd2bd7c23c09d6",
+      "family_id": "b9d9fb95-4f99-41a8-8dcc-ff8ff253cb40",
+      "is_revoked": false,
+      "expires_at": "2026-11-09T16:11:43.477Z",
+      "created_at": "2026-11-02T16:11:43.478Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793635971423-tzo7s5",
+      "user_id": "user-lead-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "eb5d8511f0cc1caae746a12534c0b71805717d7df4326a9f98839a193ae57f1c",
+      "family_id": "585ed91e-dec2-46bb-9ce1-c0d1d50e7841",
+      "is_revoked": false,
+      "expires_at": "2026-11-09T16:12:51.423Z",
+      "created_at": "2026-11-02T16:12:51.423Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793636093226-6ftdj8",
+      "user_id": "user-lead-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "1ce43838c6fff40bb5aa213c75eeb9de762e0684992c42a4137086ef46495dc6",
+      "family_id": "e9829616-c2b6-4ed6-a893-79d689d05b53",
+      "is_revoked": false,
+      "expires_at": "2026-11-09T16:14:53.226Z",
+      "created_at": "2026-11-02T16:14:53.226Z",
       "replaced_by_token_hash": null
     }
   ],
@@ -1863,9 +1008,9 @@
         "tickets:view": true,
         "tickets:create": true,
         "tickets:edit": true,
-        "tickets:delete": false,
+        "tickets:delete": true,
         "tickets:change_status": true,
-        "tickets:assign": true,
+        "tickets:assign": false,
         "tickets:view_telemetry_internal": true,
         "tickets:view_internal_notes": true,
         "tickets:create_internal_notes": true,
@@ -2015,7 +1160,7 @@
         "tickets:view": true,
         "tickets:create": true,
         "tickets:edit": true,
-        "tickets:delete": false,
+        "tickets:delete": true,
         "tickets:change_status": true,
         "tickets:assign": true,
         "tickets:view_telemetry_internal": true,
@@ -2088,5 +1233,5 @@
       }
     }
   },
-  "last_updated": "2026-10-30T18:24:36.124Z"
+  "last_updated": "2026-11-03T12:46:37.220Z"
 }

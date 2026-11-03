@@ -11,6 +11,7 @@ import { normalizeSeverity, normalizeStatus } from './utils/formatters';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { DashboardHeader, HeaderUser } from './components/DashboardHeader';
 import { SummaryCards } from './components/SummaryCards';
+import { FeedbackChannelsSection } from './components/FeedbackChannelsSection';
 import { TicketsTable, SortField, SortDirection } from './components/TicketsTable';
 import { TicketDetailModal } from './components/TicketDetailModal';
 import { CreateIncidentModal } from './components/CreateIncidentModal';
@@ -21,13 +22,13 @@ import { TicketList } from './components/TicketList';
 import { SettingsView } from './components/SettingsView';
 import { StaffWorkloadView } from './components/StaffWorkloadView';
 import { hasRolePermission } from './constants/permissions';
-import { 
-  Bell, 
-  RefreshCw, 
-  Sparkles, 
-  Trash2, 
-  Cpu, 
-  Layers, 
+import {
+  Bell,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  Cpu,
+  Layers,
   CheckCircle2,
   Plus,
   Loader2
@@ -132,6 +133,8 @@ const Dashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [simulatorCategory, setSimulatorCategory] = useState<'BUG' | 'IDEA' | 'HELP' | 'RATING'>('BUG');
   const [activeCardFilter, setActiveCardFilter] = useState<'OPEN' | 'UNASSIGNED' | 'URGENT' | 'RESOLVED' | null>(null);
 
   // Sorting state
@@ -188,11 +191,8 @@ const Dashboard: React.FC = () => {
     }
   }, [authFetch, currentTenantId, currentRole]);
 
-  // 2. Fetch Available Tenants List (Restricted strictly to super_admin by RBAC specification)
+  // 2. Fetch Available Tenants List for Workspace Switcher
   const fetchAllTenants = useCallback(async () => {
-    if (currentRole !== 'super_admin') {
-      return;
-    }
     try {
       const headers: Record<string, string> = {
         'x-tenant-id': currentTenantId,
@@ -225,10 +225,10 @@ const Dashboard: React.FC = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        
-        // For non-super_admin users, populate the active tenant so tenant switcher and header have valid data
-        if (data.tenant && currentRole !== 'super_admin') {
-          setTenants([data.tenant]);
+
+        // Populate active tenant if list is empty
+        if (data.tenant) {
+          setTenants(prev => prev.length > 1 ? prev : [data.tenant]);
         }
 
         // Dynamic Authenticated User Context from API
@@ -263,15 +263,15 @@ const Dashboard: React.FC = () => {
           const mapped: TeamMember[] = data.team_members.map((u: any, idx: number) => ({
             id: u.id,
             name: u.full_name,
-            role: u.role === 'squad_lead' 
-              ? 'Squad Lead & Arch' 
-              : u.role === 'developer' 
-              ? 'Senior Engineer' 
-              : u.role === 'tenant_admin' 
-              ? 'Tenant Administrator' 
-              : u.role === 'super_admin' 
-              ? 'Super Administrator' 
-              : 'Support Specialist',
+            role: u.role === 'squad_lead'
+              ? 'Squad Lead & Arch'
+              : u.role === 'developer'
+                ? 'Senior Engineer'
+                : u.role === 'tenant_admin'
+                  ? 'Tenant Administrator'
+                  : u.role === 'super_admin'
+                    ? 'Super Administrator'
+                    : 'Support Specialist',
             email: u.email,
             avatarInitials: (u.full_name || 'EM')
               .replace(/\s*\([^)]*\)$/, '')
@@ -393,23 +393,23 @@ const Dashboard: React.FC = () => {
   // Compute dynamic counts from live backend data
   const totalCount = tickets.length;
 
-  const openCount = useMemo(() => 
-    tickets.filter(t => normalizeStatus(t.status) !== 'Resolved').length, 
+  const openCount = useMemo(() =>
+    tickets.filter(t => normalizeStatus(t.status) !== 'Resolved').length,
     [tickets]
   );
 
-  const unassignedCount = useMemo(() => 
-    tickets.filter(t => !t.assigned_to).length, 
+  const unassignedCount = useMemo(() =>
+    tickets.filter(t => !t.assigned_to).length,
     [tickets]
   );
 
-  const urgentCount = useMemo(() => 
-    tickets.filter(t => normalizeSeverity(t.severity) === 'Urgent').length, 
+  const urgentCount = useMemo(() =>
+    tickets.filter(t => normalizeSeverity(t.severity) === 'Urgent').length,
     [tickets]
   );
 
-  const resolvedCount = useMemo(() => 
-    tickets.filter(t => normalizeStatus(t.status) === 'Resolved').length, 
+  const resolvedCount = useMemo(() =>
+    tickets.filter(t => normalizeStatus(t.status) === 'Resolved').length,
     [tickets]
   );
 
@@ -429,6 +429,7 @@ const Dashboard: React.FC = () => {
     return counts;
   }, [tickets, teamMembers]);
 
+
   // Handle clicking on summary cards to toggle filter
   const handleCardClick = (type: 'OPEN' | 'UNASSIGNED' | 'URGENT' | 'RESOLVED') => {
     if (activeCardFilter === type) {
@@ -436,13 +437,14 @@ const Dashboard: React.FC = () => {
       setStatusFilter('ALL');
       setAssigneeFilter('ALL');
       setPriorityFilter('ALL');
+      setCategoryFilter('ALL');
       return;
     }
 
     setActiveCardFilter(type);
     switch (type) {
       case 'OPEN':
-        setStatusFilter('Open');
+        setStatusFilter('OPEN_ACTIVE');
         setAssigneeFilter('ALL');
         setPriorityFilter('ALL');
         break;
@@ -490,6 +492,7 @@ const Dashboard: React.FC = () => {
     setStatusFilter('ALL');
     setAssigneeFilter('ALL');
     setPriorityFilter('ALL');
+    setCategoryFilter('ALL');
     setActiveCardFilter(null);
   }, []);
 
@@ -669,29 +672,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Quick Seed 3 live dynamic incidents
-  const handleSeedDemo = async () => {
-    setIsLoading(true);
-    try {
-      const headers: Record<string, string> = {
-        'x-tenant-id': currentTenantId,
-        'x-user-role': currentRole
-      };
-      const res = await authFetch('/api/v1/tickets/seed-demo', {
-        method: 'POST',
-        headers
-      });
-      if (res.ok) {
-        fetchTickets();
-        setAlertBanner('Seeded 3 dynamic live telemetry incidents.');
-        setTimeout(() => setAlertBanner(null), 5000);
-      }
-    } catch (err) {
-      console.error('Failed to seed demo tickets:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Clear all tickets for clean workspace state
   const handleClearTickets = async () => {
@@ -733,8 +713,8 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-[#f0f5fa] text-slate-800 font-sans">
-      
+    <div className="h-full h-[100dvh] max-h-screen w-full flex overflow-hidden bg-[#f0f5fa] text-slate-800 font-sans">
+
       {/* Sleek Dark Left Sidebar - Fixed at left, independent vertical scroll */}
       <Sidebar
         currentView={currentView}
@@ -750,8 +730,8 @@ const Dashboard: React.FC = () => {
       />
 
       {/* Main App Column: Header fixed at top, independent scrollable content below */}
-      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-hidden bg-[#f0f5fa]">
-        
+      <div className="flex-1 h-full min-h-0 flex flex-col min-w-0 overflow-hidden bg-[#f0f5fa]">
+
         {/* Dynamic Dashboard Header - Fixed at top of main area */}
         <DashboardHeader
           tenants={tenants}
@@ -770,7 +750,6 @@ const Dashboard: React.FC = () => {
           permissionsMatrix={permissionsMatrix}
           onNewIncidentClick={() => setIsSimulatorOpen(true)}
           onOpenSimulator={() => setIsSimulatorOpen(true)}
-          onSeedDemo={handleSeedDemo}
           onClearTickets={handleClearTickets}
           onSelectTicket={(ticket) => setSelectedTicket(ticket)}
           onSelectView={(view) => setCurrentView(view)}
@@ -793,329 +772,335 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Dedicated Independent Vertical Scroll Container for Main Content ONLY */}
-        <div 
+        <div
           ref={scrollContainerRef}
           id="main-scroll-container"
           className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col bg-[#f0f5fa] main-content-scroll"
         >
 
-        {/* VIEW 1: DASHBOARD (Edge-to-Edge Observability & Incident Workspace) */}
-        {currentView === 'dashboard' && (
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
-            
-            {/* Greeting & Operations Breadcrumb Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2.5">
-                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                    {greeting}, {currentUser.name.replace(/\s*\([^)]*\)/g, '').trim()} 👋
-                  </h1>
-                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-sm text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                    <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
-                    <span>{isConnected ? 'Live WebSockets Connected' : 'Syncing Live Engine'}</span>
-                  </span>
+          {/* VIEW 1: DASHBOARD (Edge-to-Edge Observability & Incident Workspace) */}
+          {currentView === 'dashboard' && (
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
+
+              {/* Greeting & Operations Breadcrumb Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2.5">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                      {greeting}, {currentUser.name.replace(/\s*\([^)]*\)/g, '').trim()} 👋
+                    </h1>
+                    <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-sm text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                      <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
+                      <span>{isConnected ? 'Live WebSockets Connected' : 'Syncing Live Engine'}</span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Live multi-tenant telemetry bridge with instant client feedback and engineering on-call triage.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Live multi-tenant telemetry bridge with instant client feedback and engineering on-call triage.
-                </p>
-              </div>
 
-              {/* Quick action buttons */}
-              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                <button
-                  type="button"
-                  onClick={() => setIsSimulatorOpen(true)}
-                  title="Test live client SDK crash / error telemetry"
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  <Cpu className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Simulate Ingest</span>
-                </button>
-
-                {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
+                {/* Quick action buttons */}
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                   <button
                     type="button"
-                    onClick={handleSeedDemo}
-                    title="Seed 3 dynamic test incidents"
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-slate-700 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    onClick={() => setIsSimulatorOpen(true)}
+                    title="Test live client SDK crash / error telemetry"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Quick Seed</span>
+                    <Cpu className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Simulate Ingest</span>
                   </button>
-                )}
 
-                {tickets.length > 0 && hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete') && (
+
+                  {tickets.length > 0 && hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete') && (
+                    <button
+                      type="button"
+                      onClick={handleClearTickets}
+                      title="Clear all tickets in this workspace"
+                      className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Clear</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    onClick={handleClearTickets}
-                    title="Clear all tickets in this workspace"
-                    className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    onClick={fetchTickets}
+                    title="Refresh live tickets from API"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-purple-700 rounded-md text-xs font-semibold shadow-xs hover:border-purple-200 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Clear</span>
+                    <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
                   </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={fetchTickets}
-                  title="Refresh live tickets from API"
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-purple-700 rounded-md text-xs font-semibold shadow-xs hover:border-purple-200 transition-colors cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isLoading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
-                </button>
+                </div>
               </div>
-            </div>
 
-            {/* 2. Needs Attention Area - Urgent & Unassigned, SLA Alerts, Client Blockers */}
-            <NeedsAttentionSection
-              tickets={tickets}
-              teamMembers={teamMembers}
-              onSelectTicket={setSelectedTicket}
-            />
-
-            {/* 3. Four Summary Cards with dynamic calculations */}
-            <SummaryCards
-              tickets={tickets}
-              openCount={openCount}
-              unassignedCount={unassignedCount}
-              urgentCount={urgentCount}
-              resolvedCount={resolvedCount}
-              activeFilterType={activeCardFilter}
-              onCardClick={handleCardClick}
-            />
-
-            {/* 4. Telemetry Observability & Triage Velocity Graphs */}
-            <ObservabilityGraphs
-              tickets={tickets}
-              teamMembers={teamMembers}
-              isLoading={isLoading}
-              onSeedDemo={handleSeedDemo}
-              onSimulateTelemetry={() => setIsSimulatorOpen(true)}
-              apiLatencyMs={apiLatencyMs}
-              onSelectCategory={(cat) => {
-                setSearchQuery(cat);
-                setActiveCardFilter(null);
-              }}
-            />
-
-
-            {/* 6. Live Dynamic Tickets Table */}
-            <section aria-labelledby="incident-table-heading" className="space-y-2">
-              <h2 id="incident-table-heading" className="sr-only">Incidents Table</h2>
-              <TicketsTable
+              {/* 2. Needs Attention Area - Urgent & Unassigned, SLA Alerts, Client Blockers */}
+              <NeedsAttentionSection
                 tickets={tickets}
                 teamMembers={teamMembers}
-                currentRole={currentRole}
-                permissionsMatrix={permissionsMatrix}
-                searchQuery={searchQuery}
-                onSearchChange={(q) => {
-                  setSearchQuery(q);
-                  setActiveCardFilter(null);
-                }}
-                statusFilter={statusFilter}
-                onStatusFilterChange={(s) => {
-                  setStatusFilter(s);
-                  setActiveCardFilter(null);
-                }}
-                assigneeFilter={assigneeFilter}
-                onAssigneeFilterChange={(a) => {
-                  setAssigneeFilter(a);
-                  setActiveCardFilter(null);
-                }}
-                priorityFilter={priorityFilter}
-                onPriorityFilterChange={(p) => {
-                  setPriorityFilter(p);
-                  setActiveCardFilter(null);
-                }}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                onSortChange={handleSortChange}
-                onResetFilters={handleResetFilters}
                 onSelectTicket={setSelectedTicket}
-                onOpenCreateModal={() => setIsSimulatorOpen(true)}
-                onOpenSimulatorModal={() => setIsSimulatorOpen(true)}
-                onSeedDemo={handleSeedDemo}
-                onUpdateStatus={handleUpdateStatus}
-                onUpdateAssignee={handleUpdateTicketAssignee}
-                lastUpdated={lastUpdated}
-                isLoading={isLoading}
               />
-            </section>
 
-          </main>
-        )}
+              {/* 3. Four Summary Cards with dynamic calculations */}
+              <SummaryCards
+                tickets={tickets}
+                openCount={openCount}
+                unassignedCount={unassignedCount}
+                urgentCount={urgentCount}
+                resolvedCount={resolvedCount}
+                activeFilterType={activeCardFilter}
+                onCardClick={handleCardClick}
+              />
+              {/* 3.5 Feedback Channels & Triage Streams (Bugs, Ideas, Help, Ratings) */}
+              <FeedbackChannelsSection
+                tickets={tickets}
+                activeCategoryFilter={categoryFilter}
+                onSelectCategory={(cat) => {
+                  setCategoryFilter(cat);
+                  setActiveCardFilter(null);
+                }}
+              />
 
-        {/* VIEW 2: TOTAL TICKETS */}
-        {currentView === 'total-tickets' && (
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
-            {/* Header Box */}
-            <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2.5">
-                  <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
-                    <Layers className="w-5 h-5 text-indigo-600" />
-                    <span>Total Tickets Registry</span>
-                  </h2>
-                  <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-md">
-                    {totalCount} Total
-                  </span>
+
+              {/* 4. Telemetry Observability & Triage Velocity Graphs */}
+              <ObservabilityGraphs
+                tickets={tickets}
+                teamMembers={teamMembers}
+                isLoading={isLoading}
+                onSimulateTelemetry={() => setIsSimulatorOpen(true)}
+                apiLatencyMs={apiLatencyMs}
+                onSelectCategory={(cat) => {
+                  setCategoryFilter(cat);
+                  setActiveCardFilter(null);
+                }}
+              />
+
+
+              {/* 6. Live Dynamic Tickets Table */}
+              <section aria-labelledby="incident-table-heading" className="space-y-2">
+                <h2 id="incident-table-heading" className="sr-only">Incidents Table</h2>
+                <TicketsTable
+                  tickets={tickets}
+                  teamMembers={teamMembers}
+                  currentRole={currentRole}
+                  permissionsMatrix={permissionsMatrix}
+                  searchQuery={searchQuery}
+                  onSearchChange={(q) => {
+                    setSearchQuery(q);
+                    setActiveCardFilter(null);
+                  }}
+                  statusFilter={statusFilter}
+                  onStatusFilterChange={(s) => {
+                    setStatusFilter(s);
+                    setActiveCardFilter(null);
+                  }}
+                  assigneeFilter={assigneeFilter}
+                  onAssigneeFilterChange={(a) => {
+                    setAssigneeFilter(a);
+                    setActiveCardFilter(null);
+                  }}
+                  priorityFilter={priorityFilter}
+                  onPriorityFilterChange={(p) => {
+                    setPriorityFilter(p);
+                    setActiveCardFilter(null);
+                  }}
+                  categoryFilter={categoryFilter}
+                  onCategoryFilterChange={(c) => {
+                    setCategoryFilter(c);
+                    setActiveCardFilter(null);
+                  }}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSortChange={handleSortChange}
+                  onResetFilters={handleResetFilters}
+                  onSelectTicket={setSelectedTicket}
+                  onOpenCreateModal={() => setIsSimulatorOpen(true)}
+                  onOpenSimulatorModal={() => setIsSimulatorOpen(true)}
+                  onUpdateStatus={handleUpdateStatus}
+                  onUpdateAssignee={handleUpdateTicketAssignee}
+                  lastUpdated={lastUpdated}
+                  isLoading={isLoading}
+                />
+              </section>
+
+            </main>
+          )}
+
+          {/* VIEW 2: TOTAL TICKETS */}
+          {currentView === 'total-tickets' && (
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
+              {/* Header Box */}
+              <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2.5">
+                    <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                      <Layers className="w-5 h-5 text-indigo-600" />
+                      <span>Total Tickets Registry</span>
+                    </h2>
+                    <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-md">
+                      {totalCount} Total
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Complete registry of all ingested incidents, bug reports, feature ideas, and customer feedback across all client products.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Complete registry of all ingested incidents, bug reports, feature ideas, and customer feedback across all client products.
-                </p>
-              </div>
 
-              <div className="flex items-center space-x-2.5 shrink-0">
-                {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
-                  <>
-                    <button
-                      onClick={() => setIsSimulatorOpen(true)}
-                      className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>New Incident</span>
-                    </button>
-                    <button
-                      onClick={() => setIsSimulatorOpen(true)}
-                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Simulate Ingest</span>
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={fetchTickets}
-                  disabled={isLoading}
-                  className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Main Ticket Queue */}
-            <TicketList
-              tickets={tickets}
-              onSelectTicket={setSelectedTicket}
-              currentRole={currentRole}
-              isLoading={isLoading}
-              onOpenWidgetSimulator={() => setIsSimulatorOpen(true)}
-              onUpdateStatus={handleUpdateStatus}
-              onDeleteTicket={handleDeleteTicket}
-              permissionsMatrix={permissionsMatrix}
-            />
-          </main>
-        )}
-
-        {/* VIEW 3: TICKETS RESOLVED */}
-        {currentView === 'resolved-tickets' && (
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
-            {/* Header Box */}
-            <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2.5">
-                  <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    <span>Resolved Incidents & SLA Compliance</span>
-                  </h2>
-                  <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md">
-                    {resolvedCount} Resolved
-                  </span>
+                <div className="flex items-center space-x-2.5 shrink-0">
+                  {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
+                    <>
+                      <button onClick={() => setIsSimulatorOpen(true)}
+                        className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>New Incident</span>
+                      </button>
+                      <button
+                        onClick={() => setIsSimulatorOpen(true)}
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Simulate Ingest</span>
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={fetchTickets}
+                    disabled={isLoading}
+                    className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Closed and verified incidents meeting enterprise SLA resolution benchmarks with complete audit trail.
-                </p>
               </div>
 
-              <div className="flex items-center space-x-2.5 shrink-0">
-                <button
-                  onClick={fetchTickets}
-                  disabled={isLoading}
-                  className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
-                </button>
+              {/* Main Ticket Queue */}
+              <TicketList
+                tickets={tickets}
+                onSelectTicket={setSelectedTicket}
+                currentRole={currentRole}
+                isLoading={isLoading}
+                onOpenWidgetSimulator={() => setIsSimulatorOpen(true)}
+                onUpdateStatus={handleUpdateStatus}
+                onDeleteTicket={handleDeleteTicket}
+                permissionsMatrix={permissionsMatrix}
+              />
+            </main>
+          )}
+
+          {/* VIEW 3: TICKETS RESOLVED */}
+          {currentView === 'resolved-tickets' && (
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
+              {/* Header Box */}
+              <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2.5">
+                    <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      <span>Resolved Incidents & SLA Compliance</span>
+                    </h2>
+                    <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md">
+                      {resolvedCount} Resolved
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Closed and verified incidents meeting enterprise SLA resolution benchmarks with complete audit trail.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2.5 shrink-0">
+                  <button
+                    onClick={fetchTickets}
+                    disabled={isLoading}
+                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Main Ticket Queue for Resolved */}
-            <TicketList
-              tickets={resolvedTickets}
-              onSelectTicket={setSelectedTicket}
-              currentRole={currentRole}
-              isLoading={isLoading}
-              onOpenWidgetSimulator={() => setIsSimulatorOpen(true)}
-              onUpdateStatus={handleUpdateStatus}
-              onDeleteTicket={handleDeleteTicket}
-              isResolvedOnly={true}
-              permissionsMatrix={permissionsMatrix}
-            />
-          </main>
-        )}
+              {/* Main Ticket Queue for Resolved */}
+              <TicketList
+                tickets={resolvedTickets}
+                onSelectTicket={setSelectedTicket}
+                currentRole={currentRole}
+                isLoading={isLoading}
+                onOpenWidgetSimulator={() => setIsSimulatorOpen(true)}
+                onUpdateStatus={handleUpdateStatus}
+                onDeleteTicket={handleDeleteTicket}
+                isResolvedOnly={true}
+                permissionsMatrix={permissionsMatrix}
+              />
+            </main>
+          )}
 
-        {/* VIEW 4: STAFF MEMBERS & ACTIVE LOAD MODULE */}
-        {currentView === 'staff-members' && (
-          <StaffWorkloadView
-            currentTenantId={currentTenantId}
-            currentRole={currentRole}
-            teamMembers={teamMembers}
-            tickets={tickets}
-            permissionsMatrix={permissionsMatrix}
-            onSelectTicket={setSelectedTicket}
-            onUpdateStatus={handleUpdateStatus}
-            onAssignTicket={(ticketId, memberId, memberName) => {
-              handleUpdateTicketAssignee(ticketId, memberId, memberName);
-            }}
-            onRefresh={() => {
-              fetchTickets();
-              fetchTenantMetadata();
-              fetchAllTenants();
-            }}
-            onStaffUpdated={() => {
-              fetchTenantMetadata();
-              fetchTickets();
-              fetchAllTenants();
-            }}
-          />
-        )}
 
-        {/* VIEW 5: SETTINGS (Dynamic RBAC Permissions Matrix) */}
-        {currentView === 'settings' && (
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
-            <SettingsView 
+          {/* VIEW 4: STAFF MEMBERS & ACTIVE LOAD MODULE */}
+          {currentView === 'staff-members' && (
+            <StaffWorkloadView
               currentTenantId={currentTenantId}
               currentRole={currentRole}
+              teamMembers={teamMembers}
+              tickets={tickets}
               permissionsMatrix={permissionsMatrix}
-              onPermissionsUpdated={(matrix) => {
-                setPermissionsMatrix(matrix);
+              onSelectTicket={setSelectedTicket}
+              onUpdateStatus={handleUpdateStatus}
+              onAssignTicket={(ticketId, memberId, memberName) => {
+                handleUpdateTicketAssignee(ticketId, memberId, memberName);
               }}
-              onTenantUpdated={() => {
-                fetchAllTenants();
+              onRefresh={() => {
                 fetchTickets();
-                loadTenantPermissions();
+                fetchTenantMetadata();
+                fetchAllTenants();
+              }}
+              onStaffUpdated={() => {
+                fetchTenantMetadata();
+                fetchTickets();
+                fetchAllTenants();
               }}
             />
-          </main>
-        )}
+          )}
 
-        {/* Footer */}
-        <footer className="border-t border-slate-200/90 bg-white/95 py-5 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 w-full mt-auto shrink-0 shadow-xs">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-800">FEEDBACK-HUB ENTERPRISE</span>
-            <span>•</span>
-            <span className="text-slate-500">DYNAMIC REST API & WEBSOCKET ENGINE</span>
-          </div>
-          <div className="flex items-center space-x-3 text-slate-500 font-mono text-[11px]">
-            <span className="text-purple-600 font-medium">REAL-TIME TELEMETRY</span>
-            <span>•</span>
-            <span>POSTGRESQL 16 RLS READY</span>
-          </div>
-        </footer>
+          {/* VIEW 5: SETTINGS (Dynamic RBAC Permissions Matrix) */}
+          {currentView === 'settings' && (
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
+              <SettingsView
+                currentTenantId={currentTenantId}
+                currentRole={currentRole}
+                permissionsMatrix={permissionsMatrix}
+                onPermissionsUpdated={(matrix) => {
+                  setPermissionsMatrix(matrix);
+                }}
+                onTenantUpdated={() => {
+                  fetchAllTenants();
+                  fetchTickets();
+                  loadTenantPermissions();
+                }}
+              />
+            </main>
+          )}
+
+          {/* Enterprise Telemetry Section */}
+          <section
+            id="enterprise-telemetry-section"
+            aria-label="Enterprise Telemetry & System Status"
+            className="border-t border-slate-200/90 bg-white/95 py-5 pb-8 sm:pb-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 w-full mt-auto shrink-0 shadow-xs"
+          >
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-slate-800">FEEDBACK-HUB ENTERPRISE</span>
+              <span>•</span>
+              <span className="text-slate-500">DYNAMIC REST API & WEBSOCKET ENGINE</span>
+            </div>
+            <div className="flex items-center space-x-3 text-slate-500 font-mono text-[11px]">
+              <span className="text-purple-600 font-medium">REAL-TIME TELEMETRY</span>
+              <span>•</span>
+              <span>POSTGRESQL 16 RLS READY</span>
+            </div>
+          </section>
 
         </div>
       </div>
@@ -1147,6 +1132,7 @@ const Dashboard: React.FC = () => {
         isOpen={isSimulatorOpen}
         onClose={() => setIsSimulatorOpen(false)}
         currentTenantId={currentTenantId}
+        initialCategory={simulatorCategory}
         onTicketCreated={() => {
           fetchTickets();
           setAlertBanner('Client SDK telemetry ingested successfully.');

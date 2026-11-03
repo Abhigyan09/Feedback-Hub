@@ -143,6 +143,9 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
                 className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-none font-medium focus:outline-none focus:border-purple-500 cursor-pointer"
               >
                 <option value="BUG">Bug</option>
+                <option value="IDEA">Idea</option>
+                <option value="HELP">Help</option>
+                <option value="RATING">Rating</option>
                 <option value="API_FAILURE">API Failure</option>
                 <option value="PERFORMANCE">Performance</option>
                 <option value="UI_GLITCH">UI Glitch</option>

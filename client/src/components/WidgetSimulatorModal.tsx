@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   X, 
   Send, 
@@ -16,23 +16,26 @@ import {
   Check
 } from 'lucide-react';
 
+type FeedbackCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING';
+type SeverityPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
+
 interface WidgetSimulatorModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentTenantId?: string;
   onTicketCreated: () => void;
+  initialCategory?: FeedbackCategory;
 }
-
-type FeedbackCategory = 'BUG' | 'IDEA' | 'HELP' | 'RATING';
-type SeverityPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
   isOpen,
   onClose,
-  onTicketCreated
+  currentTenantId,
+  onTicketCreated,
+  initialCategory
 }) => {
   // Category & Conditional Fields
-  const [category, setCategory] = useState<FeedbackCategory>('BUG');
+  const [category, setCategory] = useState<FeedbackCategory>(initialCategory || 'BUG');
   const [severity, setSeverity] = useState<SeverityPriority>('Medium');
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
@@ -47,7 +50,46 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
   // Multi-Product / Domain Simulation Switcher
   const [simulatedProduct, setSimulatedProduct] = useState<'checkout' | 'merchant' | 'medsync'>('checkout');
 
+  // Auto-sync simulated product to active tenant scope
+  useEffect(() => {
+    if (isOpen && currentTenantId) {
+      if (currentTenantId.includes('medsync') || currentTenantId === '00000000-0000-4000-8000-000000000002') {
+        setSimulatedProduct('medsync');
+      } else {
+        setSimulatedProduct('checkout');
+      }
+    }
+  }, [isOpen, currentTenantId]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset all form inputs to clean default state
+  const resetForm = useCallback(() => {
+    setCategory(initialCategory || 'BUG');
+    setSeverity('Medium');
+    setRating(5);
+    setHoverRating(0);
+    setSubject('');
+    setDetails('');
+    setScreenshot(null);
+    setIsTelemetryOpen(false);
+    setIsSubmitting(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [initialCategory]);
+
+  // When modal is opened, always refresh and reset all fields
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, resetForm]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   // Global paste listener for Ctrl+V / Cmd+V screenshot paste
   useEffect(() => {
@@ -95,7 +137,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
     },
     medsync: {
       name: 'MedSync Healthcare (Patient Portal)',
-      key: 'fb_live_acme_checkout_key_998', // Fallback for dev demo
+      key: 'fb_live_medsync_key_771',
       domain: 'portal.medsync.io',
       url: 'https://portal.medsync.io/records/telehealth'
     }
@@ -184,6 +226,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
       });
 
       if (response.ok) {
+        resetForm();
         onTicketCreated();
         onClose();
       } else {
@@ -216,10 +259,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               </p>
             </div>
           </div>
-          <button 
-            type="button" 
-            onClick={onClose} 
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          <button type="button" onClick={handleClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
@@ -486,10 +526,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
 
           {/* Modal Footer - Fixed at bottom */}
           <div className="px-6 py-4 flex items-center justify-end space-x-3 border-t border-slate-100 bg-white shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+            <button type="button" onClick={handleClose} className="px-6 py-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
             >
               Cancel
             </button>

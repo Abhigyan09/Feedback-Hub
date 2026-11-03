@@ -10,7 +10,10 @@ import {
   ArrowDown, 
   Clock, 
   Cpu, 
-  Bug, 
+  Bug,
+  Lightbulb,
+  HelpCircle,
+  Star, 
   Layout, 
   ShieldAlert, 
   AlertTriangle,
@@ -44,6 +47,8 @@ interface TicketsTableProps {
   onAssigneeFilterChange: (assigneeId: string) => void;
   priorityFilter: string;
   onPriorityFilterChange: (priority: string) => void;
+  categoryFilter?: string;
+  onCategoryFilterChange?: (category: string) => void;
   sortField: SortField;
   sortDirection: SortDirection;
   onSortChange: (field: SortField) => void;
@@ -51,7 +56,6 @@ interface TicketsTableProps {
   onSelectTicket: (ticket: Ticket) => void;
   onOpenCreateModal?: () => void;
   onOpenSimulatorModal?: () => void;
-  onSeedDemo?: () => void;
   onUpdateStatus?: (ticketId: string, status: string) => void;
   onUpdateAssignee?: (ticketId: string, assigneeId: string | null, assigneeName: string | null) => void;
   lastUpdated?: Date;
@@ -71,6 +75,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   onAssigneeFilterChange,
   priorityFilter,
   onPriorityFilterChange,
+  categoryFilter = 'ALL',
+  onCategoryFilterChange,
   sortField,
   sortDirection,
   onSortChange,
@@ -78,7 +84,6 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   onSelectTicket,
   onOpenCreateModal,
   onOpenSimulatorModal,
-  onSeedDemo,
   onUpdateStatus,
   onUpdateAssignee,
   lastUpdated,
@@ -119,7 +124,8 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     Boolean(searchQuery.trim()) || 
     statusFilter !== 'ALL' || 
     assigneeFilter !== 'ALL' || 
-    priorityFilter !== 'ALL';
+    priorityFilter !== 'ALL' ||
+    (Boolean(categoryFilter) && categoryFilter !== 'ALL');
 
   const getPriorityWeight = (priority: string): number => {
     switch (priority) {
@@ -160,7 +166,9 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
         }
       }
 
-      if (statusFilter !== 'ALL' && normStatus !== statusFilter) {
+      if (statusFilter === 'OPEN_ACTIVE') {
+        if (normStatus === 'Resolved') return false;
+      } else if (statusFilter !== 'ALL' && normStatus !== statusFilter) {
         return false;
       }
 
@@ -173,6 +181,10 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
       }
 
       if (priorityFilter !== 'ALL' && normPriority !== priorityFilter) {
+        return false;
+      }
+
+      if (categoryFilter && categoryFilter !== 'ALL' && t.category !== categoryFilter) {
         return false;
       }
 
@@ -205,7 +217,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
     });
 
     return result;
-  }, [tickets, searchQuery, statusFilter, assigneeFilter, priorityFilter, sortField, sortDirection]);
+  }, [tickets, searchQuery, statusFilter, assigneeFilter, priorityFilter, categoryFilter, sortField, sortDirection]);
 
   // Priority Badge Helper
   const renderPriorityBadge = (severity: string) => {
@@ -302,16 +314,41 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
   // Category Icon Helper
   const renderCategoryIcon = (category: string) => {
     switch (category) {
+      case 'BUG':
+        return <span title="Application Bug"><Bug className="w-3.5 h-3.5 text-rose-500" /></span>;
+      case 'IDEA':
+        return <span title="Feature Idea"><Lightbulb className="w-3.5 h-3.5 text-blue-500" /></span>;
+      case 'HELP':
+        return <span title="Help & Support"><HelpCircle className="w-3.5 h-3.5 text-emerald-500" /></span>;
+      case 'RATING':
+        return <span title="Customer Experience Rating"><Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" /></span>;
       case 'API_FAILURE':
         return <span title="API Failure"><Cpu className="w-3.5 h-3.5 text-red-500" /></span>;
-      case 'BUG':
-        return <span title="Application Bug"><Bug className="w-3.5 h-3.5 text-amber-500" /></span>;
       case 'UI_GLITCH':
-        return <span title="UI Glitch"><Layout className="w-3.5 h-3.5 text-blue-500" /></span>;
+        return <span title="UI Glitch"><Layout className="w-3.5 h-3.5 text-indigo-500" /></span>;
       case 'SECURITY':
         return <span title="Security & Auth"><ShieldAlert className="w-3.5 h-3.5 text-purple-600" /></span>;
       default:
         return <span title="Performance & Telemetry"><AlertTriangle className="w-3.5 h-3.5 text-slate-500" /></span>;
+    }
+  };
+
+  const getCategoryBadgeClass = (category: string) => {
+    switch (category) {
+      case 'BUG':
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+      case 'IDEA':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'HELP':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'RATING':
+        return 'bg-amber-50 text-amber-800 border-amber-200';
+      case 'API_FAILURE':
+        return 'bg-red-50 text-red-700 border-red-200';
+      case 'SECURITY':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
@@ -374,6 +411,7 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
             >
               <option value="ALL">All Statuses</option>
+              <option value="OPEN_ACTIVE">All Active (Unresolved)</option>
               <option value="Open">Open</option>
               <option value="In Dev">In Dev</option>
               <option value="In QA">In QA</option>
@@ -398,6 +436,26 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
               <option value="UNASSIGNED">Unassigned Only</option>
+            </select>
+          </div>
+
+          {/* Category Filter */}
+          <div className="flex items-center space-x-1.5">
+            <label htmlFor="category-filter" className="text-xs text-slate-500 font-medium hidden sm:inline">
+              Category:
+            </label>
+            <select
+              id="category-filter"
+              value={categoryFilter || 'ALL'}
+              onChange={(e) => onCategoryFilterChange?.(e.target.value)}
+              aria-label="Filter tickets by category"
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-md font-medium focus:outline-none focus:border-purple-500 cursor-pointer shadow-2xs"
+            >
+              <option value="ALL">All Categories</option>
+              <option value="BUG">Bug Reports (BUG)</option>
+              <option value="IDEA">Feature Ideas (IDEA)</option>
+              <option value="HELP">Help Inquiries (HELP)</option>
+              <option value="RATING">Experience Ratings (RATING)</option>
             </select>
           </div>
 
@@ -503,16 +561,6 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
               </p>
             </div>
             <div className="flex items-center justify-center space-x-2.5 pt-2 flex-wrap gap-y-2">
-              {onSeedDemo && (
-                <button
-                  type="button"
-                  onClick={onSeedDemo}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-md shadow-xs transition-colors"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Quick Seed Demo Incidents</span>
-                </button>
-              )}
               {onOpenSimulatorModal && (
                 <button
                   type="button"
@@ -662,10 +710,15 @@ export const TicketsTable: React.FC<TicketsTableProps> = ({
                           </span>
 
                           {/* Category Tag */}
-                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-sm bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className={`inline-flex items-center space-x-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-sm border ${getCategoryBadgeClass(ticket.category)}`}>
                             {renderCategoryIcon(ticket.category)}
                             <span>{(ticket.category || 'BUG').replace('_', ' ')}</span>
                           </span>
+                          {ticket.category === 'RATING' && ticket.rating && (
+                            <span className="inline-flex items-center space-x-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-500 text-white shadow-2xs">
+                              <span>★ {ticket.rating}/5</span>
+                            </span>
+                          )}
 
                           {/* Telemetry Attached Indicators */}
                           {canViewTelemetry && renderTelemetryIndicator(ticket)}

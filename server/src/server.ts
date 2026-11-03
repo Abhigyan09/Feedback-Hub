@@ -43,7 +43,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // Healthcheck Route
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/v1/health'], (req, res) => {
   res.json({
     status: 'ONLINE',
     service: 'Feedback-Hub Backend API',
@@ -100,11 +100,21 @@ async function startServer() {
 
   server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`[Feedback-Hub API] Port ${ENV.PORT} is already in use by active instance.`);
+      console.error(`[Feedback-Hub API] Port ${ENV.PORT} is already in use by active instance.`);
+      process.exit(1);
     } else {
       console.error('[Feedback-Hub API] Server error:', err);
     }
   });
+
+  const shutdown = () => {
+    server.close(() => {
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(0), 1000);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 
   server.listen(ENV.PORT, () => {
     console.log(`=======================================================`);

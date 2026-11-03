@@ -8,7 +8,10 @@ import {
   Clock, 
   ShieldCheck, 
   Cpu, 
-  Bug, 
+  Bug,
+  Lightbulb,
+  HelpCircle,
+  Star,
   Layout, 
   ShieldAlert, 
   AlertTriangle,
@@ -21,7 +24,6 @@ interface ObservabilityGraphsProps {
   teamMembers: TeamMember[];
   onSelectCategory?: (cat: string) => void;
   isLoading?: boolean;
-  onSeedDemo?: () => void;
   onSimulateTelemetry?: () => void;
   apiLatencyMs?: number | null;
 }
@@ -31,7 +33,6 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   teamMembers,
   onSelectCategory,
   isLoading = false,
-  onSeedDemo,
   onSimulateTelemetry,
   apiLatencyMs
 }) => {
@@ -41,11 +42,13 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   // 1. Dynamic Category Breakdown
   const categoryStats = useMemo(() => {
     const categories = [
+      { id: 'BUG', label: 'Bugs & Defects', icon: Bug, color: 'text-rose-500' },
+      { id: 'IDEA', label: 'Feature Ideas', icon: Lightbulb, color: 'text-blue-500' },
+      { id: 'HELP', label: 'Help & Inquiries', icon: HelpCircle, color: 'text-emerald-500' },
+      { id: 'RATING', label: 'Customer Ratings', icon: Star, color: 'text-amber-500' },
       { id: 'API_FAILURE', label: 'API Failures', icon: Cpu, color: 'text-red-500' },
-      { id: 'SECURITY', label: 'Security & Auth', icon: ShieldAlert, color: 'text-purple-600' },
-      { id: 'PERFORMANCE', label: 'Performance & DB', icon: AlertTriangle, color: 'text-amber-500' },
-      { id: 'BUG', label: 'Application Bugs', icon: Bug, color: 'text-indigo-500' },
-      { id: 'UI_GLITCH', label: 'UI & Frontend', icon: Layout, color: 'text-blue-500' }
+      { id: 'PERFORMANCE', label: 'Performance & DB', icon: AlertTriangle, color: 'text-amber-600' },
+      { id: 'SECURITY', label: 'Security & Auth', icon: ShieldAlert, color: 'text-purple-600' }
     ];
 
     const total = tickets.length;
@@ -78,6 +81,20 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       pctP2: total > 0 ? (p2 / total) * 100 : 0,
       pctP3: total > 0 ? (p3 / total) * 100 : 0,
     };
+  }, [tickets]);
+
+  
+  // Dynamic Customer Satisfaction Score (CSAT) from RATING submissions
+  const csatStats = useMemo(() => {
+    const ratingTickets = tickets.filter(t => t.category === 'RATING' || (t.rating && Number(t.rating) > 0));
+    if (ratingTickets.length === 0) {
+      return { avgScore: '5.0', totalRatings: 0, satisfactionPct: 100 };
+    }
+    const sum = ratingTickets.reduce((acc, t) => acc + (Number(t.rating) || 5), 0);
+    const avgScore = (sum / ratingTickets.length).toFixed(1);
+    const satisfied = ratingTickets.filter(t => (Number(t.rating) || 5) >= 4).length;
+    const satisfactionPct = Math.round((satisfied / ratingTickets.length) * 100);
+    return { avgScore, totalRatings: ratingTickets.length, satisfactionPct };
   }, [tickets]);
 
   // Dynamic MTTR & Real Performance calculations
@@ -463,7 +480,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       </div>
 
       {/* Row of 3 Operational SLA & Engineering Latency Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Metric 1: Mean Time to Resolution (MTTR) */}
         <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-4 flex items-center justify-between card-subtle">
