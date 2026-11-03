@@ -1,19 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { Ticket, TeamMember } from '../types';
 import { normalizeSeverity, normalizeStatus } from '../utils/formatters';
-import { 
-  BarChart3, 
-  Activity, 
-  Zap, 
-  Clock, 
-  ShieldCheck, 
-  Cpu, 
+import {
+  BarChart3,
+  Activity,
+  Zap,
+  Clock,
+  ShieldCheck,
+  Cpu,
   Bug,
   Lightbulb,
   HelpCircle,
   Star,
-  Layout, 
-  ShieldAlert, 
+  Layout,
+  ShieldAlert,
   AlertTriangle,
   ArrowDownRight,
   Sparkles
@@ -83,7 +83,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
     };
   }, [tickets]);
 
-  
+
   // Dynamic Customer Satisfaction Score (CSAT) from RATING submissions
   const csatStats = useMemo(() => {
     const ratingTickets = tickets.filter(t => t.category === 'RATING' || (t.rating && Number(t.rating) > 0));
@@ -191,15 +191,15 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
   }, [trendData, maxIngested]);
 
   const pathIngested = useMemo(() => {
-    return pointsIngested.reduce((acc, p, idx) => 
-      idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, 
-    '');
+    return pointsIngested.reduce((acc, p, idx) =>
+      idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`,
+      '');
   }, [pointsIngested]);
 
   const pathResolved = useMemo(() => {
-    return pointsResolved.reduce((acc, p, idx) => 
-      idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, 
-    '');
+    return pointsResolved.reduce((acc, p, idx) =>
+      idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`,
+      '');
   }, [pointsResolved]);
 
   const areaIngested = useMemo(() => {
@@ -231,7 +231,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
   return (
     <section aria-labelledby="observability-graphs-heading" className="space-y-4">
-      
+
       {/* Section Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
@@ -251,22 +251,20 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
           <button
             type="button"
             onClick={() => setTimeWindow('24h')}
-            className={`px-3 py-1 text-xs font-medium rounded-[8px] transition-colors cursor-pointer ${
-              timeWindow === '24h'
+            className={`px-3 py-1 text-xs font-medium rounded-[8px] transition-colors cursor-pointer ${timeWindow === '24h'
                 ? 'bg-[#0b1b36] text-white shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             Last 24 Hours
           </button>
           <button
             type="button"
             onClick={() => setTimeWindow('7d')}
-            className={`px-3 py-1 text-xs font-medium rounded-[8px] transition-colors cursor-pointer ${
-              timeWindow === '7d'
+            className={`px-3 py-1 text-xs font-medium rounded-[8px] transition-colors cursor-pointer ${timeWindow === '7d'
                 ? 'bg-[#0b1b36] text-white shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             Last 7 Days
           </button>
@@ -275,7 +273,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
       {/* Grid of 2 Observability Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        
+
         {/* Left Card: Incident Ingestion & Resolution Trend (7 Cols) */}
         <div className="lg:col-span-7 bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 sm:p-6 flex flex-col justify-between font-poppins">
           <div>
@@ -309,8 +307,8 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
             {/* SVG Area Chart */}
             <div className="relative pt-6 pb-2 overflow-hidden">
-              <svg 
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
+              <svg
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                 className="w-full h-40 overflow-visible"
                 preserveAspectRatio="none"
               >
@@ -410,8 +408,8 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
             {categoryStats.map((cat) => {
               const Icon = cat.icon;
               return (
-                <div 
-                  key={cat.id} 
+                <div
+                  key={cat.id}
                   className="space-y-1 cursor-pointer hover:bg-slate-50/80 p-1 rounded-[8px] transition-colors"
                   onClick={() => onSelectCategory?.(cat.id)}
                   title={`Click to filter by ${cat.label}`}
@@ -429,7 +427,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
                   {/* Progress Track */}
                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-[#3b82f6] rounded-full transition-all duration-500"
                       style={{ width: `${cat.pct}%` }}
                     />
@@ -481,7 +479,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
       {/* Row of 3 Operational SLA & Engineering Latency Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 font-poppins">
-        
+
         {/* Metric 1: Mean Time to Resolution (MTTR) */}
         <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex flex-col justify-between min-h-[135px]">
           <div>
@@ -504,7 +502,7 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
             </div>
           </div>
           <p className="text-xs text-slate-400 font-normal">
-            {avgMttrMinutes !== null 
+            {avgMttrMinutes !== null
               ? 'Calculated from resolved production incident timeline.'
               : 'Awaiting first verified incident resolution.'}
           </p>

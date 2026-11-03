@@ -226,12 +226,12 @@
       "category": "RATING",
       "severity": "LOW",
       "rating": 5,
-      "status": "OPEN",
+      "status": "RESOLVED",
       "reporter_email": "sarah.jenkins@clientops.com",
       "assigned_squad": "CUSTOMER_SUCCESS_SQUAD",
       "sla_due_at": "2026-11-04T12:46:15.063Z",
       "created_at": "2026-11-03T12:46:15.063Z",
-      "updated_at": "2026-11-03T12:46:15.063Z",
+      "updated_at": "2026-11-03T14:16:19.549Z",
       "telemetry": {
         "page_url": "https://checkout.acme.com/v2/pay/upi",
         "domain_origin": "checkout.acme.com",
@@ -258,12 +258,12 @@
       "description": "Help",
       "category": "HELP",
       "severity": "HIGH",
-      "status": "OPEN",
+      "status": "RESOLVED",
       "reporter_email": "sarah.jenkins@clientops.com",
       "assigned_squad": "CLIENT_SUPPORT_SQUAD",
       "sla_due_at": "2026-11-03T13:45:52.756Z",
       "created_at": "2026-11-03T12:45:52.756Z",
-      "updated_at": "2026-11-03T12:45:52.756Z",
+      "updated_at": "2026-11-03T14:16:18.262Z",
       "telemetry": {
         "page_url": "https://checkout.acme.com/v2/pay/upi",
         "domain_origin": "checkout.acme.com",
@@ -691,6 +691,39 @@
       "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [CUSTOMER_SUCCESS_SQUAD].",
       "is_internal_only": false,
       "created_at": "2026-11-03T12:46:15.063Z"
+    },
+    {
+      "id": "ev-1793715369103",
+      "ticket_id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from OPEN to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T14:16:09.104Z"
+    },
+    {
+      "id": "ev-1793715380947",
+      "ticket_id": "44bda3b6-e756-45fb-8751-b03f6e319988",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from OPEN to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T14:16:20.947Z"
+    },
+    {
+      "id": "ev-1793715382256",
+      "ticket_id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T14:16:22.256Z"
     }
   ],
   "refreshTokens": [
@@ -1233,5 +1266,5 @@
       }
     }
   },
-  "last_updated": "2026-11-03T12:46:37.220Z"
+  "last_updated": "2026-11-03T14:16:22.256Z"
 }
