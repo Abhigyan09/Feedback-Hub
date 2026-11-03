@@ -111,17 +111,17 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white text-neutral-900 rounded-lg p-8 sm:p-10 shadow-2xl border border-neutral-200/80">
+        <div className="bg-white text-neutral-900 rounded-[12px] p-8 sm:p-10 shadow-2xl border border-neutral-200/80">
           
           {/* Header in Card */}
           <div className="flex items-center space-x-3 pb-3 border-b border-neutral-100">
-            <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-mono font-medium text-xs shadow-sm">
+            <div className="w-8 h-8 bg-blue-600 rounded-[8px] flex items-center justify-center text-white font-mono font-medium text-xs shadow-sm">
               FH
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
-                <span className="font-semibold tracking-tight text-neutral-800 text-sm">FEEDBACK-HUB</span>
-                <span className="px-1.5 py-0.5 text-[9px] font-mono font-medium bg-blue-50 text-blue-700 rounded border border-blue-200">
+                <span className="font-medium tracking-tight text-neutral-800 text-sm">FEEDBACK-HUB</span>
+                <span className="px-1.5 py-0.5 text-[9px] font-mono font-medium bg-blue-50 text-blue-700 rounded-[6px] border border-blue-200">
                   SECURITY
                 </span>
               </div>
@@ -133,7 +133,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
           <div className="pt-4 pb-1">
             <div className="flex items-center space-x-2 text-blue-600 pb-1">
               <KeyRound className="w-5 h-5" />
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider">Set New Credentials</span>
+              <span className="text-xs font-mono font-medium uppercase tracking-wider">Set New Credentials</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-neutral-900">
               Reset your password
@@ -146,10 +146,10 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
           {/* Success State */}
           {isSuccess ? (
             <div className="mt-5 space-y-5 animate-in fade-in duration-200">
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-800 text-xs flex items-start space-x-3">
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-[8px] text-emerald-800 text-xs flex items-start space-x-3">
                 <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 mt-0.5" />
                 <div className="space-y-1">
-                  <span className="font-semibold text-sm text-emerald-900 block">Password Updated!</span>
+                  <span className="font-medium text-sm text-emerald-900 block">Password Updated!</span>
                   <p className="text-emerald-700 leading-relaxed">
                     Your password has been successfully reset. All prior active sessions have been revoked.
                   </p>
@@ -162,7 +162,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
               <button
                 type="button"
                 onClick={onNavigateToLogin}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm transition-all flex items-center justify-center space-x-2"
+                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-[8px] shadow-sm transition-all flex items-center justify-center space-x-2"
               >
                 <span>Sign in with new password</span>
               </button>
@@ -171,11 +171,11 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
             <>
               {/* Token Expiration / Already Used / Invalid State Banner */}
               {(isTokenExpired || isTokenAlreadyUsed || isTokenInvalid) && (
-                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md text-amber-900 text-xs space-y-2 animate-in fade-in duration-200">
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-[8px] text-amber-900 text-xs space-y-2 animate-in fade-in duration-200">
                   <div className="flex items-start space-x-2">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
                     <div>
-                      <span className="font-semibold block">
+                      <span className="font-medium block">
                         {isTokenExpired ? 'Reset Link Expired' : isTokenAlreadyUsed ? 'Link Already Used' : 'Invalid Reset Link'}
                       </span>
                       <p className="text-amber-800 mt-0.5 leading-relaxed">
@@ -191,7 +191,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                     <button
                       type="button"
                       onClick={onRequestNewLink}
-                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] rounded transition-colors inline-block"
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] rounded-[8px] transition-colors inline-block"
                     >
                       Request New Reset Link
                     </button>
@@ -201,7 +201,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
 
               {/* Standard Error Message */}
               {errorMessage && !isTokenExpired && !isTokenAlreadyUsed && !isTokenInvalid && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs flex items-start space-x-2 animate-in fade-in duration-200">
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-xs flex items-start space-x-2 animate-in fade-in duration-200">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-500" />
                   <div className="flex-1">
                     <span className="font-medium block">Failed to Reset Password</span>
@@ -231,7 +231,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                       disabled={isSubmitting || isTokenExpired || isTokenAlreadyUsed}
                       required
                       autoFocus
-                      className="w-full pl-10 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                      className="w-full pl-10 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-[8px] text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
                     />
                     <button
                       type="button"
@@ -261,7 +261,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                       placeholder="Re-enter new password"
                       disabled={isSubmitting || isTokenExpired || isTokenAlreadyUsed}
                       required
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-[8px] text-neutral-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                   <button
                     type="submit"
                     disabled={isSubmitting || isTokenExpired || isTokenAlreadyUsed || !token.trim()}
-                    className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
+                    className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-[8px] shadow-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
                   >
                     {isSubmitting ? (
                       <>

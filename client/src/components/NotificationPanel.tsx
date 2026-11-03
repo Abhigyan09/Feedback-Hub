@@ -201,10 +201,10 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
               <Bell className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-slate-900 tracking-tight flex items-center space-x-1.5">
+              <h3 className="text-xs font-medium text-slate-900 tracking-tight flex items-center space-x-1.5">
                 <span>Alerts & Notifications</span>
                 {unreadCount > 0 && (
-                  <span className="px-1.5 py-0.2 bg-red-100 border border-red-200 text-red-700 text-[10px] font-mono font-medium rounded-full">
+                  <span className="px-1.5 py-0.2 bg-red-100 border border-red-200 text-red-700 text-[10px] font-mono font-medium rounded-[6px]">
                     {unreadCount} new
                   </span>
                 )}
@@ -280,7 +280,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 <CheckCheck className="w-5 h-5 text-emerald-600" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-slate-900 uppercase font-mono tracking-wide">
+                <h4 className="text-xs font-medium text-slate-900 uppercase font-mono tracking-wide">
                   {filter === 'unread' ? 'All Caught Up!' : 'No Notifications'}
                 </h4>
                 <p className="text-[11px] text-slate-500 max-w-[260px] mx-auto leading-relaxed">
@@ -328,7 +328,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                         
                         <span className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded-md border ${
                           item.severity === 'Urgent' 
-                            ? 'bg-red-50 text-red-700 border-red-200 font-semibold' 
+                            ? 'bg-red-50 text-red-700 border-red-200 font-medium' 
                             : item.severity === 'High' 
                             ? 'bg-amber-50 text-amber-700 border-amber-200' 
                             : 'bg-slate-50 text-slate-600 border-slate-200'

@@ -29,7 +29,7 @@ export const Toast: React.FC<ToastProps> = ({
       id="toast-notification"
       role="status"
       aria-live="polite"
-      className={`fixed top-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-3 rounded-lg shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-300 font-sans text-xs ${
+      className={`fixed top-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-3 rounded-[12px] shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-300 font-sans text-xs ${
         isSuccess
           ? 'bg-[#121215] border border-emerald-500/40 text-emerald-300 shadow-emerald-950/40'
           : 'bg-[#121215] border border-red-500/40 text-red-300 shadow-red-950/40'

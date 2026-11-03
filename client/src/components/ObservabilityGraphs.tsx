@@ -214,16 +214,16 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
     return (
       <section aria-label="Loading analytics" className="space-y-4">
         <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+          <div className="w-6 h-6 rounded-[8px] bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
             <BarChart3 className="w-3.5 h-3.5" />
           </div>
-          <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+          <h2 className="text-sm font-medium text-slate-800 tracking-tight">
             Telemetry Observability & Triage Velocity
           </h2>
         </div>
-        <div className="bg-white rounded-md border border-slate-200/90 p-8 text-center space-y-3 card-subtle">
+        <div className="bg-white rounded-[12px] border border-slate-200/90 p-8 text-center space-y-3 card-subtle">
           <div className="w-7 h-7 mx-auto border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-semibold text-slate-700">Loading observability telemetry...</p>
+          <p className="text-xs font-medium text-slate-700">Loading observability telemetry...</p>
         </div>
       </section>
     );
@@ -235,25 +235,25 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       {/* Section Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
-          <div className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 flex-shrink-0">
-            <BarChart3 className="w-3.5 h-3.5" />
+          <div className="w-8 h-8 rounded-[8px] bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 flex-shrink-0">
+            <BarChart3 className="w-4 h-4" />
           </div>
-          <h2 id="observability-graphs-heading" className="text-sm font-bold text-slate-900 tracking-tight">
+          <h2 id="observability-graphs-heading" className="text-sm font-medium text-slate-900 tracking-tight font-poppins">
             Telemetry Observability & Triage Velocity
           </h2>
-          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-sm font-semibold">
+          <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-[6px]">
             REAL-TIME API LATENCY: {apiLatencyMs !== null && apiLatencyMs !== undefined ? `${apiLatencyMs}ms` : '955ms'}
           </span>
         </div>
 
         {/* Time Window Buttons */}
-        <div className="flex items-center space-x-1 bg-white border border-slate-200/90 p-0.5 rounded-md shadow-2xs self-start sm:self-auto">
+        <div className="flex items-center space-x-1 bg-white border border-slate-200/80 p-0.5 rounded-[8px] shadow-2xs self-start sm:self-auto font-poppins">
           <button
             type="button"
             onClick={() => setTimeWindow('24h')}
-            className={`px-3 py-1 text-[11px] font-semibold rounded-sm transition-colors ${
+            className={`px-3 py-1 text-xs font-medium rounded-[8px] transition-colors cursor-pointer ${
               timeWindow === '24h'
-                ? 'bg-[#0b1b36] text-white shadow-xs'
+                ? 'bg-[#0b1b36] text-white shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -262,9 +262,9 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
           <button
             type="button"
             onClick={() => setTimeWindow('7d')}
-            className={`px-3 py-1 text-[11px] font-semibold rounded-sm transition-colors ${
+            className={`px-3 py-1 text-xs font-medium rounded-[8px] transition-colors cursor-pointer ${
               timeWindow === '7d'
-                ? 'bg-[#0b1b36] text-white shadow-xs'
+                ? 'bg-[#0b1b36] text-white shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -277,31 +277,31 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
         {/* Left Card: Incident Ingestion & Resolution Trend (7 Cols) */}
-        <div className="lg:col-span-7 bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between card-subtle">
+        <div className="lg:col-span-7 bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 sm:p-6 flex flex-col justify-between font-poppins">
           <div>
             <div className="flex items-start justify-between gap-4 pb-2 border-b border-slate-100">
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-tight">
+                  <h3 className="text-xs font-medium text-slate-800 uppercase tracking-tight">
                     INCIDENT INGESTION & RESOLUTION TREND
                   </h3>
-                  <span className="text-[10px] font-mono text-purple-700 bg-purple-50 px-2 py-0.5 rounded-sm font-semibold">
+                  <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-[6px]">
                     {tickets.length} Ingested • {resolvedCount} Resolved
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1 font-normal">
                   Telemetry events ingested via SDK & API compared against engineering resolution velocity.
                 </p>
               </div>
 
               {/* Legend */}
-              <div className="flex items-center space-x-3 text-[11px] font-medium flex-shrink-0 pt-0.5">
+              <div className="flex items-center space-x-3 text-xs font-medium flex-shrink-0 pt-0.5">
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-2 h-2 bg-purple-600 rounded-xs" />
+                  <span className="w-2 h-2 bg-blue-600 rounded-xs" />
                   <span className="text-slate-600">Inbound</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-2 h-2 bg-teal-400 rounded-xs" />
+                  <span className="w-2 h-2 bg-teal-400 rounded-full" />
                   <span className="text-slate-600">Resolved</span>
                 </div>
               </div>
@@ -390,17 +390,17 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
         </div>
 
         {/* Right Card: Root-Cause Category Distribution (5 Cols) */}
-        <div className="lg:col-span-5 bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between space-y-4 card-subtle">
+        <div className="lg:col-span-5 bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 sm:p-6 flex flex-col justify-between space-y-4 font-poppins">
           <div className="pb-2 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-tight">
+              <h3 className="text-xs font-medium text-slate-800 uppercase tracking-tight">
                 ROOT-CAUSE CATEGORY DISTRIBUTION
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5 font-normal">
                 Breakdown of telemetry failures by system architectural layer.
               </p>
             </div>
-            <span className="text-[11px] font-mono text-slate-500 font-medium">
+            <span className="text-xs font-mono text-slate-500 font-medium">
               {tickets.length} total
             </span>
           </div>
@@ -412,18 +412,18 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
               return (
                 <div 
                   key={cat.id} 
-                  className="space-y-1 cursor-pointer hover:bg-slate-50/80 p-0.5 rounded-sm transition-colors"
+                  className="space-y-1 cursor-pointer hover:bg-slate-50/80 p-1 rounded-[8px] transition-colors"
                   onClick={() => onSelectCategory?.(cat.id)}
                   title={`Click to filter by ${cat.label}`}
                 >
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1.5">
                       <Icon className={`w-3.5 h-3.5 ${cat.color}`} />
-                      <span className="font-semibold text-slate-700">{cat.label}</span>
+                      <span className="font-medium text-slate-700">{cat.label}</span>
                     </div>
-                    <div className="flex items-center space-x-1 font-mono text-[11px]">
+                    <div className="flex items-center space-x-1 font-mono text-xs">
                       <span className="text-slate-500">{cat.pct}%</span>
-                      <span className="font-semibold text-slate-800">({cat.count})</span>
+                      <span className="font-medium text-slate-800">({cat.count})</span>
                     </div>
                   </div>
 
@@ -441,23 +441,23 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
 
           {/* Severity Distribution */}
           <div className="pt-2.5 border-t border-slate-100 space-y-1.5">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="font-bold text-slate-700">Severity Distribution</span>
-              <span className="font-mono text-slate-400 text-[10px]">P0 → P3</span>
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-slate-700">Severity Distribution</span>
+              <span className="font-mono text-slate-400 text-xs">P0 → P3</span>
             </div>
 
             {/* Stacked Bar */}
             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex">
-              <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${severityStats.pctP0}%` }} title={`P0: ${severityStats.p0}`} />
+              <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${severityStats.pctP0}%` }} title={`P0: ${severityStats.p0}`} />
               <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${severityStats.pctP1}%` }} title={`P1: ${severityStats.p1}`} />
               <div className="h-full bg-purple-600 transition-all duration-500" style={{ width: `${severityStats.pctP2}%` }} title={`P2: ${severityStats.p2}`} />
               <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${severityStats.pctP3}%` }} title={`P3: ${severityStats.p3}`} />
             </div>
 
             {/* Legend below bar */}
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-0.5">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-0.5">
               <div className="flex items-center space-x-1">
-                <span className="w-2 h-2 rounded-xs bg-red-500 inline-block" />
+                <span className="w-2 h-2 rounded-xs bg-rose-500 inline-block" />
                 <span>P0: {severityStats.p0}</span>
               </div>
               <div className="flex items-center space-x-1">
@@ -480,77 +480,77 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       </div>
 
       {/* Row of 3 Operational SLA & Engineering Latency Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-poppins">
         
         {/* Metric 1: Mean Time to Resolution (MTTR) */}
-        <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-4 flex items-center justify-between card-subtle">
+        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               MEAN TIME TO RESOLUTION
             </span>
             <div className="flex items-baseline space-x-2">
-              <span className="text-2xl font-bold font-mono text-slate-900">
+              <span className="text-2xl sm:text-3xl font-medium text-slate-900 tracking-tight">
                 {avgMttrMinutes !== null ? `${avgMttrMinutes}m` : 'Tracking'}
               </span>
-              <span className="inline-flex items-center text-xs font-semibold text-emerald-600">
+              <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px]">
                 <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
                 {resolvedCount > 0 ? `${resolvedCount} resolved` : 'Active triage'}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-xs text-slate-400 font-normal">
               {avgMttrMinutes !== null 
                 ? 'Calculated from resolved production incident timeline.'
                 : 'Awaiting first verified incident resolution.'}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-md bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200 shadow-2xs flex-shrink-0">
+          <div className="w-9 h-9 rounded-[8px] bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200 shadow-2xs flex-shrink-0">
             <Clock className="w-4 h-4" />
           </div>
         </div>
 
         {/* Metric 2: Live Ingest SLA & Crash Catch Rate */}
-        <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-4 flex items-center justify-between card-subtle">
+        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               TELEMETRY CAPTURE FIDELITY
             </span>
             <div className="flex items-baseline space-x-2">
-              <span className="text-2xl font-bold font-mono text-emerald-700">
+              <span className="text-2xl sm:text-3xl font-medium text-emerald-700 tracking-tight">
                 {telemetryFidelityPct}%
               </span>
-              <span className="inline-flex items-center text-xs font-semibold text-emerald-600">
+              <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px]">
                 <ShieldCheck className="w-3.5 h-3.5 mr-0.5" />
                 SOC-2 Pass
               </span>
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-xs text-slate-400 font-normal">
               Encrypted stack traces with sensitive auth masking.
             </p>
           </div>
-          <div className="w-9 h-9 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-2xs flex-shrink-0">
+          <div className="w-9 h-9 rounded-[8px] bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-2xs flex-shrink-0">
             <Zap className="w-4 h-4" />
           </div>
         </div>
 
         {/* Metric 3: On-Call Response Time */}
-        <div className="bg-white rounded-md border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-4 flex items-center justify-between card-subtle">
+        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               ON-CALL SQUAD RESPONSE
             </span>
             <div className="flex items-baseline space-x-2">
-              <span className="text-2xl font-bold font-mono text-slate-900">
+              <span className="text-2xl sm:text-3xl font-medium text-slate-900 tracking-tight">
                 Live
               </span>
-              <span className="inline-flex items-center text-xs font-semibold text-purple-600 font-mono">
+              <span className="inline-flex items-center text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-[6px]">
                 {unassignedCount === 0 ? 'All Assigned' : `${unassignedCount} Unassigned`}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-xs text-slate-400 font-normal">
               Real-time WebSocket dispatch on triage desk.
             </p>
           </div>
-          <div className="w-9 h-9 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200 shadow-2xs flex-shrink-0">
+          <div className="w-9 h-9 rounded-[8px] bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200 shadow-2xs flex-shrink-0">
             <Activity className="w-4 h-4" />
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { CustomSelect } from './CustomSelect';
 import { 
   Users, 
   Shield, 
@@ -486,26 +487,26 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
     <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full animate-in fade-in duration-150">
       
       {/* 1. Header Box matching Total Tickets & Resolved Tickets style */}
-      <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs">
+      <div className="bg-white border border-slate-200/80 rounded-[12px] p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] font-poppins">
         <div className="space-y-1">
           <div className="flex items-center flex-wrap gap-2.5">
-            <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200">
+            <h2 className="text-lg font-medium text-slate-900 font-poppins tracking-tight flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-[8px] bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200/80">
                 <Users className="w-4 h-4" />
               </div>
               <span>Assigned Staff Members & Active Load</span>
             </h2>
-            <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-purple-50 border border-purple-200 text-purple-700 rounded-md">
+            <span className="px-2.5 py-0.5 text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700 rounded-[6px] font-poppins">
               {staffList.length} Active Staff
             </span>
-            <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 border border-slate-200 text-slate-700 rounded-md">
+            <span className="px-2.5 py-0.5 text-xs font-medium bg-slate-100 border border-slate-200 text-slate-700 rounded-[6px] font-poppins">
               {totalOpenTickets} Open Tickets
             </span>
-            <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-md">
+            <span className="px-2.5 py-0.5 text-xs font-medium bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-[6px] font-poppins">
               {avgLoad} Avg Load
             </span>
           </div>
-          <p className="text-xs text-slate-500 max-w-3xl leading-relaxed">
+          <p className="text-xs text-slate-500 max-w-3xl leading-relaxed font-poppins">
             Real-time engineering squad capacity, live incident allocation, SLA stress tracking, and on-call on-duty dispatch.
           </p>
         </div>
@@ -517,7 +518,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               type="button"
               id="add-staff-member-btn"
               onClick={() => setIsAddModalOpen(true)}
-              className="px-3.5 py-2 bg-[#6366F1] hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
+              className="px-4 py-2 bg-[#0b1b36] hover:bg-[#12284c] text-white text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs font-poppins"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Staff Member</span>
@@ -525,7 +526,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           ) : (
             <div 
               title="Requires Squad Lead or Administrator role to add staff"
-              className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-400 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md cursor-not-allowed select-none"
+              className="px-3.5 py-2 bg-slate-100 border border-slate-200 text-slate-400 text-xs font-medium rounded-[8px] flex items-center space-x-1.5 cursor-not-allowed select-none font-poppins"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Admin / Lead Only</span>
@@ -538,7 +539,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             onClick={handleRebalanceWorkload}
             disabled={isRebalancing || !isAdminOrLead}
             title={isAdminOrLead ? "Automatically distribute unassigned tickets across available engineers" : "Requires Squad Lead authority"}
-            className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-mono font-semibold flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed font-poppins"
           >
             <Zap className={`w-3.5 h-3.5 text-purple-600 ${isRebalancing ? 'animate-spin' : ''}`} />
             <span>{isRebalancing ? 'Balancing...' : 'Auto-Balance Load'}</span>
@@ -549,7 +550,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             id="refresh-staff-btn"
             onClick={handleManualRefresh}
             disabled={isRefreshing}
-            className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs rounded-[8px] font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 font-poppins"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
@@ -559,10 +560,10 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
       {/* Notifications */}
       {actionSuccess && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center justify-between shadow-2xs animate-in fade-in rounded-md card-subtle">
+        <div className="p-4 bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs rounded-[12px] flex items-center justify-between shadow-2xs animate-in fade-in font-poppins">
           <div className="flex items-center space-x-2.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="font-semibold">{actionSuccess}</span>
+            <span className="font-medium">{actionSuccess}</span>
           </div>
           <button 
             type="button"
@@ -575,10 +576,10 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       )}
 
       {actionError && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-center justify-between shadow-2xs animate-in fade-in rounded-md card-subtle">
+        <div className="p-4 bg-rose-50 border border-rose-200/80 text-rose-800 text-xs rounded-[12px] flex items-center justify-between shadow-2xs animate-in fade-in font-poppins">
           <div className="flex items-center space-x-2.5">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span className="font-semibold">{actionError}</span>
+            <span className="font-medium">{actionError}</span>
           </div>
           <button 
             type="button"
@@ -591,78 +592,86 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
       )}
 
       {/* 2. Top 4 Capacity KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Metric 1: Total Staff */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
-            <span className="uppercase font-semibold">Active Engineers</span>
-            <Users className="w-4 h-4 text-purple-600" />
+        <div className="bg-white rounded-[12px] border border-slate-200/80 p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-poppins">
+            <span className="uppercase font-medium tracking-wider text-slate-400">Active Engineers</span>
+            <div className="w-9 h-9 rounded-[8px] bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+              <Users className="w-4 h-4" />
+            </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl font-bold font-mono text-slate-900">
+            <span className="text-2xl sm:text-3xl font-medium font-poppins text-slate-900 tracking-tight">
               {staffList.length}
             </span>
-            <span className="text-xs text-emerald-600 font-medium">
+            <span className="text-xs text-emerald-600 font-medium bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px]">
               100% Online
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 font-mono">
+          <p className="text-xs text-slate-400 font-poppins">
             {staffList.filter(m => m.role.toLowerCase().includes('lead')).length} Squad Lead • {staffList.filter(m => !m.role.toLowerCase().includes('lead')).length} Developers
           </p>
         </div>
 
         {/* Metric 2: Open Workload */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
-            <span className="uppercase font-semibold">Total Active Workload</span>
-            <Layers className="w-4 h-4 text-indigo-600" />
+        <div className="bg-white rounded-[12px] border border-slate-200/80 p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-poppins">
+            <span className="uppercase font-medium tracking-wider text-slate-400">Total Active Workload</span>
+            <div className="w-9 h-9 rounded-[8px] bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+              <Layers className="w-4 h-4" />
+            </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl font-bold font-mono text-indigo-700">
+            <span className="text-2xl sm:text-3xl font-medium font-poppins text-indigo-700 tracking-tight">
               {totalOpenTickets}
             </span>
-            <span className="text-xs text-slate-500 font-mono">
+            <span className="text-xs text-slate-500 font-poppins">
               incidents in flight
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 font-mono">
+          <p className="text-xs text-slate-400 font-poppins">
             Average capacity: {avgLoad} tickets / engineer
           </p>
         </div>
 
         {/* Metric 3: On-Call Lead */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
-            <span className="uppercase font-semibold">Primary On-Call</span>
-            <PhoneCall className="w-4 h-4 text-amber-600" />
+        <div className="bg-white rounded-[12px] border border-slate-200/80 p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-poppins">
+            <span className="uppercase font-medium tracking-wider text-slate-400">Primary On-Call</span>
+            <div className="w-9 h-9 rounded-[8px] bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+              <PhoneCall className="w-4 h-4" />
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-sm font-bold text-slate-900 truncate">
+            <span className="text-sm font-medium text-slate-900 truncate font-poppins">
               {onCallLead?.name.replace(/\s*\([^)]*\)$/, '') || 'On-Call Engineer'}
             </span>
           </div>
-          <p className="text-[11px] text-amber-700 font-mono font-medium truncate">
+          <p className="text-xs text-amber-700 font-poppins font-medium truncate">
             {onCallLead?.email || 'oncall@feedbackhub.io'}
           </p>
         </div>
 
         {/* Metric 4: Unassigned Ingestion Queue */}
-        <div className="bg-white border border-slate-200 p-4 shadow-2xs space-y-1 rounded-md card-subtle">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
-            <span className="uppercase font-semibold">Unassigned Ingestion</span>
-            <AlertCircle className={`w-4 h-4 ${unassignedTickets.length > 0 ? 'text-amber-500' : 'text-slate-400'}`} />
+        <div className="bg-white rounded-[12px] border border-slate-200/80 p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-poppins">
+            <span className="uppercase font-medium tracking-wider text-slate-400">Unassigned Ingestion</span>
+            <div className="w-9 h-9 rounded-[8px] bg-slate-50 text-slate-600 flex items-center justify-center border border-slate-200">
+              <AlertCircle className={`w-4 h-4 ${unassignedTickets.length > 0 ? 'text-amber-500' : 'text-slate-400'}`} />
+            </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className={`text-2xl font-bold font-mono ${unassignedTickets.length > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
+            <span className={`text-2xl sm:text-3xl font-medium font-poppins ${unassignedTickets.length > 0 ? 'text-amber-600' : 'text-slate-900'} tracking-tight`}>
               {unassignedTickets.length}
             </span>
-            <span className="text-xs text-slate-500 font-mono">
+            <span className="text-xs text-slate-500 font-poppins">
               pending assignment
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 font-mono">
+          <p className="text-xs text-slate-400 font-poppins">
             {unassignedTickets.length === 0 ? 'All queue incidents assigned' : 'Requires squad allocation'}
           </p>
         </div>
@@ -685,7 +694,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search staff by name, email, role, or squad..."
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs pl-9 pr-8 py-2 rounded-md placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all font-mono"
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs pl-9 pr-8 py-2 rounded-[6px] placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all font-mono"
             />
             {searchQuery && (
               <button
@@ -705,34 +714,30 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-md transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-[6px] transition-colors cursor-pointer"
               >
                 Reset Filters
               </button>
             )}
-            <div className="flex items-center space-x-1.5">
-              <span className="text-[11px] text-slate-400 font-semibold uppercase">Sort:</span>
-              <div className="relative flex items-center">
-                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 pl-8 pr-3 py-1.5 text-xs font-mono focus:outline-none focus:border-indigo-600 cursor-pointer rounded-md transition-colors"
-                >
-                  <option value="LOAD_DESC">Active Load (High → Low)</option>
-                  <option value="NAME_ASC">Alphabetical (A → Z)</option>
-                  <option value="ROLE">Role Hierarchy</option>
-                </select>
-              </div>
-            </div>
+            <CustomSelect
+              label="Sort"
+              value={sortBy}
+              onChange={(val: string) => setSortBy(val as any)}
+              options={[
+                { value: 'LOAD_DESC', label: 'Active Load (High → Low)' },
+                { value: 'NAME_ASC', label: 'Alphabetical (A → Z)' },
+                { value: 'ROLE', label: 'Role Hierarchy' }
+              ]}
+              buttonClassName="border-slate-200 bg-slate-50 hover:bg-white text-slate-800 py-1.5 text-xs rounded-[8px]"
+            />
           </div>
         </div>
 
         {/* Row 2: Segmented Filter Controls & Results Counter */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2.5 border-t border-slate-100">
           <div className="flex items-center space-x-2 overflow-x-auto scrollbar-none font-mono">
-            <span className="text-[11px] text-slate-400 font-semibold uppercase shrink-0">Filter:</span>
-            <div className="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200/80 rounded-md gap-0.5 shrink-0">
+            <span className="text-[11px] text-slate-400 font-medium uppercase shrink-0">Filter:</span>
+            <div className="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200/80 rounded-[6px] gap-0.5 shrink-0">
               {[
                 { id: 'ALL' as const, label: 'ALL', count: staffList.length },
                 { id: 'ACTIVE_LOAD' as const, label: 'ACTIVE LOAD (>0)', count: staffList.filter(m => (memberMetrics[m.id]?.openCount || 0) > 0).length },
@@ -743,9 +748,9 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   key={f.id}
                   type="button"
                   onClick={() => setFilterType(f.id)}
-                  className={`px-3 py-1 text-xs uppercase transition-all cursor-pointer whitespace-nowrap rounded-md font-mono ${
+                  className={`px-3 py-1 text-xs uppercase transition-all cursor-pointer whitespace-nowrap rounded-[6px] font-mono ${
                     filterType === f.id
-                      ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                      ? 'bg-slate-900 text-white font-medium shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
                   }`}
                 >
@@ -756,7 +761,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           </div>
 
           <div className="text-[11px] font-mono text-slate-400 shrink-0">
-            Showing <span className="font-bold text-slate-700">{filteredMembers.length}</span> of <span className="font-bold text-slate-700">{staffList.length}</span> engineers
+            Showing <span className="font-medium text-slate-700">{filteredMembers.length}</span> of <span className="font-medium text-slate-700">{staffList.length}</span> engineers
           </div>
         </div>
 
@@ -777,13 +782,13 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
             : metrics.openCount <= 5 
             ? 'bg-amber-50 text-amber-700 border-amber-200' 
-            : 'bg-rose-50 text-rose-700 border-rose-200 font-bold';
+            : 'bg-rose-50 text-rose-700 border-rose-200 font-medium';
 
           return (
             <div
               key={member.id}
               onClick={() => handleToggleMemberQueue(member.id)}
-              className={`bg-white border p-4 transition-all duration-150 cursor-pointer select-none flex flex-col justify-between space-y-3.5 shadow-2xs hover:shadow-md rounded-md card-subtle ${
+              className={`bg-white border rounded-[12px] p-4 transition-all duration-150 cursor-pointer select-none flex flex-col justify-between space-y-3.5 shadow-2xs hover:shadow-md ${
                 isSelected
                   ? 'border-indigo-600 ring-2 ring-indigo-500/20 bg-indigo-50/10'
                   : 'border-slate-200/90 hover:border-slate-300'
@@ -794,7 +799,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <div className="flex items-start space-x-3 min-w-0">
                   {/* Avatar Initials with Status Dot */}
                   <div className="relative shrink-0">
-                    <div className={`w-10 h-10 border flex items-center justify-center font-bold text-xs font-mono shadow-2xs rounded-md ${member.color}`}>
+                    <div className={`w-10 h-10 border rounded-[8px] flex items-center justify-center font-medium text-xs font-mono shadow-2xs ${member.color}`}>
                       {member.avatarInitials}
                     </div>
                     <span
@@ -812,11 +817,11 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   {/* Name, Role & Email */}
                   <div className="min-w-0">
                     <div className="flex items-center space-x-1.5 flex-wrap">
-                      <h3 className="text-xs font-bold text-slate-900 truncate">
+                      <h3 className="text-xs font-medium text-slate-900 truncate">
                         {member.name}
                       </h3>
                       {isOnCall && (
-                        <span className="text-[9px] font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-1.5 py-0.5 rounded-md shrink-0">
+                        <span className="text-[9px] font-mono font-medium text-amber-800 bg-amber-50 border border-amber-300 px-1 py-0.2 rounded-[6px] shrink-0">
                           ON-CALL
                         </span>
                       )}
@@ -834,12 +839,12 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <div className="flex flex-col items-end shrink-0">
                   <div className="flex items-center space-x-1 font-mono">
                     <span className="text-[11px] text-slate-400">Open:</span>
-                    <span className={`px-2 py-0.5 text-xs font-bold font-mono border rounded-md ${loadBadgeColor}`}>
+                    <span className={`px-2 py-0.5 text-xs font-medium font-mono border rounded-[6px] ${loadBadgeColor}`}>
                       {metrics.openCount}
                     </span>
                   </div>
                   {metrics.urgentCount > 0 && (
-                    <span className="text-[9px] font-mono font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md mt-1">
+                    <span className="text-[9px] font-mono font-medium text-rose-600 bg-rose-50 px-1 py-0.2 rounded-[6px] mt-1">
                       {metrics.urgentCount} Urgent
                     </span>
                   )}
@@ -852,7 +857,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <span>Capacity Stress</span>
                   <span>{metrics.openCount} / 6 max</span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 overflow-hidden rounded-full">
+                <div className="w-full bg-slate-100 h-1.5 rounded-[6px] overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-300 ${
                       metrics.openCount === 0 
@@ -881,9 +886,9 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         type="button"
                         onClick={() => handleToggleOnCall(member)}
                         title={isOnCall ? "Switch to standard online status" : "Designate as primary on-call lead"}
-                        className={`px-2 py-0.5 border text-[10px] cursor-pointer rounded-md transition-colors ${
+                        className={`px-2 py-0.5 border text-[10px] rounded-[8px] cursor-pointer transition-colors ${
                           isOnCall 
-                            ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 font-bold'
+                            ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 font-medium'
                             : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
                         }`}
                       >
@@ -894,7 +899,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         type="button"
                         onClick={() => handleDeleteStaffMember(member)}
                         title="Remove member from squad registry"
-                        className="p-1 border border-slate-200 hover:border-rose-300 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-md transition-colors cursor-pointer"
+                        className="p-1 border border-slate-200 hover:border-rose-300 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-[8px] transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -904,7 +909,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleToggleMemberQueue(member.id)}
-                    className="px-2 py-0.5 border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold cursor-pointer rounded-md transition-colors"
+                    className="px-2 py-0.5 border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 text-[10px] font-medium rounded-[8px] cursor-pointer transition-colors"
                   >
                     {isSelected ? 'Collapse' : `View Queue (${metrics.openCount})`}
                   </button>
@@ -925,15 +930,15 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-3">
-              <div className={`w-8 h-8 rounded-md border flex items-center justify-center font-bold text-xs font-mono ${activeMember.color}`}>
+              <div className={`w-8 h-8 border flex items-center justify-center font-medium text-xs font-mono ${activeMember.color}`}>
                 {activeMember.avatarInitials}
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 id="member-workload-heading" className="text-sm font-bold text-slate-900 font-mono">
+                  <h3 id="member-workload-heading" className="text-sm font-medium text-slate-900 font-mono">
                     Assigned Incident Queue: {activeMember.name}
                   </h3>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-indigo-50 border border-indigo-200 text-indigo-700">
                     {activeMemberTickets.length} Incidents Total
                   </span>
                 </div>
@@ -956,7 +961,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           {activeMemberTickets.length === 0 ? (
             <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-md card-subtle space-y-2">
               <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-              <p className="text-xs font-bold text-slate-800 font-mono">
+              <p className="text-xs font-medium text-slate-800 font-mono">
                 {activeMember.name} is fully caught up with zero active backlog tickets!
               </p>
               <p className="text-[11px] text-slate-400">
@@ -968,13 +973,13 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
               <table className="w-full text-left border-collapse text-xs font-mono">
                 <thead>
                   <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-wider">
-                    <th className="p-2.5 font-bold">INCIDENT ID & SHORT CODE</th>
-                    <th className="p-2.5 font-bold">SEVERITY</th>
-                    <th className="p-2.5 font-bold">CATEGORY</th>
-                    <th className="p-2.5 font-bold">SUMMARY TITLE</th>
-                    <th className="p-2.5 font-bold">STATUS</th>
-                    <th className="p-2.5 font-bold">REASSIGN TO</th>
-                    <th className="p-2.5 font-bold">ACTION</th>
+                    <th className="p-2.5 font-medium">INCIDENT ID & SHORT CODE</th>
+                    <th className="p-2.5 font-medium">SEVERITY</th>
+                    <th className="p-2.5 font-medium">CATEGORY</th>
+                    <th className="p-2.5 font-medium">SUMMARY TITLE</th>
+                    <th className="p-2.5 font-medium">STATUS</th>
+                    <th className="p-2.5 font-medium">REASSIGN TO</th>
+                    <th className="p-2.5 font-medium">ACTION</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
@@ -989,12 +994,12 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         className="hover:bg-slate-50 transition-colors cursor-pointer"
                       >
                         <td className="p-2.5 whitespace-nowrap">
-                          <span className="font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md border border-indigo-200">
+                          <span className="font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 border border-indigo-200">
                             {t.short_code || t.id.slice(0, 8)}
                           </span>
                         </td>
                         <td className="p-2.5 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${
+                          <span className={`px-2 py-0.5 text-[10px] font-medium uppercase border ${
                             normSeverity === 'Urgent' ? 'bg-rose-50 text-rose-700 border-rose-300' :
                             normSeverity === 'High' ? 'bg-amber-50 text-amber-700 border-amber-300' :
                             normSeverity === 'Medium' ? 'bg-blue-50 text-blue-700 border-blue-300' :
@@ -1006,11 +1011,11 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         <td className="p-2.5 whitespace-nowrap text-slate-600">
                           {t.category}
                         </td>
-                        <td className="p-2.5 text-slate-900 font-bold max-w-md truncate">
+                        <td className="p-2.5 text-slate-900 font-medium max-w-md truncate">
                           {t.title}
                         </td>
                         <td className="p-2.5 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                          <span className={`px-2 py-0.5 text-[10px] font-medium border ${
                             normStatus === 'Resolved' 
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
                               : 'bg-indigo-50 text-indigo-700 border-indigo-200'
@@ -1020,18 +1025,16 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                         </td>
                         <td className="p-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           {canAssign ? (
-                            <select
+                            <CustomSelect
                               value={t.assigned_to || ''}
-                              onChange={(e) => handleQuickAssign(t.id, e.target.value)}
-                              className="text-[11px] font-mono border border-slate-200 rounded-md bg-white px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-600 cursor-pointer"
-                            >
-                              <option value="">-- Reassign --</option>
-                              {staffList.map(sm => (
-                                <option key={sm.id} value={sm.id}>
-                                  {sm.name}
-                                </option>
-                              ))}
-                            </select>
+                              onChange={(val: string) => handleQuickAssign(t.id, val)}
+                              placeholder="-- Reassign --"
+                              options={[
+                                { value: '', label: '-- Reassign --' },
+                                ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
+                              ]}
+                              buttonClassName="text-[11px] font-mono border-slate-200 bg-white px-2 py-1 text-slate-700 rounded-[8px]"
+                            />
                           ) : (
                             <span className="text-[11px] text-slate-400 font-mono">-</span>
                           )}
@@ -1042,7 +1045,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleQuickResolve(t.id, t.short_code)}
-                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold cursor-pointer transition-colors shadow-2xs"
+                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-medium cursor-pointer transition-colors shadow-2xs"
                               >
                                 Mark Resolved
                               </button>
@@ -1072,7 +1075,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 text-amber-600" />
-              <h3 id="unassigned-heading" className="text-xs font-bold text-amber-900 font-mono uppercase tracking-wide">
+              <h3 id="unassigned-heading" className="text-xs font-medium text-amber-900 font-mono uppercase tracking-wide">
                 Unassigned Ingestion Queue ({unassignedTickets.length} Incidents Awaiting Squad Allocation)
               </h3>
             </div>
@@ -1082,7 +1085,7 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 type="button"
                 onClick={handleRebalanceWorkload}
                 disabled={isRebalancing}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-xs font-mono font-bold cursor-pointer transition-colors shadow-xs flex items-center space-x-1.5"
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-mono font-medium cursor-pointer transition-colors shadow-xs flex items-center space-x-1.5"
               >
                 <Zap className="w-3.5 h-3.5" />
                 <span>Auto-Assign All Unassigned</span>
@@ -1094,20 +1097,20 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
             {unassignedTickets.slice(0, 6).map((ticket) => (
               <div 
                 key={ticket.id}
-                className="p-3 border border-amber-200/80 bg-amber-50/20 hover:bg-amber-50/40 rounded-md transition-colors space-y-2 select-none"
+                className="p-3 border border-amber-200/80 bg-amber-50/20 hover:bg-amber-50/40 rounded-[12px] transition-colors space-y-2 select-none"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 rounded-md border border-amber-300">
+                  <span className="font-mono text-[10px] font-medium text-amber-800 bg-amber-100/70 px-1.5 py-0.5 border border-amber-300 rounded-[6px]">
                     {ticket.short_code || ticket.id.slice(0, 8)}
                   </span>
-                  <span className="text-[9px] font-mono font-bold text-rose-700 uppercase bg-rose-50 border border-rose-200 px-1 py-0.2 rounded-md">
+                  <span className="text-[9px] font-mono font-medium text-rose-700 uppercase bg-rose-50 border border-rose-200 px-1 py-0.2 rounded-[6px]">
                     {ticket.severity}
                   </span>
                 </div>
                 
                 <p 
                   onClick={() => onSelectTicket(ticket)}
-                  className="text-xs font-bold text-slate-800 truncate cursor-pointer hover:text-indigo-600"
+                  className="text-xs font-medium text-slate-800 truncate cursor-pointer hover:text-indigo-600"
                 >
                   {ticket.title}
                 </p>
@@ -1115,23 +1118,20 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1.5 border-t border-amber-100 gap-2">
                   <span className="truncate">{ticket.category}</span>
                   {canAssign ? (
-                    <select
-                      defaultValue=""
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          handleQuickAssign(ticket.id, e.target.value);
-                          e.target.value = '';
+                    <CustomSelect
+                      value=""
+                      onChange={(val: string) => {
+                        if (val) {
+                          handleQuickAssign(ticket.id, val);
                         }
                       }}
-                      className="text-[10px] font-mono border border-amber-300 bg-white text-slate-800 px-1 py-0.5 rounded-md cursor-pointer focus:outline-none"
-                    >
-                      <option value="">+ Assign...</option>
-                      {staffList.map(sm => (
-                        <option key={sm.id} value={sm.id}>
-                          {sm.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="+ Assign..."
+                      options={[
+                        { value: '', label: '+ Assign...' },
+                        ...staffList.map(sm => ({ value: sm.id, label: sm.name }))
+                      ]}
+                      buttonClassName="text-[10px] font-mono border-amber-300 bg-white text-slate-800 px-2 py-0.5 rounded-[8px]"
+                    />
                   ) : (
                     <button
                       type="button"
@@ -1150,30 +1150,42 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
 
       {/* 7. Modal: Add New Staff Member */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-md card-subtle shadow-xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-7 h-7 bg-purple-50 text-purple-600 flex items-center justify-center rounded-md border border-purple-200">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900 font-mono uppercase tracking-wide">
-                  Register New Squad Member
-                </h3>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 backdrop-blur-[2px] p-4 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white border border-slate-200/90 shadow-2xl max-w-md w-full rounded-[16px] overflow-hidden animate-in fade-in zoom-in-95 duration-150 font-poppins relative">
+            
+            {/* Top-right dismiss button */}
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute top-4 right-4 z-10 p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-[8px] transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Top Hero Section */}
+            <div className="m-3 p-5 sm:p-6 bg-[#f4f4f5] rounded-[12px] flex flex-col space-y-3 text-left">
+              <div className="w-9 h-9 rounded-full bg-white border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-2xs">
+                <UserPlus className="w-4 h-4 text-slate-700 stroke-[2.2]" />
               </div>
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-md hover:bg-slate-100"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="space-y-1">
+                <h3 className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight leading-snug">
+                  Add squad member
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed">
+                  Register a new engineer, lead, or support specialist to the active on-call roster.
+                </p>
+              </div>
             </div>
 
-            <form onSubmit={handleAddStaffMember} className="space-y-4 text-xs font-mono">
-              <div className="space-y-1.5">
-                <label className="text-slate-700 font-bold block uppercase text-[10px]">
-                  Full Name & Title <span className="text-red-500">*</span>
+            {/* Form */}
+            <form onSubmit={handleAddStaffMember} className="p-5 sm:p-6 pt-1 space-y-4 text-xs">
+              <div className="space-y-1.5 text-left">
+                <label className="text-slate-700 font-medium text-xs">
+                  Full Name & Title <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1181,13 +1193,13 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffName}
                   onChange={(e) => setNewStaffName(e.target.value)}
                   placeholder="e.g. Alex Zhang (Senior Systems Engineer)"
-                  className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className="w-full bg-white border border-slate-200 p-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none rounded-[8px] shadow-2xs"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-slate-700 font-bold block uppercase text-[10px]">
-                  Corporate Email <span className="text-red-500">*</span>
+              <div className="space-y-1.5 text-left">
+                <label className="text-slate-700 font-medium text-xs">
+                  Corporate Email <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -1195,45 +1207,49 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffEmail}
                   onChange={(e) => setNewStaffEmail(e.target.value)}
                   placeholder="e.g. alex.zhang@feedbackhub.io"
-                  className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className="w-full bg-white border border-slate-200 p-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none rounded-[8px] shadow-2xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 text-left">
                 <div className="space-y-1.5">
-                  <label className="text-slate-700 font-bold block uppercase text-[10px]">
+                  <label className="text-slate-700 font-medium text-xs">
                     Role Hierarchy
                   </label>
-                  <select
+                  <CustomSelect
+                    fullWidth
                     value={newStaffRole}
-                    onChange={(e) => setNewStaffRole(e.target.value as UserRole)}
-                    className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer"
-                  >
-                    <option value="developer">Developer</option>
-                    <option value="squad_lead">Squad Lead</option>
-                    <option value="tenant_admin">Tenant Admin</option>
-                    <option value="support_agent">Support Agent</option>
-                  </select>
+                    onChange={(val: string) => setNewStaffRole(val as UserRole)}
+                    options={[
+                      { value: 'developer', label: 'Developer' },
+                      { value: 'squad_lead', label: 'Squad Lead' },
+                      { value: 'tenant_admin', label: 'Tenant Admin' },
+                      { value: 'support_agent', label: 'Support Agent' }
+                    ]}
+                    buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-slate-700 font-bold block uppercase text-[10px]">
+                  <label className="text-slate-700 font-medium text-xs">
                     Initial Status
                   </label>
-                  <select
+                  <CustomSelect
+                    fullWidth
                     value={newStaffStatus}
-                    onChange={(e) => setNewStaffStatus(e.target.value as any)}
-                    className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 bg-white focus:border-indigo-600 focus:outline-none cursor-pointer"
-                  >
-                    <option value="ONLINE">ONLINE</option>
-                    <option value="ON_CALL">ON-CALL</option>
-                    <option value="AWAY">AWAY</option>
-                  </select>
+                    onChange={(val: string) => setNewStaffStatus(val as any)}
+                    options={[
+                      { value: 'ONLINE', label: 'ONLINE' },
+                      { value: 'ON_CALL', label: 'ON-CALL' },
+                      { value: 'AWAY', label: 'AWAY' }
+                    ]}
+                    buttonClassName="bg-white border-slate-200 p-2 text-xs rounded-[8px] shadow-2xs"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-slate-700 font-bold block uppercase text-[10px]">
+              <div className="space-y-1.5 text-left">
+                <label className="text-slate-700 font-medium text-xs">
                   Assigned Engineering Squad
                 </label>
                 <input
@@ -1241,31 +1257,30 @@ export const StaffWorkloadView: React.FC<StaffWorkloadViewProps> = ({
                   value={newStaffSquad}
                   onChange={(e) => setNewStaffSquad(e.target.value)}
                   placeholder="e.g. Core Platform & API Squad"
-                  className="w-full border border-slate-300 rounded-md p-2 text-xs text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className="w-full bg-white border border-slate-200 p-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none rounded-[8px] shadow-2xs"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
+              <div className="pt-2 space-y-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-[#6366F1] hover:bg-indigo-700 text-white rounded-md text-xs font-bold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="w-full py-3 px-4 bg-[#242426] hover:bg-[#18181b] text-white text-xs font-semibold rounded-[8px] shadow-2xs disabled:opacity-50 transition-all cursor-pointer uppercase tracking-wider"
                 >
-                  {isSubmitting ? 'Registering...' : 'Add Squad Member'}
+                  {isSubmitting ? 'Registering...' : 'REGISTER SQUAD MEMBER'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="w-full py-1.5 text-xs text-slate-500 hover:text-slate-800 font-normal transition-colors cursor-pointer text-center"
+                >
+                  Cancel and discard
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-    </main>
+</main>
   );
 };

@@ -757,14 +757,14 @@ const Dashboard: React.FC = () => {
 
         {/* Real-time Incident Alert Banner */}
         {alertBanner && (
-          <div className="bg-purple-900 border-b border-purple-800 text-purple-100 px-6 py-2.5 text-xs font-semibold flex items-center justify-between animate-in slide-in-from-top duration-200 shrink-0">
+          <div className="bg-purple-900 border-b border-purple-800 text-purple-100 px-6 py-2.5 text-xs font-medium flex items-center justify-between animate-in slide-in-from-top duration-200 shrink-0">
             <div className="flex items-center space-x-2.5">
               <Bell className="w-4 h-4 text-purple-300 animate-bounce" />
               <span>{alertBanner}</span>
             </div>
             <button
               onClick={() => setAlertBanner(null)}
-              className="text-purple-300 hover:text-white font-bold cursor-pointer"
+              className="text-purple-300 hover:text-white font-medium cursor-pointer"
             >
               DISMISS
             </button>
@@ -781,20 +781,20 @@ const Dashboard: React.FC = () => {
           {/* VIEW 1: DASHBOARD (Edge-to-Edge Observability & Incident Workspace) */}
           {currentView === 'dashboard' && (
             <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
-
+              
               {/* Greeting & Operations Breadcrumb Row */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2.5">
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight font-poppins">
                       {greeting}, {currentUser.name.replace(/\s*\([^)]*\)/g, '').trim()} 👋
                     </h1>
-                    <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-sm text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                      <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
-                      <span>{isConnected ? 'Live WebSockets Connected' : 'Syncing Live Engine'}</span>
+                    <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                      <span className="font-poppins">{isConnected ? 'Live WebSockets Connected' : 'Syncing Live Engine'}</span>
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 font-poppins">
                     Live multi-tenant telemetry bridge with instant client feedback and engineering on-call triage.
                   </p>
                 </div>
@@ -805,19 +805,18 @@ const Dashboard: React.FC = () => {
                     type="button"
                     onClick={() => setIsSimulatorOpen(true)}
                     title="Test live client SDK crash / error telemetry"
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-purple-300 text-purple-700 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-300 text-blue-700 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins"
                   >
-                    <Cpu className="w-3.5 h-3.5 text-purple-600" />
+                    <Cpu className="w-3.5 h-3.5 text-blue-600" />
                     <span>Simulate Ingest</span>
                   </button>
-
 
                   {tickets.length > 0 && hasRolePermission(permissionsMatrix, currentRole, 'tickets:delete') && (
                     <button
                       type="button"
                       onClick={handleClearTickets}
                       title="Clear all tickets in this workspace"
-                      className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                      className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 rounded-[8px] text-xs font-medium shadow-2xs transition-colors cursor-pointer font-poppins"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Clear</span>
@@ -828,9 +827,9 @@ const Dashboard: React.FC = () => {
                     type="button"
                     onClick={fetchTickets}
                     title="Refresh live tickets from API"
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-purple-700 rounded-md text-xs font-semibold shadow-xs hover:border-purple-200 transition-colors cursor-pointer"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-blue-700 rounded-[8px] text-xs font-medium shadow-2xs hover:border-blue-200 transition-colors cursor-pointer font-poppins"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isLoading ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isLoading ? 'animate-spin' : ''}`} />
                     <span>Refresh</span>
                   </button>
                 </div>
@@ -864,7 +863,8 @@ const Dashboard: React.FC = () => {
               />
 
 
-              {/* 4. Telemetry Observability & Triage Velocity Graphs */}
+
+{/* 4. Telemetry Observability & Triage Velocity Graphs */}
               <ObservabilityGraphs
                 tickets={tickets}
                 teamMembers={teamMembers}
@@ -926,24 +926,24 @@ const Dashboard: React.FC = () => {
               </section>
 
             </main>
-          )}
+          )
 
           {/* VIEW 2: TOTAL TICKETS */}
           {currentView === 'total-tickets' && (
             <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
               {/* Header Box */}
-              <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+              <div className="bg-white border border-slate-200/80 rounded-[12px] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs font-poppins">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2.5">
-                    <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                    <h2 className="text-lg font-medium text-slate-900 font-poppins tracking-tight flex items-center space-x-2">
                       <Layers className="w-5 h-5 text-indigo-600" />
                       <span>Total Tickets Registry</span>
                     </h2>
-                    <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-md">
+                    <span className="px-2.5 py-0.5 text-xs font-medium bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-[6px] font-poppins">
                       {totalCount} Total
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 font-poppins">
                     Complete registry of all ingested incidents, bug reports, feature ideas, and customer feedback across all client products.
                   </p>
                 </div>
@@ -951,15 +951,16 @@ const Dashboard: React.FC = () => {
                 <div className="flex items-center space-x-2.5 shrink-0">
                   {hasRolePermission(permissionsMatrix, currentRole, 'tickets:create') && (
                     <>
-                      <button onClick={() => setIsSimulatorOpen(true)}
-                        className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
+                      <button
+                        onClick={() => setIsSimulatorOpen(true)}
+                        className="px-4 py-2 bg-[#0b1b36] hover:bg-[#12284c] text-white text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>New Incident</span>
                       </button>
                       <button
                         onClick={() => setIsSimulatorOpen(true)}
-                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-mono flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-xs"
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-[8px] flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Simulate Ingest</span>
@@ -969,7 +970,7 @@ const Dashboard: React.FC = () => {
                   <button
                     onClick={fetchTickets}
                     disabled={isLoading}
-                    className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
+                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs rounded-[8px] font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
                     <span>Refresh</span>
@@ -995,18 +996,18 @@ const Dashboard: React.FC = () => {
           {currentView === 'resolved-tickets' && (
             <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 w-full pb-8 animate-in fade-in duration-150">
               {/* Header Box */}
-              <div className="bg-white border border-slate-200 rounded-md card-subtle p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+              <div className="bg-white border border-slate-200/80 rounded-[12px] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs font-poppins">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2.5">
-                    <h2 className="text-lg font-bold text-slate-900 font-mono uppercase tracking-wide flex items-center space-x-2">
+                    <h2 className="text-lg font-medium text-slate-900 font-poppins tracking-tight flex items-center space-x-2">
                       <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                       <span>Resolved Incidents & SLA Compliance</span>
                     </h2>
-                    <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md">
+                    <span className="px-2.5 py-0.5 text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-[6px] font-poppins">
                       {resolvedCount} Resolved
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 font-poppins">
                     Closed and verified incidents meeting enterprise SLA resolution benchmarks with complete audit trail.
                   </p>
                 </div>
@@ -1015,12 +1016,28 @@ const Dashboard: React.FC = () => {
                   <button
                     onClick={fetchTickets}
                     disabled={isLoading}
-                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-mono font-medium flex items-center space-x-1.5 rounded-md transition-colors cursor-pointer shadow-2xs"
+                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs rounded-[8px] font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs font-poppins"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
                     <span>Refresh</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Main Ticket Queue for Resolved */}
+              <TicketList
+                tickets={resolvedTickets}
+                onSelectTicket={setSelectedTicket}
+                currentRole={currentRole}
+                isLoading={isLoading}
+                onOpenWidgetSimulator={() => setIsSimulatorOpen(true)}
+                onUpdateStatus={handleUpdateStatus}
+                onDeleteTicket={handleDeleteTicket}
+                isResolvedOnly={true}
+                permissionsMatrix={permissionsMatrix}
+              />
+            </main>
+          )}
               </div>
 
               {/* Main Ticket Queue for Resolved */}
@@ -1084,14 +1101,14 @@ const Dashboard: React.FC = () => {
             </main>
           )}
 
-          {/* Enterprise Telemetry Section */}
-          <section
+          {/* Enterprise Telemetry Section & Footer */}
+          <footer
             id="enterprise-telemetry-section"
             aria-label="Enterprise Telemetry & System Status"
             className="border-t border-slate-200/90 bg-white/95 py-5 pb-8 sm:pb-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 w-full mt-auto shrink-0 shadow-xs"
           >
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-slate-800">FEEDBACK-HUB ENTERPRISE</span>
+              <span className="font-medium text-slate-800">FEEDBACK-HUB ENTERPRISE</span>
               <span>•</span>
               <span className="text-slate-500">DYNAMIC REST API & WEBSOCKET ENGINE</span>
             </div>
@@ -1100,7 +1117,7 @@ const Dashboard: React.FC = () => {
               <span>•</span>
               <span>POSTGRESQL 16 RLS READY</span>
             </div>
-          </section>
+          </footer>
 
         </div>
       </div>
@@ -1146,6 +1163,8 @@ const Dashboard: React.FC = () => {
         onConfirm={handleConfirmLogout}
         onCancel={() => setIsLogoutModalOpen(false)}
         isLoggingOut={isLoggingOut}
+        user={currentUser}
+        tenantName={tenants.find(t => t.id === currentTenantId)?.name}
       />
 
     </div>
@@ -1197,7 +1216,7 @@ const AppContent: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0a0c10] flex flex-col items-center justify-center p-4">
-        <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-white font-mono font-bold text-xl shadow-lg shadow-blue-500/30 border border-blue-400/30 animate-pulse">
+        <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-[12px] flex items-center justify-center text-white font-mono font-medium text-xl shadow-lg shadow-blue-500/30 border border-blue-400/30 animate-pulse">
           FH
         </div>
         <div className="mt-4 flex items-center space-x-2 text-neutral-400 font-mono text-xs">

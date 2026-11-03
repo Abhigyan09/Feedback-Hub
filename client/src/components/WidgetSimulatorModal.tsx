@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { CustomSelect } from './CustomSelect';
 import { 
   X, 
   Send, 
@@ -241,17 +242,17 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-white text-slate-800 w-full max-w-[490px] max-h-[92vh] flex flex-col rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden my-auto animate-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white text-slate-800 w-full max-w-[540px] max-h-[90vh] flex flex-col rounded-[12px] shadow-2xl border border-slate-300 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 modal-subtle">
         
         {/* Modal Header - Fixed at top */}
         <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">
           <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/80 flex items-center justify-center text-blue-600 shadow-2xs shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shadow-2xs shrink-0">
               <MessageSquarePlus className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-800 leading-tight">
+              <h3 className="text-base font-medium text-slate-900 leading-tight">
                 Share Feedback with Engineering
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -259,7 +260,10 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               </p>
             </div>
           </div>
-          <button type="button" onClick={handleClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          <button 
+            type="button" 
+            onClick={handleClose} 
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-[8px] hover:bg-slate-200 transition-colors cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
@@ -281,10 +285,10 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('BUG')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-[8px] border text-xs font-medium transition-all cursor-pointer ${
                   category === 'BUG'
-                    ? 'border-blue-600 bg-blue-50/20 text-blue-600 ring-1 ring-blue-600 font-semibold'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-medium'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <Bug className="w-5 h-5 mb-1.5 text-inherit" />
@@ -295,10 +299,10 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('IDEA')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-[8px] border text-xs font-medium transition-all cursor-pointer ${
                   category === 'IDEA'
-                    ? 'border-blue-600 bg-blue-50/20 text-blue-600 ring-1 ring-blue-600 font-semibold'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-medium'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <Lightbulb className="w-5 h-5 mb-1.5 text-inherit" />
@@ -309,10 +313,10 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('HELP')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-[8px] border text-xs font-medium transition-all cursor-pointer ${
                   category === 'HELP'
-                    ? 'border-blue-600 bg-blue-50/20 text-blue-600 ring-1 ring-blue-600 font-semibold'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-medium'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <HelpCircle className="w-5 h-5 mb-1.5 text-inherit" />
@@ -323,10 +327,10 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCategory('RATING')}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-3 px-2 rounded-[8px] border text-xs font-medium transition-all cursor-pointer ${
                   category === 'RATING'
-                    ? 'border-blue-600 bg-blue-50/20 text-blue-600 ring-1 ring-blue-600 font-semibold'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    ? 'border-purple-600 bg-purple-50/50 text-purple-700 ring-1 ring-purple-600 shadow-2xs font-medium'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <Star className="w-5 h-5 mb-1.5 text-inherit" />
@@ -346,7 +350,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                     key={level}
                     type="button"
                     onClick={() => setSeverity(level)}
-                    className={`py-2 text-xs rounded-lg font-medium border transition-all text-center cursor-pointer ${
+                    className={`py-2 text-xs rounded-[8px] font-medium border transition-all text-center cursor-pointer ${
                       severity === level
                         ? 'bg-[#1e293b] text-white border-[#1e293b] shadow-2xs'
                         : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -397,7 +401,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder={getSubjectPlaceholder()}
-              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-slate-50/40 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all"
+              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-[8px] focus:outline-none focus:border-purple-600 shadow-2xs"
             />
           </div>
 
@@ -412,7 +416,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
               placeholder={getDetailsPlaceholder()}
               rows={3}
               required
-              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-slate-50/40 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 resize-none transition-all"
+              className="w-full px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-[8px] focus:outline-none focus:border-purple-600 resize-none shadow-2xs"
             />
           </div>
 
@@ -429,9 +433,9 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
             </div>
 
             {screenshot ? (
-              <div className="relative border border-slate-200 rounded-xl p-2 bg-slate-50 flex items-center justify-between">
+              <div className="relative border border-slate-200 rounded-[12px] p-2 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <img src={screenshot} alt="Screenshot preview" className="w-14 h-14 object-cover rounded-lg border border-slate-200" />
+                  <img src={screenshot} alt="Screenshot preview" className="w-14 h-14 object-cover rounded-[8px] border border-slate-200" />
                   <div className="text-xs">
                     <p className="font-medium text-slate-800">Screenshot Attached</p>
                     <p className="text-[11px] text-slate-400">Ready to transmit with incident</p>
@@ -440,7 +444,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setScreenshot(null)}
-                  className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-white transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-red-500 rounded-[8px] hover:bg-white transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -448,7 +452,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer bg-slate-50/20 hover:bg-slate-50/60 transition-colors"
+                className="border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-[12px] p-4 text-center cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors"
               >
                 <input
                   type="file"
@@ -458,7 +462,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                   className="hidden"
                 />
                 <div className="flex flex-col items-center justify-center space-y-1">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-2xs">
+                  <div className="w-8 h-8 rounded-[8px] bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-2xs">
                     <Upload className="w-4 h-4" />
                   </div>
                   <p className="text-xs font-medium text-slate-700">Click to upload or paste screenshot</p>
@@ -469,7 +473,7 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
           </div>
 
           {/* 6. Auto-Captured System Telemetry Accordion */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+          <div className="border border-slate-200 rounded-[12px] overflow-hidden text-xs">
             <button
               type="button"
               onClick={() => setIsTelemetryOpen(!isTelemetryOpen)}
@@ -493,18 +497,20 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
                   <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
                     Simulate Client Product & Domain Origin:
                   </label>
-                  <select
+                  <CustomSelect
+                    fullWidth
                     value={simulatedProduct}
-                    onChange={(e) => setSimulatedProduct(e.target.value as any)}
-                    className="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-800 focus:outline-none focus:border-blue-600"
-                  >
-                    <option value="checkout">Acme Payments (checkout.acme.com)</option>
-                    <option value="merchant">Acme Payments (merchant.acme.com)</option>
-                    <option value="medsync">MedSync Healthcare (portal.medsync.io)</option>
-                  </select>
+                    onChange={(val: string) => setSimulatedProduct(val as any)}
+                    options={[
+                      { value: 'checkout', label: 'Acme Payments (checkout.acme.com)' },
+                      { value: 'merchant', label: 'Acme Payments (merchant.acme.com)' },
+                      { value: 'medsync', label: 'MedSync Healthcare (portal.medsync.io)' }
+                    ]}
+                    buttonClassName="bg-slate-50 border-slate-200 rounded-[8px] p-2 font-mono text-xs"
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-600 bg-slate-50 p-2.5 rounded-[8px] border border-slate-100">
                   <div>
                     <span className="text-slate-400">Domain:</span> {currentConfig.domain}
                   </div>
@@ -526,14 +532,17 @@ export const WidgetSimulatorModal: React.FC<WidgetSimulatorModalProps> = ({
 
           {/* Modal Footer - Fixed at bottom */}
           <div className="px-6 py-4 flex items-center justify-end space-x-3 border-t border-slate-100 bg-white shrink-0">
-            <button type="button" onClick={handleClose} className="px-6 py-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-6 py-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-[8px] hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-[#7ba4e8] hover:bg-[#6c97e0] text-white text-xs font-semibold rounded-xl shadow-xs flex items-center space-x-2 disabled:opacity-50 transition-all cursor-pointer active:scale-[0.98]"
+              className="px-5 py-2 bg-[#0066FF] hover:bg-blue-600 text-white text-xs font-medium rounded-[8px] shadow-xs flex items-center space-x-2 disabled:opacity-50 transition-all cursor-pointer active:scale-[0.98]"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Sending...' : 'Send Feedback'}</span>

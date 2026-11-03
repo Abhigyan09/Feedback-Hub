@@ -68,7 +68,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       parenthesisCount: urgentCount,
       icon: ShieldAlert,
       iconBg: 'bg-rose-50 text-rose-600 border border-rose-100',
-      activeBorder: 'ring-2 ring-red-500 border-red-300'
+      activeBorder: 'ring-2 ring-rose-500 border-rose-300'
     },
     {
       id: 'RESOLVED' as const,
@@ -102,43 +102,43 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
               }
             }}
             aria-label={`${card.label} tickets count: ${card.count}. Click to filter table.`}
-            className={`bg-white rounded-md p-5 border transition-all duration-200 cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-xs flex flex-col justify-between min-h-[105px] card-subtle ${
+            className={`bg-white rounded-[12px] p-5 sm:p-6 border transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-xs flex flex-col justify-between min-h-[115px] font-poppins ${
               isActive
-                ? `${card.activeBorder} bg-purple-50/20 shadow-purple-100`
-                : 'border-slate-200/90 hover:border-purple-300'
+                ? `${card.activeBorder} bg-blue-50/20 shadow-blue-100`
+                : 'border-slate-200/80 hover:border-blue-400'
             }`}
           >
             {/* Top row: Label and Soft Icon badge */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-semibold text-slate-800 tracking-tight">
+                <span className="text-sm font-medium text-slate-800 tracking-tight">
                   {card.label}
                 </span>
                 {isActive && (
-                  <span className="text-[10px] font-semibold bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded-sm">
+                  <span className="text-[10px] font-medium bg-blue-100 text-blue-700 px-2 py-0.5 rounded-[6px]">
                     Filtered
                   </span>
                 )}
               </div>
 
-              <div className={`w-7 h-7 rounded-md flex items-center justify-center ${card.iconBg}`}>
+              <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center ${card.iconBg}`}>
                 <IconComponent className="w-4 h-4" />
               </div>
             </div>
 
-            {/* Bottom Row: Big Bold Count + Square Indicator + Sublabel + Far Right Count in Parentheses */}
-            <div className="mt-3 flex items-center justify-between">
+            {/* Bottom Row: Big Bold Count + Rounded Indicator + Sublabel + Far Right Count in Parentheses */}
+            <div className="mt-4 flex items-center justify-between">
               <div className="flex items-baseline space-x-3">
-                <span className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 leading-none">
+                <span className="text-2xl sm:text-3xl font-medium font-poppins text-slate-900 leading-none tracking-tight">
                   {card.count}
                 </span>
                 <div className="flex items-center space-x-1.5 text-xs text-slate-500 font-medium">
-                  <span className={`w-2 h-2 rounded-xs ${card.dotColor} flex-shrink-0`} />
+                  <span className={`w-2 h-2 rounded-full ${card.dotColor} flex-shrink-0`} />
                   <span>{card.sublabel}</span>
                 </div>
               </div>
 
-              <span className="font-mono text-xs text-slate-600 font-semibold">
+              <span className="font-poppins text-xs text-slate-400 font-medium">
                 ({card.parenthesisCount})
               </span>
             </div>
