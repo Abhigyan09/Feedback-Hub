@@ -160,9 +160,12 @@ export const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               <CustomSelect
                 fullWidth
                 value={category}
-                onChange={(val: string) => setCategory(val as TicketCategory)}
+onChange={(val: string) => setCategory(val as TicketCategory)}
                 options={[
                   { value: 'BUG', label: 'Bug' },
+                  { value: 'IDEA', label: 'Idea' },
+                  { value: 'HELP', label: 'Help' },
+                  { value: 'RATING', label: 'Rating' },
                   { value: 'API_FAILURE', label: 'API Failure' },
                   { value: 'PERFORMANCE', label: 'Performance' },
                   { value: 'UI_GLITCH', label: 'UI Glitch' },

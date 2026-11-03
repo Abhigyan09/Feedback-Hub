@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
-import { tenantStore, isPostgresConnected, pool, persistRolePermissionsToDb } from '../config/db.js';
+import { tenantStore, isPostgresConnected, pool, persistRolePermissionsToDb, persistFullMatrixToDb, toTenantUuid } from '../config/db.js';
 import { requireRole, requirePermission, requireAnyPermission } from '../middleware/rbac.js';
 import { broadcastTicketEvent } from '../services/socket.js';
 import { Product, User, UserRole, PermissionKey } from '../types/index.js';
@@ -8,19 +8,76 @@ import { PERMISSION_DEFINITIONS, ALL_ROLES } from '../config/permissions.js';
 
 export const tenantRouter = Router();
 
-// 1. GET TENANT METADATA & MONITORED PRODUCTS
-tenantRouter.get('/current', (req: Request, res: Response) => {
+// 1. GET TENANT METADATA & MONITORED PRODUCTS (LIVE FROM SUPABASE)
+tenantRouter.get('/current', async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
-  const tenant = tenantStore.tenants.find(t => t.id === tenantId);
+  const targetTenantUuid = toTenantUuid(tenantId);
+
+  let tenant = tenantStore.tenants.find(t => t.id === tenantId || toTenantUuid(t.id) === targetTenantUuid);
+  let products = tenantStore.products.filter(p => p.tenant_id === tenantId || toTenantUuid(p.tenant_id) === targetTenantUuid);
+  let users = tenantStore.users
+    .filter(u => u.tenant_id === tenantId || toTenantUuid(u.tenant_id) === targetTenantUuid)
+    .map(({ password_hash, ...safeUser }) => safeUser);
+
+  if (isPostgresConnected) {
+    try {
+      const tenantRes = await pool.query('SELECT * FROM tenants WHERE id = $1 LIMIT 1', [targetTenantUuid]);
+      if (tenantRes.rows.length > 0) {
+        const row = tenantRes.rows[0];
+        tenant = {
+          id: tenantId,
+          name: row.name,
+          slug: row.slug,
+          plan: row.plan,
+          allowed_domains: row.allowed_domains || [],
+          webhook_url: row.webhook_url,
+          notification_email: row.notification_email,
+          auto_capture_telemetry: row.auto_capture_telemetry,
+          auto_capture_network: row.auto_capture_network,
+          require_email: row.require_email,
+          default_squad: row.default_squad,
+          created_at: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+          updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString()
+        };
+      }
+
+      const productsRes = await pool.query('SELECT * FROM products WHERE tenant_id = $1', [targetTenantUuid]);
+      if (productsRes.rows.length > 0) {
+        products = productsRes.rows.map(p => ({
+          id: p.id,
+          tenant_id: tenantId,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          api_key_hash: p.api_key_hash,
+          raw_api_key: p.raw_api_key,
+          environment: p.environment,
+          webhook_url: p.webhook_url,
+          created_at: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString()
+        }));
+      }
+
+      const usersRes = await pool.query('SELECT id, email, full_name, role, is_active, created_at FROM users WHERE tenant_id = $1', [targetTenantUuid]);
+      if (usersRes.rows.length > 0) {
+        users = usersRes.rows.map(u => ({
+          id: u.id,
+          tenant_id: tenantId,
+          email: u.email,
+          full_name: u.full_name,
+          role: u.role,
+          is_active: u.is_active,
+          created_at: u.created_at ? new Date(u.created_at).toISOString() : new Date().toISOString()
+        }));
+      }
+    } catch (dbErr) {
+      console.error('[Supabase Fetch Tenant Details Error]', dbErr);
+    }
+  }
+
   if (!tenant) {
     return res.status(404).json({ error: `Tenant not found for ID: ${tenantId}` });
   }
 
-  const products = tenantStore.products.filter(p => p.tenant_id === tenantId);
-  // Sanitize password_hash from team members
-  const users = tenantStore.users
-    .filter(u => u.tenant_id === tenantId)
-    .map(({ password_hash, ...safeUser }) => safeUser);
   const permissionsMatrix = tenantStore.getPermissionsMatrix(tenantId);
 
   res.json({
@@ -35,6 +92,7 @@ tenantRouter.get('/current', (req: Request, res: Response) => {
 // 2. UPDATE ACTIVE TENANT SETTINGS (Full Update)
 tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenant:manage_policies', 'tenant:manage_domains']), async (req: Request, res: Response) => {
   const tenantId = req.auth!.tenantId;
+  const targetTenantUuid = toTenantUuid(tenantId);
   const { 
     name, 
     allowed_domains, 
@@ -47,7 +105,7 @@ tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenan
     default_squad 
   } = req.body;
 
-  const tenant = tenantStore.tenants.find(t => t.id === tenantId);
+  const tenant = tenantStore.tenants.find(t => t.id === tenantId || toTenantUuid(t.id) === targetTenantUuid);
   if (!tenant) {
     return res.status(404).json({ error: 'Tenant not found.' });
   }
@@ -96,7 +154,7 @@ tenantRouter.put('/current', requireAnyPermission(['tenant:edit_profile', 'tenan
           tenant.auto_capture_telemetry, 
           tenant.auto_capture_network, 
           tenant.require_email, 
-          tenantId
+          targetTenantUuid
         ]
       );
     } catch (dbErr) {
@@ -159,7 +217,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
   const tenantId = req.auth!.tenantId;
   const { role, permissions, updates, matrix: fullMatrix } = req.body;
 
-  // Mode A: Full Matrix update mode (all roles)
+  // Mode A: Full Matrix update mode (all roles) - Batch persisted in 1 single SQL query
   if (fullMatrix && typeof fullMatrix === 'object') {
     for (const r of ALL_ROLES) {
       if (fullMatrix[r] && typeof fullMatrix[r] === 'object') {
@@ -167,9 +225,9 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
           fullMatrix[r]['permissions:edit'] = true; // prevent lockout
         }
         tenantStore.updateRolePermissions(tenantId, r as UserRole, fullMatrix[r]);
-        await persistRolePermissionsToDb(tenantId, r as UserRole, fullMatrix[r]);
       }
     }
+    await persistFullMatrixToDb(tenantId, fullMatrix as any);
     tenantStore.saveToDisk();
 
     const updated = tenantStore.getPermissionsMatrix(tenantId);
@@ -231,9 +289,7 @@ tenantRouter.put('/permissions', requirePermission('permissions:edit'), async (r
     }
 
     const matrix = tenantStore.getPermissionsMatrix(tenantId);
-    for (const r of ALL_ROLES) {
-      await persistRolePermissionsToDb(tenantId, r, matrix[r]);
-    }
+    await persistFullMatrixToDb(tenantId, matrix);
     tenantStore.saveToDisk();
 
     broadcastTicketEvent(tenantId, 'PERMISSIONS_UPDATED', {
@@ -263,9 +319,7 @@ tenantRouter.post('/permissions/reset', requirePermission('permissions:reset'), 
   if (targetRole) {
     await persistRolePermissionsToDb(tenantId, targetRole, resetMatrix[targetRole]);
   } else {
-    for (const r of ALL_ROLES) {
-      await persistRolePermissionsToDb(tenantId, r, resetMatrix[r]);
-    }
+    await persistFullMatrixToDb(tenantId, resetMatrix);
   }
   tenantStore.saveToDisk();
 
@@ -434,7 +488,7 @@ tenantRouter.delete('/products/:id', requirePermission('products:delete'), async
 });
 
 // 10. LIST ALL TENANTS (FOR SWITCHER - SUPER_ADMIN ONLY)
-tenantRouter.get('/all', requireRole(['super_admin']), (req: Request, res: Response) => {
+tenantRouter.get('/all', requireRole(['super_admin', 'tenant_admin', 'squad_lead', 'developer']), (req: Request, res: Response) => {
   res.json({
     tenants: tenantStore.tenants.map(t => ({
       id: t.id,

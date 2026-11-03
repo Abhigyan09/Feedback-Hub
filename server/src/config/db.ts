@@ -8,15 +8,51 @@ import { createDefaultPermissionsMatrix, DEFAULT_ROLE_PERMISSIONS, ALL_ROLES, PE
 
 const { Pool } = pg;
 
+// Auto-detect and configure Supabase Session Pooler
+let connectionString = ENV.DATABASE_URL || '';
+if (connectionString.includes('pooler.supabase.com:5432')) {
+  connectionString = connectionString.replace(':5432/', ':6543/');
+}
+
+const isSupabase = connectionString.includes('supabase.com');
+
 export const pool = new Pool({
-  connectionString: ENV.DATABASE_URL,
+  connectionString,
+  ssl: isSupabase ? { rejectUnauthorized: false } : undefined,
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000
+  connectionTimeoutMillis: 15000
 });
 
 // Flag indicating if live Postgres connection is established
 export let isPostgresConnected = false;
+
+// Multi-tenant UUID and Text Mapping Dictionary
+export const TENANT_TEXT_TO_UUID: Record<string, string> = {
+  'tenant-acme-corp-001': '00000000-0000-4000-8000-000000000001',
+  'tenant-medsync-002': '00000000-0000-4000-8000-000000000002',
+  'acme-payments': '00000000-0000-4000-8000-000000000001',
+  'medsync': '00000000-0000-4000-8000-000000000002'
+};
+
+export const TENANT_UUID_TO_TEXT: Record<string, string> = {
+  '00000000-0000-4000-8000-000000000001': 'tenant-acme-corp-001',
+  '00000000-0000-4000-8000-000000000002': 'tenant-medsync-002'
+};
+
+export function toTenantUuid(tenantId: string): string {
+  if (TENANT_TEXT_TO_UUID[tenantId]) return TENANT_TEXT_TO_UUID[tenantId];
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenantId)) {
+    return tenantId;
+  }
+  return '00000000-0000-4000-8000-000000000001';
+}
+
+export function toTenantTextId(tenantId: string): string {
+  if (TENANT_UUID_TO_TEXT[tenantId]) return TENANT_UUID_TO_TEXT[tenantId];
+  return tenantId;
+}
+
 
 function getDbFilePath(): string {
   // Check if cwd has 'db' directory
@@ -105,20 +141,26 @@ export class MultiTenantStore {
           this.events = Array.isArray(data.events) ? data.events : [];
           this.refreshTokens = Array.isArray(data.refreshTokens)
             ? data.refreshTokens.map((r: any) => ({
-                ...r,
-                expires_at: new Date(r.expires_at),
-                created_at: new Date(r.created_at)
-              }))
+              ...r,
+              expires_at: new Date(r.expires_at),
+              created_at: new Date(r.created_at)
+            }))
             : [];
           this.passwordResetTokens = Array.isArray(data.passwordResetTokens)
             ? data.passwordResetTokens.map((p: any) => ({
-                ...p,
-                expires_at: new Date(p.expires_at),
-                created_at: new Date(p.created_at),
-                used_at: p.used_at ? new Date(p.used_at) : null
-              }))
+              ...p,
+              expires_at: new Date(p.expires_at),
+              created_at: new Date(p.created_at),
+              used_at: p.used_at ? new Date(p.used_at) : null
+            }))
             : [];
           this.permissionsMatrix = data.permissionsMatrix || {};
+          // Ensure developer role has tickets:delete aligned with active permissions
+          for (const tKey of Object.keys(this.permissionsMatrix)) {
+            if (this.permissionsMatrix[tKey]?.developer) {
+              this.permissionsMatrix[tKey].developer['tickets:delete'] = true;
+            }
+          }
           console.log(`[Database] Loaded persistent data: ${this.tickets.length} tickets, ${this.products.length} products, ${this.tenants.length} tenants, ${this.refreshTokens.length} active sessions.`);
           return true;
         }
@@ -350,421 +392,14 @@ export class MultiTenantStore {
     this.permissionsMatrix[tenantB.id] = createDefaultPermissionsMatrix();
   }
 
-  public seedRichLiveTickets() {
-    const tenantAId = 'tenant-acme-corp-001';
-    const tenantBId = 'tenant-medsync-002';
-    const now = Date.now();
-
-    const sampleTickets: Ticket[] = [
-      {
-        id: 'ticket-fb-1042',
-        tenant_id: tenantAId,
-        product_id: 'prod-checkout-gateway',
-        product_name: 'Checkout Gateway API & SDK',
-        short_code: 'FB-1042',
-        title: 'HTTP 504 Gateway Timeout during UPI Webhook settlement',
-        description: 'Production checkout failed for 14 enterprise transactions during peak settlement hour. Merchant receives blank loading state.',
-        category: 'API_FAILURE',
-        severity: 'CRITICAL',
-        status: 'IN_DEV',
-        reporter_email: 'operations@partner-client.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-dev-01',
-        assigned_to_name: 'Rahul Sharma (Senior Backend Dev)',
-        sla_due_at: new Date(now + 45 * 60000).toISOString(),
-        created_at: new Date(now - 35 * 60000).toISOString(),
-        updated_at: new Date(now - 10 * 60000).toISOString(),
-        telemetry: {
-          page_url: 'https://checkout.acme.com/v2/pay/upi/intent?session=sess_982b',
-          app_version: 'v2.14.0-prod',
-          user_agent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
-          viewport_dimensions: '390x844',
-          console_logs: [
-            { type: 'info', message: 'Initialized UPI SDK v2.4.1', timestamp: '18:12:02' },
-            { type: 'error', message: 'Uncaught (in promise) Error: GatewayTimeout at fetchWithRetry (/bundle.js:842)', timestamp: '18:12:45' }
-          ],
-          network_errors: [
-            { url: 'https://api.acme.com/v1/settlements/verify', status: 504, method: 'POST', timestamp: '18:12:45' }
-          ],
-          encrypted_sensitive_data: encryptSensitiveData(JSON.stringify({
-            authHeader: 'Bearer [REDACTED_CLIENT_SECRET]',
-            sessionToken: 'sess_live_e9a8f2c3'
-          }))
-        }
-      },
-      {
-        id: 'ticket-fb-1043',
-        tenant_id: tenantAId,
-        product_id: 'prod-dashboard',
-        product_name: 'Merchant Admin Portal',
-        short_code: 'FB-1043',
-        title: 'Tax invoice PDF download button unresponsive on Chrome iOS',
-        description: 'Clicking Download Invoice on billing portal triggers a spinner but never initiates file download stream.',
-        category: 'UI_GLITCH',
-        severity: 'HIGH',
-        status: 'OPEN',
-        reporter_email: 'finance@partner-client.com',
-        assigned_squad: 'Core Platform & API Squad',
-        sla_due_at: new Date(now + 180 * 60000).toISOString(),
-        created_at: new Date(now - 15 * 60000).toISOString(),
-        updated_at: new Date(now - 15 * 60000).toISOString(),
-        telemetry: {
-          page_url: 'https://merchant.acme.com/billing/invoices/2026-Q1',
-          app_version: 'v4.1.2',
-          user_agent: 'Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15',
-          viewport_dimensions: '820x1180',
-          console_logs: [
-            { type: 'warn', message: 'Blob URL revoked before download triggered', timestamp: '18:20:11' }
-          ],
-          network_errors: []
-        }
-      },
-      {
-        id: 'ticket-medsync-2001',
-        tenant_id: tenantBId,
-        product_id: 'prod-telehealth-portal',
-        product_name: 'MedSync Telehealth Patient Web',
-        short_code: 'MS-2001',
-        title: 'HIPAA Audit Trail Sync Latency in Clinic Node',
-        description: 'Audit logs for patient record lookups are delayed by 180 seconds during batch record ingestion.',
-        category: 'PERFORMANCE',
-        severity: 'HIGH',
-        status: 'OPEN',
-        reporter_email: 'compliance@medsync.io',
-        assigned_squad: 'COMPLIANCE_ENG',
-        assigned_to: 'user-medsync-dev-01',
-        assigned_to_name: 'Elena Rostova',
-        sla_due_at: new Date(now + 120 * 60000).toISOString(),
-        created_at: new Date(now - 60 * 60000).toISOString(),
-        updated_at: new Date(now - 30 * 60000).toISOString(),
-        telemetry: {
-          page_url: 'https://ehr.medsync.io/audit/sync',
-          app_version: 'v1.8.0',
-          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          viewport_dimensions: '1920x1080',
-          console_logs: [],
-          network_errors: []
-        }
-      },
-      {
-        id: 'ticket-1041',
-        tenant_id: tenantAId,
-        product_id: 'prod-checkout-gateway',
-        product_name: 'Checkout Gateway API & SDK',
-        short_code: 'FB-1041',
-        title: 'BUG: Feedback from checkout.acme.com',
-        description: 'Customer encountered error during checkout payment flow. Form validation and payment token gateway threw HTTP 500.',
-        category: 'BUG',
-        severity: 'MEDIUM',
-        status: 'OPEN',
-        reporter_email: 'sarah.jenkins@clientops.acme.com',
-        assigned_squad: 'Checkout & Billing Squad',
-        assigned_to: undefined,
-        assigned_to_name: undefined,
-        domain_origin: 'checkout.acme.com',
-        telemetry: {
-          page_url: 'https://checkout.acme.com/pay',
-          domain_origin: 'checkout.acme.com',
-          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          viewport_dimensions: '1358x636',
-          console_logs: [
-            { type: 'error', message: 'Failed to load resource: the server responded with a status of 500', timestamp: '18:31:01' },
-            { type: 'warn', message: 'Transaction state reset to unconfirmed', timestamp: '18:31:02' }
-          ],
-          network_errors: [
-            { url: 'https://checkout.acme.com/api/v1/payments/charge', status: 500, method: 'POST', timestamp: '18:31:02' }
-          ]
-        },
-        sla_due_at: new Date(now + 119 * 60000).toISOString(),
-        created_at: new Date(now - 8 * 60000).toISOString(),
-        updated_at: new Date(now - 8 * 60000).toISOString()
-      },
-      {
-        id: 'ticket-1042',
-        tenant_id: tenantAId,
-        product_id: 'prod-checkout-gateway',
-        product_name: 'Checkout Gateway API & SDK',
-        short_code: 'FB-1042',
-        title: 'Webhook HMAC Signature Fails on Idempotent Retry',
-        description: 'Timestamp drift causes HMAC-SHA256 signature verification to reject idempotent retry events sent by the automated retry queue.',
-        category: 'BUG',
-        severity: 'CRITICAL',
-        status: 'IN_DEV',
-        reporter_email: 'ops-monitoring@acme.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-lead-01',
-        assigned_to_name: 'Vikram Mehta (API Squad Lead)',
-        domain_origin: 'payments.acme.com',
-        telemetry: {
-          page_url: 'https://payments.acme.com/v1/webhooks/health',
-          domain_origin: 'payments.acme.com',
-          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0',
-          viewport_dimensions: '1920x1080',
-          console_logs: [
-            { type: 'error', message: 'CryptoSignatureMismatch: header x-signature does not match computed HMAC', timestamp: '11:15:22' }
-          ],
-          network_errors: [
-            { url: 'https://payments.acme.com/v1/webhooks/verify', status: 502, method: 'POST', timestamp: '11:15:22' }
-          ]
-        },
-        sla_due_at: new Date(now + 60 * 60000).toISOString(),
-        created_at: new Date(now - 120 * 60000).toISOString(),
-        updated_at: new Date(now - 15 * 60000).toISOString()
-      },
-      {
-        id: 'ticket-1043',
-        tenant_id: tenantAId,
-        product_id: 'prod-dashboard',
-        product_name: 'Merchant Admin Portal',
-        short_code: 'FB-1043',
-        title: 'Merchant Settlement Reconciliation Discrepancy in EUR/USD Export',
-        description: 'Rounding discrepancy of $0.01 observed on EUR/USD currency conversion when generating monthly settlement ledger CSV for European merchants.',
-        category: 'BUG',
-        severity: 'HIGH',
-        status: 'IN_QA',
-        reporter_email: 'accounting@merchant-partner.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-dev-02',
-        assigned_to_name: 'Priya Nair (Frontend Platform Dev)',
-        domain_origin: 'merchant.acme.com',
-        telemetry: {
-          page_url: 'https://merchant.acme.com/reports/settlement',
-          domain_origin: 'merchant.acme.com',
-          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-          viewport_dimensions: '1680x1050'
-        },
-        sla_due_at: new Date(now + 120 * 60000).toISOString(),
-        created_at: new Date(now - 180 * 60000).toISOString(),
-        updated_at: new Date(now - 40 * 60000).toISOString()
-      },
-      {
-        id: 'ticket-1044',
-        tenant_id: tenantAId,
-        product_id: 'prod-checkout-gateway',
-        product_name: 'Checkout Gateway API & SDK',
-        short_code: 'FB-1044',
-        title: 'Session Cookie SameSite Blocks 3DS Authentication Redirect',
-        description: 'Strict SameSite cookie attribute prevented bank OTP redirect from completing in embedded iframe. Hotfix deployed to use SameSite=None; Secure.',
-        category: 'BUG',
-        severity: 'HIGH',
-        status: 'RESOLVED',
-        reporter_email: 'qa-engineer@acme.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-dev-01',
-        assigned_to_name: 'Rahul Sharma (Senior Backend Dev)',
-        domain_origin: 'checkout.acme.com',
-        sla_due_at: new Date(now - 100 * 60000).toISOString(),
-        created_at: new Date(now - 300 * 60000).toISOString(),
-        updated_at: new Date(now - 30 * 60000).toISOString()
-      },
-      {
-        id: 'ticket-1045',
-        tenant_id: tenantAId,
-        product_id: 'prod-dashboard',
-        product_name: 'Merchant Admin Portal',
-        short_code: 'FB-1045',
-        title: 'Bulk Refund Processing via CSV Upload in Admin Portal',
-        description: 'Tier-1 merchants requesting ability to batch refund chargebacks by uploading standardized CSV template directly through the dashboard.',
-        category: 'IDEA',
-        severity: 'MEDIUM',
-        status: 'IN_DEV',
-        reporter_email: 'ops-manager@acme.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-dev-03',
-        assigned_to_name: 'Amit Patel (Full-Stack Reliability Dev)',
-        domain_origin: 'merchant.acme.com',
-        sla_due_at: new Date(now + 24 * 3600000).toISOString(),
-        created_at: new Date(now - 400 * 60000).toISOString(),
-        updated_at: new Date(now - 50 * 60000).toISOString()
-      },
-      {
-        id: 'ticket-1046',
-        tenant_id: tenantAId,
-        product_id: 'prod-checkout-gateway',
-        product_name: 'Checkout Gateway API & SDK',
-        short_code: 'FB-1046',
-        title: 'Native Dark Mode Theme for Embedded Widget',
-        description: 'Auto-detection of host application prefers-color-scheme media query for seamless dark UI embedding in modern applications.',
-        category: 'IDEA',
-        severity: 'LOW',
-        status: 'CLOSED',
-        reporter_email: 'design-systems@acme.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-dev-02',
-        assigned_to_name: 'Priya Nair (Frontend Platform Dev)',
-        domain_origin: 'checkout.acme.com',
-        sla_due_at: new Date(now - 120 * 60000).toISOString(),
-        created_at: new Date(now - 800 * 60000).toISOString(),
-        updated_at: new Date(now - 120 * 60000).toISOString()
-      },
-      {
-        id: 'ticket-1047',
-        tenant_id: tenantAId,
-        product_id: 'prod-checkout-gateway',
-        product_name: 'Checkout Gateway API & SDK',
-        short_code: 'FB-1047',
-        title: 'Checkout Experience: 5 Star Review from Verified Buyer',
-        description: 'Instant UPI payment QR code generated and settled in under 280ms. Exceptional mobile checkout speed on iOS Safari.',
-        category: 'RATING',
-        rating: 5,
-        severity: 'LOW',
-        status: 'RESOLVED',
-        reporter_email: 'buyer.verified@gmail.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-lead-01',
-        assigned_to_name: 'Vikram Mehta (API Squad Lead)',
-        domain_origin: 'checkout.acme.com',
-        sla_due_at: new Date(now - 60 * 60000).toISOString(),
-        created_at: new Date(now - 250 * 60000).toISOString(),
-        updated_at: new Date(now - 60 * 60000).toISOString()
-      },
-      {
-        id: 'ticket-1048',
-        tenant_id: tenantAId,
-        product_id: 'prod-checkout-gateway',
-        product_name: 'Checkout Gateway API & SDK',
-        short_code: 'FB-1048',
-        title: 'Custom Domain SSL Handshake DNS Records Assistance',
-        description: 'Need verification DNS TXT and CNAME records for enterprise custom domain routing SSL certificate automated provisioning.',
-        category: 'HELP',
-        severity: 'MEDIUM',
-        status: 'OPEN',
-        reporter_email: 'infra-lead@acme.com',
-        assigned_squad: 'Core Platform & API Squad',
-        assigned_to: 'user-dev-03',
-        assigned_to_name: 'Amit Patel (Full-Stack Reliability Dev)',
-        domain_origin: 'payments.acme.com',
-        sla_due_at: new Date(now + 60 * 60000).toISOString(),
-        created_at: new Date(now - 90 * 60000).toISOString(),
-        updated_at: new Date(now - 90 * 60000).toISOString()
-      },
-      // Tenant B (MedSync Healthcare) Isolated Incident
-      {
-        id: 'ticket-2001',
-        tenant_id: tenantBId,
-        product_id: 'prod-telehealth-portal',
-        product_name: 'MedSync Telehealth Patient Web',
-        short_code: 'FB-2001',
-        title: 'EHR FHIR API Integration Timeout During Patient Discharge',
-        description: 'Discharge summary sync fails intermittently with 504 Gateway Timeout when synchronizing HL7 records to hospital server.',
-        category: 'BUG',
-        severity: 'CRITICAL',
-        status: 'OPEN',
-        reporter_email: 'clinical-ops@medsync.io',
-        assigned_squad: 'Clinical Telehealth Squad',
-        domain_origin: 'portal.medsync.io',
-        sla_due_at: new Date(now + 30 * 60000).toISOString(),
-        created_at: new Date(now - 120 * 60000).toISOString(),
-        updated_at: new Date(now - 120 * 60000).toISOString()
-      }
-    ];
-
-    const sampleEvents: TicketEvent[] = [
-      {
-        id: 'ev-1',
-        ticket_id: 'ticket-1041',
-        tenant_id: tenantAId,
-        author_name: 'Automated Ingestion Bridge',
-        author_role: 'super_admin',
-        event_type: 'STATUS_CHANGE',
-        content: 'Incident ingested via client SDK from checkout.acme.com. High-severity triage alert dispatched to Core Platform & API Squad.',
-        is_internal_only: false,
-        created_at: new Date(now - 45 * 60000).toISOString()
-      },
-      {
-        id: 'ev-2',
-        ticket_id: 'ticket-1041',
-        tenant_id: tenantAId,
-        author_name: 'Vikram Mehta (API Squad Lead)',
-        author_role: 'squad_lead',
-        event_type: 'ASSIGNED',
-        content: 'Ticket assigned to Rahul Sharma for urgent investigation on Safari 17.4 device lab.',
-        is_internal_only: false,
-        created_at: new Date(now - 20 * 60000).toISOString()
-      },
-      {
-        id: 'ev-3',
-        ticket_id: 'ticket-1044',
-        tenant_id: tenantAId,
-        author_name: 'Rahul Sharma (Senior Backend Dev)',
-        author_role: 'developer',
-        event_type: 'DEV_NOTE',
-        content: 'Root cause identified: Cookie attribute was missing partitioned flag for cross-site iframe embedding. Tested and deployed to production.',
-        is_internal_only: true,
-        created_at: new Date(now - 40 * 60000).toISOString()
-      },
-      {
-        id: 'ev-4',
-        ticket_id: 'ticket-1044',
-        tenant_id: tenantAId,
-        author_name: 'Rahul Sharma (Senior Backend Dev)',
-        author_role: 'developer',
-        event_type: 'STATUS_CHANGE',
-        content: 'Status advanced from IN_QA to RESOLVED. Verified 100% 3DS conversion rate restored.',
-        is_internal_only: false,
-        created_at: new Date(now - 30 * 60000).toISOString()
-      },
-      {
-        id: 'ev-01',
-        ticket_id: 'ticket-fb-1042',
-        tenant_id: tenantAId,
-        author_name: 'Rahul Sharma',
-        author_role: 'developer',
-        event_type: 'DEV_NOTE',
-        content: 'Investigated Redis connection pool in Settlement microservice. It timed out due to slow socket read on banking partner node. Rolling out pool sizing hotfix to staging.',
-        is_internal_only: true,
-        created_at: new Date(now - 20 * 60000).toISOString()
-      },
-      {
-        id: 'ev-02',
-        ticket_id: 'ticket-fb-1042',
-        tenant_id: tenantAId,
-        author_name: 'Vikram Mehta',
-        author_role: 'squad_lead',
-        event_type: 'CLIENT_REPLY',
-        content: 'Our core API team is actively applying a backend hotfix to resolve the gateway delay. Next status update in 20 minutes.',
-        is_internal_only: false,
-        created_at: new Date(now - 12 * 60000).toISOString()
-      },
-      {
-        id: 'ev-medsync-01',
-        ticket_id: 'ticket-medsync-2001',
-        tenant_id: tenantBId,
-        author_name: 'Elena Rostova',
-        author_role: 'developer',
-        event_type: 'DEV_NOTE',
-        content: 'Configured secondary Redis replica for HIPAA audit buffering.',
-        is_internal_only: true,
-        created_at: new Date(now - 25 * 60000).toISOString()
-      }
-    ];
-
-    if (this.tickets.length === 0) {
-      this.tickets = sampleTickets;
-    } else {
-      for (const st of sampleTickets) {
-        if (!this.tickets.some(t => t.id === st.id)) {
-          this.tickets.push(st);
-        }
-      }
-    }
-
-    if (this.events.length === 0) {
-      this.events = sampleEvents;
-    } else {
-      for (const se of sampleEvents) {
-        if (!this.events.some(e => e.id === se.id)) {
-          this.events.push(se);
-        }
-      }
-    }
-  }
-
   public getPermissionsMatrix(tenantId: string): RolePermissionsMatrix {
-    if (!this.permissionsMatrix[tenantId]) {
-      this.permissionsMatrix[tenantId] = createDefaultPermissionsMatrix();
-    }
-    return this.permissionsMatrix[tenantId];
+    const textId = toTenantTextId(tenantId);
+    const uuid = toTenantUuid(tenantId);
+    if (this.permissionsMatrix[textId]) return this.permissionsMatrix[textId];
+    if (this.permissionsMatrix[uuid]) return this.permissionsMatrix[uuid];
+    if (this.permissionsMatrix[tenantId]) return this.permissionsMatrix[tenantId];
+    this.permissionsMatrix[textId] = createDefaultPermissionsMatrix();
+    return this.permissionsMatrix[textId];
   }
 
   public hasPermission(tenantId: string, role: UserRole, permissionKey: PermissionKey): boolean {
@@ -803,8 +438,8 @@ export class MultiTenantStore {
   }
 
   public updateRolePermissions(
-    tenantId: string, 
-    role: UserRole, 
+    tenantId: string,
+    role: UserRole,
     permissions: Partial<Record<PermissionKey, boolean>>
   ): RolePermissionsMatrix {
     const matrix = this.getPermissionsMatrix(tenantId);
@@ -850,29 +485,85 @@ export const tenantStore = new MultiTenantStore();
  * Persist role permissions to live PostgreSQL database if connected.
  */
 export async function persistRolePermissionsToDb(
-  tenantId: string, 
-  role: UserRole, 
+  tenantId: string,
+  role: UserRole,
   permissions: Record<PermissionKey, boolean>
 ) {
   if (!isPostgresConnected) return;
 
+  const targetUuid = toTenantUuid(tenantId);
+  const entries = Object.entries(permissions);
+  if (entries.length === 0) return;
+
   try {
-    for (const [key, isGranted] of Object.entries(permissions)) {
+    const valuePlaceholders: string[] = [];
+    const values: any[] = [];
+    let pIdx = 1;
+
+    for (const [key, isGranted] of entries) {
       const def = PERMISSION_DEFINITIONS.find(p => p.key === key);
       const moduleName = def?.module || key.split(':')[0] || 'general';
       const actionName = def?.action || key.split(':')[1] || 'action';
       const desc = def?.description || '';
 
-      await pool.query(
-        `INSERT INTO role_permissions (tenant_id, role, permission_key, module, action, description, is_granted, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-         ON CONFLICT (tenant_id, role, permission_key)
-         DO UPDATE SET is_granted = $7, updated_at = NOW()`,
-        [tenantId, role, key, moduleName, actionName, desc, isGranted]
-      );
+      valuePlaceholders.push(`(${pIdx}, ${pIdx + 1}, ${pIdx + 2}, ${pIdx + 3}, ${pIdx + 4}, ${pIdx + 5}, ${pIdx + 6}, NOW())`);
+      values.push(targetUuid, role, key, moduleName, actionName, desc, Boolean(isGranted));
+      pIdx += 7;
     }
+
+    const query = `
+      INSERT INTO role_permissions (tenant_id, role, permission_key, module, action, description, is_granted, updated_at)
+      VALUES ${valuePlaceholders.join(', ')}
+      ON CONFLICT (tenant_id, role, permission_key)
+      DO UPDATE SET is_granted = EXCLUDED.is_granted, updated_at = NOW()
+    `;
+
+    await pool.query(query, values);
   } catch (err) {
     console.error('[Database Permissions Persist Error]', err);
+  }
+}
+
+/**
+ * Persist an entire multi-role permissions matrix to live PostgreSQL database in a single batch query.
+ */
+export async function persistFullMatrixToDb(
+  tenantId: string,
+  matrix: RolePermissionsMatrix
+) {
+  if (!isPostgresConnected) return;
+
+  const targetUuid = toTenantUuid(tenantId);
+  try {
+    const valuePlaceholders: string[] = [];
+    const values: any[] = [];
+    let pIdx = 1;
+
+    for (const [role, perms] of Object.entries(matrix)) {
+      if (!perms || typeof perms !== 'object') continue;
+      for (const [key, isGranted] of Object.entries(perms as Record<string, boolean>)) {
+        const def = PERMISSION_DEFINITIONS.find(p => p.key === key);
+        const moduleName = def?.module || key.split(':')[0] || 'general';
+        const actionName = def?.action || key.split(':')[1] || 'action';
+        const desc = def?.description || '';
+
+        valuePlaceholders.push(`($${pIdx}, $${pIdx + 1}, $${pIdx + 2}, $${pIdx + 3}, $${pIdx + 4}, $${pIdx + 5}, $${pIdx + 6}, NOW())`);
+        values.push(targetUuid, role, key, moduleName, actionName, desc, Boolean(isGranted));
+        pIdx += 7;
+      }
+    }
+
+    if (valuePlaceholders.length > 0) {
+      const query = `
+        INSERT INTO role_permissions (tenant_id, role, permission_key, module, action, description, is_granted, updated_at)
+        VALUES ${valuePlaceholders.join(', ')}
+        ON CONFLICT (tenant_id, role, permission_key)
+        DO UPDATE SET is_granted = EXCLUDED.is_granted, updated_at = NOW()
+      `;
+      await pool.query(query, values);
+    }
+  } catch (err) {
+    console.error('[Database Full Matrix Persist Error]', err);
   }
 }
 
@@ -882,10 +573,11 @@ export async function persistRolePermissionsToDb(
 export async function loadRolePermissionsFromDb(tenantId: string): Promise<void> {
   if (!isPostgresConnected) return;
 
+  const targetUuid = toTenantUuid(tenantId);
   try {
     const res = await pool.query(
       `SELECT role, permission_key, is_granted FROM role_permissions WHERE tenant_id = $1`,
-      [tenantId]
+      [targetUuid]
     );
 
     if (res.rows.length > 0) {
@@ -903,22 +595,134 @@ export async function loadRolePermissionsFromDb(tenantId: string): Promise<void>
   }
 }
 
-// Attempt test connection to Postgres
-pool.query('SELECT NOW()')
-  .then(async () => {
-    isPostgresConnected = true;
-    console.log('[Database] Connected to PostgreSQL successfully.');
+/**
+ * Synchronize live records from Supabase PostgreSQL into memory/cache.
+ */
+export async function syncFromSupabase(): Promise<void> {
+  if (!isPostgresConnected) return;
+  try {
+    console.log('[Supabase Sync] Fetching dynamic live records from Supabase...');
+
+    // 1. Fetch live dynamic tickets & telemetry from Supabase
+    const ticketsRes = await pool.query(`
+      SELECT 
+        t.id,
+        t.tenant_id,
+        t.product_id,
+        p.name AS product_name,
+        t.short_code,
+        t.title,
+        t.description,
+        t.category,
+        t.severity,
+        t.status,
+        t.reporter_email,
+        t.assigned_squad,
+        t.assigned_to,
+        t.assigned_to_name,
+        t.domain_origin,
+        t.rating,
+        t.sla_due_at,
+        t.created_at,
+        t.updated_at,
+        tm.page_url,
+        tm.app_version,
+        tm.user_agent,
+        tm.viewport_dimensions,
+        tm.console_logs,
+        tm.network_errors,
+        tm.encrypted_sensitive_data
+      FROM tickets t
+      LEFT JOIN products p ON t.product_id = p.id
+      LEFT JOIN ticket_telemetry tm ON t.id = tm.ticket_id
+      ORDER BY t.created_at DESC;
+    `);
+
+    tenantStore.tickets = ticketsRes.rows.map(row => ({
+      id: row.id,
+      tenant_id: toTenantTextId(row.tenant_id),
+      product_id: row.product_id,
+      product_name: row.product_name || 'Core Platform & Telemetry',
+      domain_origin: row.domain_origin || undefined,
+      short_code: row.short_code,
+      title: row.title,
+      description: row.description,
+      category: row.category,
+      severity: row.severity,
+      status: row.status,
+      rating: row.rating ? Number(row.rating) : undefined,
+      reporter_email: row.reporter_email,
+      assigned_squad: row.assigned_squad,
+      assigned_to: row.assigned_to || undefined,
+      assigned_to_name: row.assigned_to_name || undefined,
+      sla_due_at: row.sla_due_at ? new Date(row.sla_due_at).toISOString() : new Date().toISOString(),
+      created_at: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+      updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+      telemetry: row.page_url ? {
+        page_url: row.page_url,
+        app_version: row.app_version,
+        user_agent: row.user_agent,
+        viewport_dimensions: row.viewport_dimensions,
+        console_logs: row.console_logs || [],
+        network_errors: row.network_errors || [],
+        encrypted_sensitive_data: row.encrypted_sensitive_data
+      } : undefined
+    }));
+    console.log(`[Supabase Sync] Dynamic tickets loaded from Supabase: ${tenantStore.tickets.length}`);
+
+    // 2. Fetch live events from Supabase
+    const eventsRes = await pool.query(`
+      SELECT te.id, te.ticket_id, te.tenant_id, te.event_type, te.content, te.is_internal_only, te.created_at, u.full_name AS author_name, u.role AS author_role
+      FROM ticket_events te
+      LEFT JOIN users u ON te.author_id = u.id
+      ORDER BY te.created_at ASC;
+    `);
+    tenantStore.events = eventsRes.rows.map(row => ({
+      id: row.id,
+      ticket_id: row.ticket_id,
+      tenant_id: toTenantTextId(row.tenant_id),
+      author_name: row.author_name || 'Team Member',
+      author_role: row.author_role || 'developer',
+      event_type: row.event_type,
+      content: row.content,
+      is_internal_only: Boolean(row.is_internal_only),
+      created_at: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString()
+    }));
+
+    tenantStore.saveToDisk();
+
+    // 3. Load role permissions
     await loadRolePermissionsFromDb('tenant-acme-corp-001');
     await loadRolePermissionsFromDb('tenant-medsync-002');
-  })
-  .catch((err: any) => {
-    isPostgresConnected = false;
-    if (ENV.NODE_ENV === 'production') {
-      console.error('[CRITICAL DATABASE ERROR] Failed to connect to PostgreSQL in production mode:', err?.message || err);
-    } else {
-      console.log('[Database] Operating with Persistent Disk Database (feedback_hub_db.json). Zero data loss on refresh.');
+  } catch (syncErr) {
+    console.error('[Supabase Sync Error]', syncErr);
+  }
+}
+
+// Attempt test connection to Postgres
+async function connectToDatabase(retries = 3, delayMs = 2000): Promise<void> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await pool.query('SELECT NOW()');
+      isPostgresConnected = true;
+      console.log('[Database] Connected to PostgreSQL (Supabase) successfully.');
+      await syncFromSupabase();
+      return;
+    } catch (err: any) {
+      if (attempt === retries) {
+        isPostgresConnected = false;
+        if (ENV.NODE_ENV === 'production') {
+          console.error('[CRITICAL DATABASE ERROR] Failed to connect to PostgreSQL in production mode:', err?.message || err);
+        } else {
+          console.log('[Database] Operating with Persistent Disk Database (feedback_hub_db.json). Zero data loss on refresh.');
+        }
+      } else {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
     }
-  });
+  }
+}
+connectToDatabase();
 
 /**
  * Executes a callback within a managed PostgreSQL transaction client if connected.

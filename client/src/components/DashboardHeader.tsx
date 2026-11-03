@@ -48,7 +48,6 @@ interface DashboardHeaderProps {
   permissionsMatrix?: RolePermissionsMatrix | null;
   onNewIncidentClick?: () => void;
   onOpenSimulator?: () => void;
-  onSeedDemo?: () => void;
   onClearTickets?: () => void;
   onSelectTicket?: (ticket: Ticket) => void;
   onSelectView?: (view: any) => void;
@@ -68,7 +67,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   permissionsMatrix,
   onNewIncidentClick,
   onOpenSimulator,
-  onSeedDemo,
   onClearTickets,
   onSelectTicket,
   onSelectView

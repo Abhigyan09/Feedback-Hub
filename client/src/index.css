@@ -99,6 +99,7 @@ body {
 html, body {
   width: 100%;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
   margin: 0;
   padding: 0;
@@ -109,6 +110,7 @@ html, body {
 #root {
   width: 100%;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
   margin: 0;
   padding: 0;
@@ -177,7 +179,9 @@ html, body {
 /* Dedicated main scroll container: natural 1:1 hardware scroll with isolated boundary */
 .main-content-scroll {
   overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
+-webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scroll-padding-bottom: 2.5rem;
 }
 
 /* Code and raw telemetry logs styling */

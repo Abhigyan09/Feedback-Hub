@@ -179,7 +179,7 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
           ? 'grid-cols-1 md:grid-cols-2'
           : visibleItems.length === 3
           ? 'grid-cols-1 md:grid-cols-3'
-          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
       }`}>
         {visibleItems.map(({ ticket, slaLabel, isBreached, waitingDuration }) => {
           const normSeverity = normalizeSeverity(ticket.severity);
@@ -214,18 +214,18 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
               </div>
 
               {/* Second row: Short Code, Severity Badge, Status Badge (Squarish 4-corner tags) */}
-              <div className="flex items-center space-x-2">
-                <span className="font-mono text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-[6px]">
+              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                <span className="font-mono text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-[6px] shrink-0">
                   {ticket.short_code}
                 </span>
-                <span className={`text-[10px] font-medium uppercase px-2 py-0.5 rounded-[6px] border ${
+                <span className={`text-[10px] font-medium uppercase px-2 py-0.5 rounded-[6px] border shrink-0 ${
                   normSeverity === 'Urgent'
                     ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
                   {normSeverity}
                 </span>
-                <span className="text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-[6px]">
+                <span className="text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-[6px] shrink-0">
                   {normStatus}
                 </span>
               </div>
@@ -239,30 +239,28 @@ export const NeedsAttentionSection: React.FC<NeedsAttentionSectionProps> = ({
               </h3>
 
               {/* Fourth row: Assignee on left, Waiting on right */}
-              <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div className="flex items-center space-x-1.5 min-w-0">
-                  <span className="text-xs text-slate-400">Assignee:</span>
+              <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs text-slate-500 overflow-hidden">
+                <div className="flex items-center space-x-1.5 min-w-0 flex-1 overflow-hidden">
+                  <span className="text-[11px] text-slate-400 shrink-0">Assignee:</span>
                   {assignedMember ? (
-                    <span className="font-medium text-slate-700 px-2 py-0.5 rounded-[6px] bg-slate-50 border border-slate-200 text-xs truncate max-w-[130px]" title={assignedMember.name}>
+                    <span className="font-medium text-slate-700 px-1.5 py-0.5 rounded-[6px] bg-slate-50 border border-slate-200 text-[11px] truncate" title={assignedMember.name}>
                       {assignedMember.name}
                     </span>
                   ) : ticket.assigned_to_name ? (
-                    <span className="font-medium text-slate-700 px-2 py-0.5 rounded-[6px] bg-slate-50 border border-slate-200 text-xs truncate max-w-[130px]">
+                    <span className="font-medium text-slate-700 px-1.5 py-0.5 rounded-[6px] bg-slate-50 border border-slate-200 text-[11px] truncate" title={ticket.assigned_to_name}>
                       {ticket.assigned_to_name}
                     </span>
                   ) : (
-                    <span className="font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-[6px] text-xs">
+                    <span className="font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-[6px] text-[11px] shrink-0">
                       Unassigned
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center space-x-1.5 text-slate-400 text-xs shrink-0">
-                  <div className="flex items-center space-x-1 font-mono text-slate-400">
-                    <Clock className="w-3 h-3 text-slate-400" />
-                    <span>Waiting {waitingDuration}</span>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                <div className="flex items-center space-x-1 text-slate-400 text-[11px] font-mono shrink-0 ml-auto" title={`Waiting time: ${waitingDuration}`}>
+                  <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                  <span className="whitespace-nowrap">{waitingDuration}</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
                 </div>
               </div>
 

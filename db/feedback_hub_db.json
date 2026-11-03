@@ -2,23 +2,24 @@
   "tenants": [
     {
       "id": "tenant-acme-corp-001",
-      "name": "Acme Payments Inc.",
+      "name": "Acme Payments Global Inc.",
       "slug": "acme-payments",
       "plan": "ENTERPRISE",
       "isolation_standard": "PostgreSQL 16 RLS (Bank-Grade)",
       "allowed_domains": [
         "payments.acme.com",
         "checkout.acme.com",
-        "merchant.acme.com",
-        "localhost:3000"
+        "localhost:3000",
+        "newdomain.io"
       ],
-      "webhook_url": "https://api.acme.com/v1/webhooks/incident-bridge",
-      "notification_email": "security-alerts@acme.com",
+      "webhook_url": "",
+      "notification_email": "",
       "auto_capture_telemetry": true,
       "auto_capture_network": true,
       "require_email": false,
       "default_squad": "Core Platform & API Squad",
-      "created_at": "2026-09-30T18:43:06.893Z"
+      "created_at": "2026-09-27T16:48:10.141Z",
+      "updated_at": "2026-11-02T15:14:21.491Z"
     },
     {
       "id": "tenant-medsync-002",
@@ -37,30 +38,10 @@
       "auto_capture_network": false,
       "require_email": true,
       "default_squad": "Clinical Telehealth Squad",
-      "created_at": "2026-10-15T18:43:06.903Z"
+      "created_at": "2026-10-12T16:48:10.153Z"
     }
   ],
   "users": [
-    {
-      "id": "user-super-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "superadmin@feedbackhub.io",
-      "full_name": "Alex Vance (Global Super Admin)",
-      "role": "super_admin",
-      "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
-    },
-    {
-      "id": "user-admin-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "admin.priya@acme.com",
-      "full_name": "Priya Sharma (Acme Admin)",
-      "role": "tenant_admin",
-      "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
-    },
     {
       "id": "user-lead-01",
       "tenant_id": "tenant-acme-corp-001",
@@ -68,8 +49,9 @@
       "full_name": "Vikram Mehta (API Squad Lead)",
       "role": "squad_lead",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
+      "created_at": "2026-10-27T16:48:10.153Z",
+      "status": "ONLINE",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
     },
     {
       "id": "user-dev-01",
@@ -78,58 +60,9 @@
       "full_name": "Rahul Sharma (Senior Backend Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
-    },
-    {
-      "id": "user-support-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "support.amit@acme.com",
-      "full_name": "Amit Patel (Support Agent)",
-      "role": "support_agent",
-      "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
-    },
-    {
-      "id": "user-client-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "client.john@partner.com",
-      "full_name": "John Client (Partner Merchant)",
-      "role": "client_user",
-      "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
-    },
-    {
-      "id": "member-1",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "elena.rostova@feedbackhub.io",
-      "full_name": "Elena Rostova",
-      "role": "squad_lead",
-      "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
-    },
-    {
-      "id": "member-2",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "marcus.chen@feedbackhub.io",
-      "full_name": "Marcus Chen",
-      "role": "developer",
-      "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
-    },
-    {
-      "id": "user-dev-02",
-      "tenant_id": "tenant-acme-corp-001",
-      "email": "priya.nair@acme.com",
-      "full_name": "Priya Nair (Frontend Platform Dev)",
-      "role": "developer",
-      "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
+      "created_at": "2026-10-27T16:48:10.153Z",
+      "status": "ONLINE",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
     },
     {
       "id": "user-dev-03",
@@ -138,8 +71,91 @@
       "full_name": "Amit Patel (Full-Stack Reliability Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
+      "created_at": "2026-10-27T16:48:10.153Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "user-client-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "operations@partner-client.com",
+      "full_name": "Sarah Jenkins (Client Ops Director)",
+      "role": "client_user",
+      "is_active": true,
+      "created_at": "2026-10-27T16:48:10.153Z",
+      "status": "ONLINE",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "user-1793291757929-931",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "alex@gmail.com",
+      "full_name": "Alex",
+      "role": "developer",
+      "is_active": true,
+      "status": "ONLINE",
+      "squad": "Core Platform & API Squad",
+      "created_at": "2026-10-29T16:35:57.931Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "user-super-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "superadmin@feedbackhub.io",
+      "full_name": "Alex Vance (Global Super Admin)",
+      "role": "super_admin",
+      "is_active": true,
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "user-admin-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "admin.priya@acme.com",
+      "full_name": "Priya Sharma (Acme Admin)",
+      "role": "tenant_admin",
+      "is_active": true,
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "user-support-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "support.amit@acme.com",
+      "full_name": "Amit Patel (Support Agent)",
+      "role": "support_agent",
+      "is_active": true,
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "member-1",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "elena.rostova@feedbackhub.io",
+      "full_name": "Elena Rostova",
+      "role": "squad_lead",
+      "is_active": true,
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "member-2",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "marcus.chen@feedbackhub.io",
+      "full_name": "Marcus Chen",
+      "role": "developer",
+      "is_active": true,
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
+    },
+    {
+      "id": "user-dev-02",
+      "tenant_id": "tenant-acme-corp-001",
+      "email": "priya.nair@acme.com",
+      "full_name": "Priya Nair (Frontend Platform Dev)",
+      "role": "developer",
+      "is_active": true,
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
     },
     {
       "id": "member-3",
@@ -148,8 +164,8 @@
       "full_name": "Sarah Jenkins",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
     },
     {
       "id": "user-medsync-dev-01",
@@ -158,8 +174,8 @@
       "full_name": "Elena Rostova (MedSync Dev)",
       "role": "developer",
       "is_active": true,
-      "created_at": "2026-10-30T18:43:06.903Z",
-      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$I5LAsKbZf387G3uoWMKoYw$AdMwEBgopBYce6Gl0GVPs77NqNdmSsOPukGE29V37zo"
+      "created_at": "2026-10-29T18:28:06.712Z",
+      "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$h+I3uXfaVgoAwZfG7ztXPw$yuOLOxgzwV6Pwo2Pye+IJhHltwoCTZjUEXZS2wI7FRY"
     }
   ],
   "products": [
@@ -172,7 +188,7 @@
       "api_key_hash": "hash_prod_live_checkout_key",
       "raw_api_key": "fb_live_acme_checkout_key_998",
       "environment": "production",
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-27T16:48:10.153Z"
     },
     {
       "id": "prod-dashboard",
@@ -183,7 +199,7 @@
       "api_key_hash": "hash_prod_live_portal_key",
       "raw_api_key": "hash_prod_live_portal_key",
       "environment": "staging",
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-27T16:48:10.153Z"
     },
     {
       "id": "prod-telehealth-portal",
@@ -194,309 +210,752 @@
       "api_key_hash": "hash_prod_live_medsync_key",
       "raw_api_key": "fb_live_medsync_key_771",
       "environment": "production",
-      "created_at": "2026-10-30T18:43:06.903Z"
+      "created_at": "2026-10-27T16:48:10.153Z"
     }
   ],
   "tickets": [
     {
-      "id": "ticket-1793458388226-3",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-dashboard",
-      "product_name": "Merchant Admin Portal",
-      "short_code": "FH-503",
-      "title": "Client feedback widget overflow on mobile screens < 360px width",
-      "description": "Modal horizontal container causes layout shift on small Android devices. Awaiting client reproduction video and viewport logs.",
-      "category": "UI_GLITCH",
-      "severity": "MEDIUM",
-      "status": "TRIAGED",
-      "reporter_email": "sarah.jenkins@feedbackhub.io",
-      "assigned_squad": "FRONTEND_PORTAL",
-      "assigned_to": "member-3",
-      "assigned_to_name": "Sarah Jenkins",
-      "waiting_for_client": true,
-      "sla_due_at": "2026-10-31T17:53:08.226Z",
-      "created_at": "2026-10-31T13:38:08.226Z",
-      "updated_at": "2026-10-31T14:33:08.226Z"
-    },
-    {
-      "id": "ticket-1793458388226-2",
+      "id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
       "tenant_id": "tenant-acme-corp-001",
       "product_id": "prod-checkout-gateway",
       "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FH-502",
-      "title": "PostgreSQL connection pool exhaustion during batch telemetry ingest",
-      "description": "RDS Proxy spikes to 100% pool utilization under spike loads, queuing incoming crash telemetry.",
-      "category": "PERFORMANCE",
-      "severity": "CRITICAL",
-      "status": "OPEN",
-      "reporter_email": "alerts@internal-ops.io",
-      "assigned_squad": "INFRASTRUCTURE_CORE",
-      "sla_due_at": "2026-10-31T14:38:08.226Z",
-      "created_at": "2026-10-31T14:05:08.226Z",
-      "updated_at": "2026-10-31T14:43:08.226Z",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1050",
+      "title": "RATING: Feedback from checkout.acme.com",
+      "description": "Excellent",
+      "category": "RATING",
+      "severity": "LOW",
+      "rating": 5,
+      "status": "RESOLVED",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "CUSTOMER_SUCCESS_SQUAD",
+      "sla_due_at": "2026-11-04T12:46:15.063Z",
+      "created_at": "2026-11-03T12:46:15.063Z",
+      "updated_at": "2026-11-03T14:16:19.549Z",
       "telemetry": {
-        "page_url": "POST /api/v1/ingest/telemetry/bulk",
-        "app_version": "v2.14.0",
-        "console_logs": [
-          {
-            "type": "error",
-            "message": "remaining connection slots reserved for superuser",
-            "timestamp": "7:48:08 pm"
-          }
-        ],
-        "network_errors": [
-          {
-            "url": "POST /api/v1/ingest/telemetry/bulk",
-            "status": 503,
-            "timestamp": "7:48:08 pm"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ticket-1793458388226-1",
-      "tenant_id": "tenant-acme-corp-001",
-      "product_id": "prod-checkout-gateway",
-      "product_name": "Checkout Gateway API & SDK",
-      "short_code": "FH-501",
-      "title": "OAuth2 token exchange timing out on iOS Safari WebViews",
-      "description": "Clients on iOS 17.4 experiencing 504 gateway timeout when trading auth code for JWT session token.",
-      "category": "API_FAILURE",
-      "severity": "CRITICAL",
-      "status": "IN_DEV",
-      "reporter_email": "lead-dev@client-payment.com",
-      "assigned_squad": "PAYMENT_CORE_API",
-      "assigned_to": "member-2",
-      "assigned_to_name": "Marcus Chen",
-      "sla_due_at": "2026-10-31T15:38:08.226Z",
-      "created_at": "2026-10-31T14:39:08.226Z",
-      "updated_at": "2026-10-31T14:48:08.226Z",
-      "telemetry": {
-        "page_url": "https://checkout.acme.com/v2/pay/upi/intent?session=sess_982b",
-        "app_version": "v2.14.0-prod",
-        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15",
-        "viewport_dimensions": "390x844",
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
         "console_logs": [
           {
             "type": "info",
-            "message": "Initialized OAuth SDK v2.4.1",
-            "timestamp": "8:09:08 pm"
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:16:13"
+          }
+        ],
+        "network_errors": []
+      }
+    },
+    {
+      "id": "44bda3b6-e756-45fb-8751-b03f6e319988",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1049",
+      "title": "HELP: Feedback from checkout.acme.com",
+      "description": "Help",
+      "category": "HELP",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "CLIENT_SUPPORT_SQUAD",
+      "sla_due_at": "2026-11-03T13:45:52.756Z",
+      "created_at": "2026-11-03T12:45:52.756Z",
+      "updated_at": "2026-11-03T14:16:18.262Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:15:51"
+          }
+        ],
+        "network_errors": []
+      }
+    },
+    {
+      "id": "65e082d1-2f85-40d5-91a7-cb68925ca959",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1048",
+      "title": "IDEA: Feedback from checkout.acme.com",
+      "description": "idea",
+      "category": "IDEA",
+      "severity": "LOW",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-10T12:45:31.873Z",
+      "created_at": "2026-11-03T12:45:31.873Z",
+      "updated_at": "2026-11-03T12:45:31.873Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:15:30"
+          }
+        ],
+        "network_errors": []
+      }
+    },
+    {
+      "id": "ticket-1793709462489",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "prod-checkout-gateway",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1047",
+      "title": "IDEA: Feedback from checkout.acme.com",
+      "description": "Idea",
+      "category": "IDEA",
+      "severity": "LOW",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-10T12:37:44.447Z",
+      "created_at": "2026-11-03T12:37:44.448Z",
+      "updated_at": "2026-11-03T12:37:44.448Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "domain_origin": "checkout.acme.com",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "18:07:42"
+          }
+        ],
+        "network_errors": []
+      }
+    },
+    {
+      "id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1047",
+      "title": "RATING: Feedback from checkout.acme.com",
+      "description": "Excellent",
+      "category": "RATING",
+      "severity": "LOW",
+      "status": "RESOLVED",
+      "rating": 5,
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "CUSTOMER_SUCCESS_SQUAD",
+      "sla_due_at": "2026-11-03T18:16:09.825Z",
+      "created_at": "2026-11-02T18:16:10.220Z",
+      "updated_at": "2026-11-03T12:10:41.765Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "app_version": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "23:46:09"
+          }
+        ],
+        "network_errors": [],
+        "encrypted_sensitive_data": null
+      }
+    },
+    {
+      "id": "da3eb55e-7f45-47ba-a09a-09f54a6d21c2",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "merchant.acme.com",
+      "short_code": "HELP-201",
+      "title": "Webhook Signature Verification Question",
+      "description": "Need guidance on computing HMAC-SHA256 headers for sandbox test transactions.",
+      "category": "HELP",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "reporter_email": "dev@clientstartup.io",
+      "assigned_squad": "CLIENT_SUPPORT_SQUAD",
+      "sla_due_at": "2026-11-02T19:11:30.284Z",
+      "created_at": "2026-11-02T18:11:30.284Z",
+      "updated_at": "2026-11-02T18:11:30.284Z"
+    },
+    {
+      "id": "8dc618e2-d219-4e53-80cb-bb0a87d67bfd",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "IDEA-101",
+      "title": "Quick Checkout 1-Click Payments",
+      "description": "Allow repeat customers to complete checkout using saved biometric authenticators.",
+      "category": "IDEA",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "reporter_email": "pm@partnercorp.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-09T18:11:29.960Z",
+      "created_at": "2026-11-02T18:11:29.960Z",
+      "updated_at": "2026-11-02T18:11:29.960Z"
+    },
+    {
+      "id": "9fcc8a68-7a89-4d0f-930a-5b0517abfb1f",
+      "tenant_id": "tenant-medsync-002",
+      "product_id": "f4d64a64-138c-42bc-a1e5-0a1912de97f5",
+      "product_name": "MedSync Telehealth Patient Web",
+      "domain_origin": "merchant.acme.com",
+      "short_code": "CSAT-301",
+      "title": "Smooth and intuitive dashboard onboarding",
+      "description": "Extremely satisfied with the developer telemetry and real-time incident notifications.",
+      "category": "RATING",
+      "severity": "LOW",
+      "status": "OPEN",
+      "rating": 5,
+      "reporter_email": "cto@fintechflow.com",
+      "assigned_squad": "CUSTOMER_SUCCESS_SQUAD",
+      "sla_due_at": "2026-11-03T18:10:27.176Z",
+      "created_at": "2026-11-02T18:10:27.176Z",
+      "updated_at": "2026-11-02T18:10:27.176Z"
+    },
+    {
+      "id": "849502bd-7b2a-46db-95ce-ad894901326a",
+      "tenant_id": "tenant-medsync-002",
+      "product_id": "f4d64a64-138c-42bc-a1e5-0a1912de97f5",
+      "product_name": "MedSync Telehealth Patient Web",
+      "domain_origin": "merchant.acme.com",
+      "short_code": "HELP-201",
+      "title": "Webhook Signature Verification Question",
+      "description": "Need guidance on computing HMAC-SHA256 headers for sandbox test transactions.",
+      "category": "HELP",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "reporter_email": "dev@clientstartup.io",
+      "assigned_squad": "CLIENT_SUPPORT_SQUAD",
+      "sla_due_at": "2026-11-02T19:10:26.786Z",
+      "created_at": "2026-11-02T18:10:26.786Z",
+      "updated_at": "2026-11-02T18:10:26.786Z"
+    },
+    {
+      "id": "d5594227-b28e-4054-bcb5-c896aa8ae1f6",
+      "tenant_id": "tenant-medsync-002",
+      "product_id": "f4d64a64-138c-42bc-a1e5-0a1912de97f5",
+      "product_name": "MedSync Telehealth Patient Web",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "IDEA-101",
+      "title": "Quick Checkout 1-Click Payments",
+      "description": "Allow repeat customers to complete checkout using saved biometric authenticators.",
+      "category": "IDEA",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "reporter_email": "pm@partnercorp.com",
+      "assigned_squad": "PRODUCT_DESIGN_SQUAD",
+      "sla_due_at": "2026-11-09T18:10:26.486Z",
+      "created_at": "2026-11-02T18:10:26.486Z",
+      "updated_at": "2026-11-02T18:10:26.486Z"
+    },
+    {
+      "id": "c4c39b2a-dd8a-4d7c-bfb7-8f781cf2cf1a",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1046",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "idea",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-11-02T19:57:59.186Z",
+      "created_at": "2026-11-02T17:57:59.577Z",
+      "updated_at": "2026-11-02T17:57:59.577Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "app_version": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "23:27:58"
           },
           {
             "type": "error",
-            "message": "GatewayTimeoutError: Upstream auth cluster took > 10000ms",
-            "timestamp": "8:10:08 pm"
+            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
+            "timestamp": "23:27:58"
           }
         ],
         "network_errors": [
           {
-            "url": "POST /api/v1/auth/token/exchange",
-            "status": 504,
+            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
             "method": "POST",
-            "timestamp": "8:10:08 pm"
+            "status": 500,
+            "timestamp": "23:27:58"
           }
-        ]
+        ],
+        "encrypted_sensitive_data": null
+      }
+    },
+    {
+      "id": "5d5dedf3-0106-421d-a65d-6d3e6dd7a5df",
+      "tenant_id": "tenant-acme-corp-001",
+      "product_id": "dee3a2f4-507b-4f83-a519-81dfdfd59eda",
+      "product_name": "Checkout Gateway API & SDK",
+      "domain_origin": "checkout.acme.com",
+      "short_code": "FB-1042",
+      "title": "BUG: Feedback from checkout.acme.com",
+      "description": "Bug",
+      "category": "BUG",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "reporter_email": "sarah.jenkins@clientops.com",
+      "assigned_squad": "FRONTEND_PORTAL",
+      "sla_due_at": "2026-11-02T18:55:08.386Z",
+      "created_at": "2026-11-02T16:55:08.758Z",
+      "updated_at": "2026-11-02T16:55:08.758Z",
+      "telemetry": {
+        "page_url": "https://checkout.acme.com/v2/pay/upi",
+        "app_version": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "viewport_dimensions": "1358x636",
+        "console_logs": [
+          {
+            "type": "info",
+            "message": "Initialized client on checkout.acme.com",
+            "timestamp": "22:25:08"
+          },
+          {
+            "type": "error",
+            "message": "Uncaught Error: Fetch failed at https://checkout.acme.com/v2/pay/upi",
+            "timestamp": "22:25:08"
+          }
+        ],
+        "network_errors": [
+          {
+            "url": "https://checkout.acme.com/v2/pay/upi/api/sync",
+            "method": "POST",
+            "status": 500,
+            "timestamp": "22:25:08"
+          }
+        ],
+        "encrypted_sensitive_data": null
       }
     }
   ],
-  "events": [],
+  "events": [
+    {
+      "id": "78cbd41c-66e6-43df-af10-1d89f7869745",
+      "ticket_id": "5d5dedf3-0106-421d-a65d-6d3e6dd7a5df",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
+      "is_internal_only": false,
+      "created_at": "2026-11-02T16:55:09.388Z"
+    },
+    {
+      "id": "fe7a6401-7ceb-4676-977f-e31f87d959ee",
+      "ticket_id": "c4c39b2a-dd8a-4d7c-bfb7-8f781cf2cf1a",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [FRONTEND_PORTAL].",
+      "is_internal_only": false,
+      "created_at": "2026-11-02T17:58:00.187Z"
+    },
+    {
+      "id": "edc517e1-1dc8-41b6-a053-cb35c91c6733",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [CUSTOMER_SUCCESS_SQUAD].",
+      "is_internal_only": false,
+      "created_at": "2026-11-02T18:16:10.920Z"
+    },
+    {
+      "id": "48ef726d-1dbb-4809-84fb-9a2bc0c40539",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from OPEN to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:10:40.750Z"
+    },
+    {
+      "id": "131e2407-6194-4a9d-9063-37e1b16d6643",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:10:41.488Z"
+    },
+    {
+      "id": "7598da28-69c1-410d-a141-3140d2fe2677",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:10:41.712Z"
+    },
+    {
+      "id": "56d10e65-9b7a-4875-bda1-bd371a8caa40",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:10:43.407Z"
+    },
+    {
+      "id": "b802eea9-d92f-48c5-b7e7-f0a56b1660ef",
+      "ticket_id": "22fd95c3-0a0b-4971-9aba-16fe3819e8c5",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Team Member",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:10:44.625Z"
+    },
+    {
+      "id": "ev-1793709464448",
+      "ticket_id": "ticket-1793709462489",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [PRODUCT_DESIGN_SQUAD].",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:37:44.448Z"
+    },
+    {
+      "id": "ev-1793709931873",
+      "ticket_id": "65e082d1-2f85-40d5-91a7-cb68925ca959",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [PRODUCT_DESIGN_SQUAD].",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:45:31.873Z"
+    },
+    {
+      "id": "ev-1793709952757",
+      "ticket_id": "44bda3b6-e756-45fb-8751-b03f6e319988",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [CLIENT_SUPPORT_SQUAD].",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:45:52.757Z"
+    },
+    {
+      "id": "ev-1793709975063",
+      "ticket_id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Feedback-Hub Ingest Engine",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Ticket automatically ingested for product 'Checkout Gateway API & SDK' from domain 'checkout.acme.com'. Routed to squad [CUSTOMER_SUCCESS_SQUAD].",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T12:46:15.063Z"
+    },
+    {
+      "id": "ev-1793715369103",
+      "ticket_id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from OPEN to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T14:16:09.104Z"
+    },
+    {
+      "id": "ev-1793715380947",
+      "ticket_id": "44bda3b6-e756-45fb-8751-b03f6e319988",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from OPEN to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T14:16:20.947Z"
+    },
+    {
+      "id": "ev-1793715382256",
+      "ticket_id": "9eae6208-411e-44eb-b3f2-774e70615ef7",
+      "tenant_id": "tenant-acme-corp-001",
+      "author_name": "Rahul Sharma (Senior Backend Dev)",
+      "author_role": "developer",
+      "event_type": "STATUS_CHANGE",
+      "content": "Status changed from RESOLVED to RESOLVED.",
+      "is_internal_only": false,
+      "created_at": "2026-11-03T14:16:22.256Z"
+    }
+  ],
   "refreshTokens": [
     {
-      "id": "rt-1793453720549-uhsp3w",
+      "id": "rt-1793382413296-vlxfra",
       "user_id": "user-dev-01",
       "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "87d78c4c1afddf29d1b5d562d66859aa701e2be0b9ad1fef3734ee56f48aeb53",
-      "family_id": "de8cbfd0-1bb0-4e79-b208-ab75ed69326e",
+      "token_hash": "f7f70ca338d40bcff3875cf0b7501318aa4a9b73ecaf4f324f2b837894116a41",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T17:46:53.295Z",
+      "created_at": "2026-10-30T17:46:53.296Z",
+      "replaced_by_token_hash": "ada5ea09880325ee3097b3c68d42e1ed0fbadc573fb13711416cb79d26e0078a"
+    },
+    {
+      "id": "rt-1793383217472-71c6vx",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "ada5ea09880325ee3097b3c68d42e1ed0fbadc573fb13711416cb79d26e0078a",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:00:17.337Z",
+      "created_at": "2026-10-30T18:00:17.472Z",
+      "replaced_by_token_hash": "67f5f299ddd80497232ef49917fc04191822df8c94936f02416c0dcf0ee8f44c"
+    },
+    {
+      "id": "rt-1793383286297-kq73zm",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "67f5f299ddd80497232ef49917fc04191822df8c94936f02416c0dcf0ee8f44c",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:01:26.251Z",
+      "created_at": "2026-10-30T18:01:26.297Z",
+      "replaced_by_token_hash": "fe5ebf1bc497cc9f6b9264f3b4cd8678fe07e28f30222e0bd00d2be68b286c97"
+    },
+    {
+      "id": "rt-1793383357191-mtm4za",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "fe5ebf1bc497cc9f6b9264f3b4cd8678fe07e28f30222e0bd00d2be68b286c97",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:02:37.180Z",
+      "created_at": "2026-10-30T18:02:37.191Z",
+      "replaced_by_token_hash": "c34b3ebc8f3dfcd1c2e28500f3586ccb1f3b49f28fb89e02c35de7f122c937cf"
+    },
+    {
+      "id": "rt-1793383485711-4eteze",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "c34b3ebc8f3dfcd1c2e28500f3586ccb1f3b49f28fb89e02c35de7f122c937cf",
+      "family_id": "3e637da9-51bd-49ef-a974-735d0ed8b719",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:04:45.671Z",
+      "created_at": "2026-10-30T18:04:45.711Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793383668178-3xnv03",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "012adb8e9f080af034702057632fdc06d630bcea0901c807c6374b7a68b04796",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:07:48.176Z",
+      "created_at": "2026-10-30T18:07:48.179Z",
+      "replaced_by_token_hash": "84fdb08ce0a4ab2da1e650c83d0b229b75cc89644316a2f0739d0ac487ffd2ed"
+    },
+    {
+      "id": "rt-1793384484427-m3uo1e",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "84fdb08ce0a4ab2da1e650c83d0b229b75cc89644316a2f0739d0ac487ffd2ed",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:21:24.387Z",
+      "created_at": "2026-10-30T18:21:24.428Z",
+      "replaced_by_token_hash": "e64c799862eb75699d2ebd21d6c7b0121c0337505607b610fd3deea29262c106"
+    },
+    {
+      "id": "rt-1793384579101-vd0gkv",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "e64c799862eb75699d2ebd21d6c7b0121c0337505607b610fd3deea29262c106",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:22:59.088Z",
+      "created_at": "2026-10-30T18:22:59.102Z",
+      "replaced_by_token_hash": "49727dffe4d7a58d7b4273ffc1b62272339875e8c61f9413170620e0fb17cc14"
+    },
+    {
+      "id": "rt-1793384593932-lwovf7",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "49727dffe4d7a58d7b4273ffc1b62272339875e8c61f9413170620e0fb17cc14",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:23:13.913Z",
+      "created_at": "2026-10-30T18:23:13.932Z",
+      "replaced_by_token_hash": "d2e67f5dd9b28aa08b40c6b8caff1a55bfc9ea00e78364bd58b1bfc63b45ef09"
+    },
+    {
+      "id": "rt-1793384676124-zhra2u",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "d2e67f5dd9b28aa08b40c6b8caff1a55bfc9ea00e78364bd58b1bfc63b45ef09",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-06T18:24:36.090Z",
+      "created_at": "2026-10-30T18:24:36.124Z",
+      "replaced_by_token_hash": "a8e94e9b9004316897dff7ab968d4e6ae1fc3b2330d7545eb13391a7253069c3"
+    },
+    {
+      "id": "rt-1793454374529-8p11zi",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "a8e94e9b9004316897dff7ab968d4e6ae1fc3b2330d7545eb13391a7253069c3",
+      "family_id": "c7d1a4ad-4f91-4692-a123-d94ab95ce563",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T13:46:14.517Z",
+      "created_at": "2026-10-31T13:46:14.529Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793454436198-vn0nz8",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "750448b5b246c3098749699f49195c19298589073efed7b2f6710b0ef15a328d",
+      "family_id": "b4cbd4aa-d5ff-474c-bef5-072a63bfe887",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T13:47:16.182Z",
+      "created_at": "2026-10-31T13:47:16.290Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793454477615-q1tmx5",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "5d0a6cc38e9eba56a80fce17249a9e29b4119ced6ff7877762f838c87e027fd7",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T13:47:57.611Z",
+      "created_at": "2026-10-31T13:47:57.615Z",
+      "replaced_by_token_hash": "faff828e1ae8235280931d6b770eead0c29f29b534069173d5d96e90c65824c6"
+    },
+    {
+      "id": "rt-1793455313361-8ds803",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "faff828e1ae8235280931d6b770eead0c29f29b534069173d5d96e90c65824c6",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:01:53.240Z",
+      "created_at": "2026-10-31T14:01:53.369Z",
+      "replaced_by_token_hash": "2bf53f65a43a32c7d9b841774f8f2ba76384049c135dc7dae80ad0d68325ac36"
+    },
+    {
+      "id": "rt-1793456824008-c5h4fq",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "2bf53f65a43a32c7d9b841774f8f2ba76384049c135dc7dae80ad0d68325ac36",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:27:03.817Z",
+      "created_at": "2026-10-31T14:27:04.009Z",
+      "replaced_by_token_hash": "36b37bf6489c17001143fe0dc2673eb97ff550124ffd1ad3a1c56d72a3c13d01"
+    },
+    {
+      "id": "rt-1793457705318-dwdc0m",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "36b37bf6489c17001143fe0dc2673eb97ff550124ffd1ad3a1c56d72a3c13d01",
+      "family_id": "5ee50367-9513-40fb-8bc9-54c9adabbad2",
+      "is_revoked": true,
+      "expires_at": "2026-11-07T14:41:45.169Z",
+      "created_at": "2026-10-31T14:41:45.340Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793457714062-q5wmx8",
+      "user_id": "user-dev-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "1de2945818c3bb4227a573e3c588b8b798f732081c32881fab1126107e5c5242",
+      "family_id": "44d3cf34-3cc5-46d7-b172-eb2670475c47",
       "is_revoked": false,
-      "expires_at": "2026-11-07T13:35:20.548Z",
-      "created_at": "2026-10-31T13:35:20.549Z",
+      "expires_at": "2026-11-07T14:41:54.061Z",
+      "created_at": "2026-10-31T14:41:54.062Z",
       "replaced_by_token_hash": null
     },
     {
-      "id": "rt-1793453737445-1j75ts",
-      "user_id": "user-dev-01",
+      "id": "rt-1793635862551-qgkhbd",
+      "user_id": "user-lead-01",
       "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "47fc4ca6ed6361f072e24e6ecf3dfededd99d172677865f54b03e598b41114b0",
-      "family_id": "00ca2e20-8b74-4f5f-9ead-bf0540bdde33",
+      "token_hash": "84b27a90156b1d2b7b3b747fdfbe6a727324b6cb06b8d5a1bcb33b178bbf4019",
+      "family_id": "448c720a-b9ad-406c-8e13-cb770242a785",
       "is_revoked": false,
-      "expires_at": "2026-11-07T13:35:37.445Z",
-      "created_at": "2026-10-31T13:35:37.445Z",
+      "expires_at": "2026-11-09T16:11:02.549Z",
+      "created_at": "2026-11-02T16:11:02.552Z",
       "replaced_by_token_hash": null
     },
     {
-      "id": "rt-1793455279739-iq4pgp",
-      "user_id": "user-dev-01",
+      "id": "rt-1793635903477-keoxz4",
+      "user_id": "user-lead-01",
       "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "f6c231f620be71b10de960bd4ccbf1639ab77c42d7a054093509d2da0ee82b76",
-      "family_id": "a71a0edf-4ee3-4db6-a4b0-2b1cd7f19491",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T14:01:19.738Z",
-      "created_at": "2026-10-31T14:01:19.739Z",
-      "replaced_by_token_hash": "e3eeafddf9a71c3ef5182b6d90ed7338fc331ff77b6b75d44794c8a98eb1e60a"
-    },
-    {
-      "id": "rt-1793455806882-83v2d7",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "e3eeafddf9a71c3ef5182b6d90ed7338fc331ff77b6b75d44794c8a98eb1e60a",
-      "family_id": "a71a0edf-4ee3-4db6-a4b0-2b1cd7f19491",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T14:10:06.874Z",
-      "created_at": "2026-10-31T14:10:06.883Z",
-      "replaced_by_token_hash": "6b6d2e88df21cf7b3ef2bb1bc6e6bdd2d72edc995099a8c3955b3914f8223a68"
-    },
-    {
-      "id": "rt-1793457018711-pvooh3",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "6b6d2e88df21cf7b3ef2bb1bc6e6bdd2d72edc995099a8c3955b3914f8223a68",
-      "family_id": "a71a0edf-4ee3-4db6-a4b0-2b1cd7f19491",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T14:30:18.699Z",
-      "created_at": "2026-10-31T14:30:18.711Z",
-      "replaced_by_token_hash": null
-    },
-    {
-      "id": "rt-1793457023464-ma93i0",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "b33f1d3b0c6e8c3a52b53105855dd79204aa21e9e2cfa40a72e56ecefefa8a4e",
-      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T14:30:23.464Z",
-      "created_at": "2026-10-31T14:30:23.465Z",
-      "replaced_by_token_hash": "041a433f95524a71b4843521937f76af81f98e92308f802058570b2c4038eea7"
-    },
-    {
-      "id": "rt-1793457534631-bo0j1d",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "041a433f95524a71b4843521937f76af81f98e92308f802058570b2c4038eea7",
-      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T14:38:54.624Z",
-      "created_at": "2026-10-31T14:38:54.631Z",
-      "replaced_by_token_hash": "aafbcc46d55e2e8b532f187f8dd512ac71d494deb1d118f845729ad6e785be62"
-    },
-    {
-      "id": "rt-1793458374736-4xqfl3",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "aafbcc46d55e2e8b532f187f8dd512ac71d494deb1d118f845729ad6e785be62",
-      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T14:52:54.731Z",
-      "created_at": "2026-10-31T14:52:54.736Z",
-      "replaced_by_token_hash": "bacbd914703f236798e1f651c406d7c9fb491832af8fef0978c7166d7eb48c14"
-    },
-    {
-      "id": "rt-1793459214995-kx4h8q",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "bacbd914703f236798e1f651c406d7c9fb491832af8fef0978c7166d7eb48c14",
-      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T15:06:54.992Z",
-      "created_at": "2026-10-31T15:06:54.995Z",
-      "replaced_by_token_hash": "9a07b6253c102e9c58ff9e690ef4be21941e08f062f0261b2f36095f98f5126a"
-    },
-    {
-      "id": "rt-1793459608683-r43fh9",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "9a07b6253c102e9c58ff9e690ef4be21941e08f062f0261b2f36095f98f5126a",
-      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T15:13:28.680Z",
-      "created_at": "2026-10-31T15:13:28.683Z",
-      "replaced_by_token_hash": "19eec73263c6b4d9eb482d65abedc0555146fddad88999ae5806a430295951b5"
-    },
-    {
-      "id": "rt-1793463458681-fk689l",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "19eec73263c6b4d9eb482d65abedc0555146fddad88999ae5806a430295951b5",
-      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T16:17:38.671Z",
-      "created_at": "2026-10-31T16:17:38.682Z",
-      "replaced_by_token_hash": "bef17e0f30cae4193e972030ace56768191736213b1c128a4409ecc7d1c24a2d"
-    },
-    {
-      "id": "rt-1793465092773-qe7wza",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "bef17e0f30cae4193e972030ace56768191736213b1c128a4409ecc7d1c24a2d",
-      "family_id": "4368e64d-6538-4b2b-9236-c9c3f286f0a7",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T16:44:52.759Z",
-      "created_at": "2026-10-31T16:44:52.773Z",
-      "replaced_by_token_hash": null
-    },
-    {
-      "id": "rt-1793466415789-lckl3f",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "64fccff6a846b5a8ce8e44752dc1851afaca61045d47a565445079ce1afbfc12",
-      "family_id": "0947c149-2c1a-44b1-be5a-30ed00fef417",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T17:06:55.788Z",
-      "created_at": "2026-10-31T17:06:55.789Z",
-      "replaced_by_token_hash": "36a1c7ea621e3c452e7bcf312617bddf98db6b0f60e2055f46d6828c95a771c6"
-    },
-    {
-      "id": "rt-1793472277078-sg2iow",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "36a1c7ea621e3c452e7bcf312617bddf98db6b0f60e2055f46d6828c95a771c6",
-      "family_id": "0947c149-2c1a-44b1-be5a-30ed00fef417",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T18:44:37.069Z",
-      "created_at": "2026-10-31T18:44:37.078Z",
-      "replaced_by_token_hash": "71c078a0ad2d373909662b3666779c2b95fa0a16980cabb885f449cf37d75723"
-    },
-    {
-      "id": "rt-1793472277410-yhvp82",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "71c078a0ad2d373909662b3666779c2b95fa0a16980cabb885f449cf37d75723",
-      "family_id": "0947c149-2c1a-44b1-be5a-30ed00fef417",
-      "is_revoked": true,
-      "expires_at": "2026-11-07T18:44:37.407Z",
-      "created_at": "2026-10-31T18:44:37.410Z",
-      "replaced_by_token_hash": "c8007c472fa61910b4836e3741b13a4d1b8ffdf62729da290f36a2a42254e0bc"
-    },
-    {
-      "id": "rt-1793622926664-hsf5nl",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "c8007c472fa61910b4836e3741b13a4d1b8ffdf62729da290f36a2a42254e0bc",
-      "family_id": "0947c149-2c1a-44b1-be5a-30ed00fef417",
-      "is_revoked": true,
-      "expires_at": "2026-11-09T12:35:26.656Z",
-      "created_at": "2026-11-02T12:35:26.664Z",
-      "replaced_by_token_hash": null
-    },
-    {
-      "id": "rt-1793623173168-xxqpx7",
-      "user_id": "user-dev-01",
-      "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "220126b2bfeaa98df5d1a5318f4bfc7c2b67d0060ad59421656e06a275026b11",
-      "family_id": "c1037236-81b8-43e2-bc40-03b5e9f256ba",
+      "token_hash": "8f09f83d0f4b8f7bff1d816298419af1a0bc93020daa91af1ccd2bd7c23c09d6",
+      "family_id": "b9d9fb95-4f99-41a8-8dcc-ff8ff253cb40",
       "is_revoked": false,
-      "expires_at": "2026-11-09T12:39:33.168Z",
-      "created_at": "2026-11-02T12:39:33.168Z",
+      "expires_at": "2026-11-09T16:11:43.477Z",
+      "created_at": "2026-11-02T16:11:43.478Z",
       "replaced_by_token_hash": null
     },
     {
-      "id": "rt-1793638276389-fyu4ye",
-      "user_id": "user-dev-01",
+      "id": "rt-1793635971423-tzo7s5",
+      "user_id": "user-lead-01",
       "tenant_id": "tenant-acme-corp-001",
-      "token_hash": "782552b247afcc8f4beec159683760e6a024044f67bf0e5e991e37ccd3391f3f",
-      "family_id": "149b7b14-4a13-4550-9a49-fb60f670bd5d",
+      "token_hash": "eb5d8511f0cc1caae746a12534c0b71805717d7df4326a9f98839a193ae57f1c",
+      "family_id": "585ed91e-dec2-46bb-9ce1-c0d1d50e7841",
       "is_revoked": false,
-      "expires_at": "2026-11-09T16:51:16.388Z",
-      "created_at": "2026-11-02T16:51:16.389Z",
+      "expires_at": "2026-11-09T16:12:51.423Z",
+      "created_at": "2026-11-02T16:12:51.423Z",
+      "replaced_by_token_hash": null
+    },
+    {
+      "id": "rt-1793636093226-6ftdj8",
+      "user_id": "user-lead-01",
+      "tenant_id": "tenant-acme-corp-001",
+      "token_hash": "1ce43838c6fff40bb5aa213c75eeb9de762e0684992c42a4137086ef46495dc6",
+      "family_id": "e9829616-c2b6-4ed6-a893-79d689d05b53",
+      "is_revoked": false,
+      "expires_at": "2026-11-09T16:14:53.226Z",
+      "created_at": "2026-11-02T16:14:53.226Z",
       "replaced_by_token_hash": null
     }
   ],
@@ -582,9 +1041,9 @@
         "tickets:view": true,
         "tickets:create": true,
         "tickets:edit": true,
-        "tickets:delete": false,
+        "tickets:delete": true,
         "tickets:change_status": true,
-        "tickets:assign": true,
+        "tickets:assign": false,
         "tickets:view_telemetry_internal": true,
         "tickets:view_internal_notes": true,
         "tickets:create_internal_notes": true,
@@ -734,7 +1193,7 @@
         "tickets:view": true,
         "tickets:create": true,
         "tickets:edit": true,
-        "tickets:delete": false,
+        "tickets:delete": true,
         "tickets:change_status": true,
         "tickets:assign": true,
         "tickets:view_telemetry_internal": true,
@@ -807,5 +1266,5 @@
       }
     }
   },
-  "last_updated": "2026-11-02T16:51:16.389Z"
+  "last_updated": "2026-11-03T14:16:22.256Z"
 }
