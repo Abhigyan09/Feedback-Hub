@@ -480,79 +480,85 @@ export const ObservabilityGraphs: React.FC<ObservabilityGraphsProps> = ({
       </div>
 
       {/* Row of 3 Operational SLA & Engineering Latency Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-poppins">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 font-poppins">
         
         {/* Metric 1: Mean Time to Resolution (MTTR) */}
-        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              MEAN TIME TO RESOLUTION
-            </span>
-            <div className="flex items-baseline space-x-2">
+        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex flex-col justify-between min-h-[135px]">
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                MEAN TIME TO RESOLUTION
+              </span>
+              <div className="w-8 h-8 rounded-[8px] bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200 shadow-2xs shrink-0">
+                <Clock className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-2 mt-2 mb-1.5">
               <span className="text-2xl sm:text-3xl font-medium text-slate-900 tracking-tight">
                 {avgMttrMinutes !== null ? `${avgMttrMinutes}m` : 'Tracking'}
               </span>
-              <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px]">
+              <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px] shrink-0">
                 <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
                 {resolvedCount > 0 ? `${resolvedCount} resolved` : 'Active triage'}
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-normal">
-              {avgMttrMinutes !== null 
-                ? 'Calculated from resolved production incident timeline.'
-                : 'Awaiting first verified incident resolution.'}
-            </p>
           </div>
-          <div className="w-9 h-9 rounded-[8px] bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200 shadow-2xs flex-shrink-0">
-            <Clock className="w-4 h-4" />
-          </div>
+          <p className="text-xs text-slate-400 font-normal">
+            {avgMttrMinutes !== null 
+              ? 'Calculated from resolved production incident timeline.'
+              : 'Awaiting first verified incident resolution.'}
+          </p>
         </div>
 
         {/* Metric 2: Live Ingest SLA & Crash Catch Rate */}
-        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              TELEMETRY CAPTURE FIDELITY
-            </span>
-            <div className="flex items-baseline space-x-2">
+        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex flex-col justify-between min-h-[135px]">
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                TELEMETRY CAPTURE FIDELITY
+              </span>
+              <div className="w-8 h-8 rounded-[8px] bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-2xs shrink-0">
+                <Zap className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-2 mt-2 mb-1.5">
               <span className="text-2xl sm:text-3xl font-medium text-emerald-700 tracking-tight">
                 {telemetryFidelityPct}%
               </span>
-              <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px]">
+              <span className="inline-flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-[6px] shrink-0">
                 <ShieldCheck className="w-3.5 h-3.5 mr-0.5" />
                 SOC-2 Pass
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-normal">
-              Encrypted stack traces with sensitive auth masking.
-            </p>
           </div>
-          <div className="w-9 h-9 rounded-[8px] bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-2xs flex-shrink-0">
-            <Zap className="w-4 h-4" />
-          </div>
+          <p className="text-xs text-slate-400 font-normal">
+            Encrypted stack traces with sensitive auth masking.
+          </p>
         </div>
 
         {/* Metric 3: On-Call Response Time */}
-        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              ON-CALL SQUAD RESPONSE
-            </span>
-            <div className="flex items-baseline space-x-2">
+        <div className="bg-white rounded-[12px] border border-slate-200/80 shadow-2xs p-5 hover:shadow-xs transition-all flex flex-col justify-between min-h-[135px]">
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                ON-CALL SQUAD RESPONSE
+              </span>
+              <div className="w-8 h-8 rounded-[8px] bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200 shadow-2xs shrink-0">
+                <Activity className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-2 mt-2 mb-1.5">
               <span className="text-2xl sm:text-3xl font-medium text-slate-900 tracking-tight">
                 Live
               </span>
-              <span className="inline-flex items-center text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-[6px]">
+              <span className="inline-flex items-center text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-[6px] shrink-0">
                 {unassignedCount === 0 ? 'All Assigned' : `${unassignedCount} Unassigned`}
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-normal">
-              Real-time WebSocket dispatch on triage desk.
-            </p>
           </div>
-          <div className="w-9 h-9 rounded-[8px] bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200 shadow-2xs flex-shrink-0">
-            <Activity className="w-4 h-4" />
-          </div>
+          <p className="text-xs text-slate-400 font-normal">
+            Real-time WebSocket dispatch on triage desk.
+          </p>
         </div>
 
       </div>
